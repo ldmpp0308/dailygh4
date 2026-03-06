@@ -27,10 +27,10 @@
   <!-- xlsx.js 和 html2canvas 改为按需加载，避免阻塞页面渲染 -->
   <style>
     body { font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background:#f6f7fb; margin:0; }
-    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); padding: 50px 12px 6px; position: relative; }
-    h1 { font-size: 24px; margin: 0; color:#2c2c2ce0; font-weight: 700; letter-spacing: 1px; line-height: 1.25; position: relative; }
+    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); padding: 50px 12px 36px; position: relative; }
+    h1 { font-size: 28px; margin: 0; color:#111; letter-spacing: 0.3px; line-height: 1.25; position: relative; }
     .desc { color:#616a76; font-size: 14px; margin-top: 6px; margin-bottom: 0; line-height: 1.8; }
-    .container::before { content:""; position:absolute; top:0; left:0; width:100%; height: 30px; border-top-left-radius:14px; border-top-right-radius:14px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
+    .container::before { content:""; position:absolute; top:0; left:0; right:0; height: 18px; border-top-left-radius:12px; border-top-right-radius:12px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
     /* Page header cosmetics */
     .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 14px; border-bottom: 1px solid #eef2f7; margin-bottom: 2px; }
     .header-icon { width:44px; height:44px; border-radius:10px; background: linear-gradient(135deg, #7c4dff, #4c6ef5); box-shadow: 0 8px 20px rgba(76,110,245,0.25); display:flex; align-items:center; justify-content:center; color:#fff; }
@@ -64,11 +64,11 @@
     .tab-switcher button.active { background:#ffffff; color:#1e293b; box-shadow:0 6px 18px rgba(76,110,245,0.12); }
     .tab-panel { display:none; margin-top: -4px; }
     .tab-panel.active { display:block; }
-    .auto-card { background:#fafafa; border:1px solid #e5e7eb; border-radius:10px; padding:16px; margin-bottom:12px; display:flex; flex-direction:column; gap:12px; }
+    .auto-card { background:#fafafa; border:1px solid #e5e7eb; border-radius:10px; padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:12px; }
     .auto-card-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
     .auto-card-title { font-size:18px; font-weight:600; color:#1f2937; }
-    .auto-card-desc { font-size:13px; color:#6b7280; margin-top:4px; }
-    .auto-meta { display:flex; flex-wrap:wrap; gap:12px; font-size:13px; color:#4b5563; }
+    .auto-card-desc { font-size:13px; color:#6b7280; margin-top:2px; }
+    .auto-meta { display:flex; flex-wrap:wrap; gap:16px; font-size:13px; color:#4b5563; }
     .auto-status { font-weight:600; }
     .auto-status.success { color:#137333; }
     .auto-status.error { color:#d93025; }
@@ -78,7 +78,7 @@
     .auto-actions { display:flex; gap:10px; flex-wrap:wrap; }
     .auto-refresh-btn { background:#4c6ef5; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; }
     .auto-refresh-btn:disabled { opacity:0.6; cursor:not-allowed; }
-    .actions { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+    .actions { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; }
     button { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 600; cursor:pointer; }
     .btn-primary { background: #4c6ef5; color:#fff; }
     .btn-secondary { background:#20c997; color:#fff; }
@@ -91,7 +91,7 @@
 
     /* 手机端统一：左右12px、底部36px、顶部50px */
     @media (max-width: 640px){
-      .container { padding: 50px 12px 6px; }
+      .container { padding: 50px 12px 36px; }
     }
     .flame-icon { display: inline-block; margin-left: 4px; font-size: 14px; line-height: 1; vertical-align: middle; }
     /* 涨幅单元格：文本居中，火焰固定在最左侧，不遮挡文字 */
@@ -2688,7 +2688,7 @@ function renderPreviewTable(rows){
     cells.push(`<td>${r.姓名}</td>`);
     if (showCollect) cells.push(`<td>${r.收藏数}</td>`);
     if (showLike) cells.push(`<td>${r.点赞数}</td>`);
-    const fansCellStyleBase = `background-image: linear-gradient(to right, #ff9500, #ffe082ed); background-size: ${pct}% 100%; background-repeat: no-repeat;`;`;
+    const fansCellStyleBase = `background-image: linear-gradient(to right, #ff9500, #ffe082ed); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
     const fansCellStyle = isEven ? fansCellStyleBase + ' background-color: #efefef; background-blend-mode: multiply;' : fansCellStyleBase;
     cells.push(`<td style="${fansCellStyle}">${fans}</td>`);
     cells.push(`<td>${diffPrevText}</td>`);
