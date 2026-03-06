@@ -154,11 +154,11 @@
     </div>
     <div class="controls" style="margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
       <div class="label" style="font-size:13px; color:var(--text-muted);">刷新存档：</div>
-      <button id="restoreLatestBtn" class="btn-light" title="从服务器拉取最新归档并合并到本地">从服务器恢复最新存档</button>
-      <button id="localRefreshBtn" class="btn-light" title="从本地原始存档扫描缺失并重渲染">从本地刷新并重渲染</button>
-      <span id="restoreStatus" class="status-badge"></span>
-      <span id="localRefreshStatus" class="status-badge"></span>
-      <span id="lastSyncTimePerson" class="status-badge status-muted">最后同步时间：—</span>
+      <button id="restoreLatestBtn" class="btn-light" title="从服务器拉取最新归档并合并到本地">服务器刷新</button>
+      <button id="localRefreshBtn" class="btn-light" title="从本地原始存档扫描缺失并重渲染">本地刷新</button>
+      <span id="restoreStatus" class="status-badge" style="display:none;"></span>
+      <span id="localRefreshStatus" class="status-badge" style="display:none;"></span>
+      <span id="lastSyncTimePerson" class="status-badge status-muted" style="display:none;">最后同步时间：—</span>
     </div>
     <!-- 显示内容勾选：默认仅显示粉丝数，勾选显示点赞/收藏 -->
     <div class="controls" style="margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -180,7 +180,7 @@
       <div class="label" style="font-size:13px; color:var(--text-muted);">趋势类型：</div>
       <div class="seg" id="trendType">
         <button data-type="growth" class="active">增长趋势</button>
-        <button data-type="total">粉丝总数趋势</button>
+        <button data-type="total">总数趋势</button>
       </div>
     </div>
     <!-- 已移除日维度日期导航：仅保留周/月 -->
@@ -3018,6 +3018,7 @@
           forceBtn.title = '强制从本地原始存档补齐并覆盖当日';
           forceBtn.textContent = '强制补齐当日';
           forceBtn.style.marginLeft = '8px';
+          forceBtn.style.display = 'none';
           localBtn.insertAdjacentElement('afterend', forceBtn);
         }
         forceBtn.addEventListener('click', ()=>{
