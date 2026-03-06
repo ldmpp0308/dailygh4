@@ -1,0 +1,4 @@
+# 重写 .html 请求到无后缀版本（200 表示重写而非重定向）
+/person.html /person 200
+/index.html / 200
+/*.html /:splat 200
