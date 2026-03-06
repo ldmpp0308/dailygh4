@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>每日高会 · 离线打包总览</title>
+  <style>
+    :root{
+      --bg:#0f1420; --panel:#131a28; --border:#263043; --text:#e6e9ef; --muted:#8a94a7;
+      --accent:#3b82f6; --accent-2:#22c55e; --accent-3:#f59e0b; --danger:#ef4444;
+    }
+    html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font: 14px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,"PingFang SC","Microsoft YaHei",sans-serif;}
+    .wrap{max-width:1000px; margin:24px auto; padding:0 16px;}
+    .sub{color:var(--muted); margin:6px 0 18px}
+    .card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px}
+    .title{font-size:18px; margin:0 0 10px}
+    .row{display:flex; gap:8px; flex-wrap:wrap}
+    .btn{appearance:none; border:1px solid var(--border); background:#111625; color:var(--text); border-radius:8px; padding:8px 12px; cursor:pointer}
+    .btn:hover{border-color:#3b82f6aa}
+    iframe{width:100%; height:520px; border:1px solid var(--border); border-radius:8px; background:#0c111b}
+    pre{white-space:pre-wrap; word-break:break-word; background:#0c111b; border:1px solid var(--border); border-radius:8px; padding:10px; max-height:460px; overflow:auto}
+    .badge{display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); background:#141922; color:var(--text); font-size:12px; margin-left:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="margin:0">每日高会 · 离线打包总览</h1>
+    <p class="sub">本页用于本地离线打开，整合个人页、H5 页与最新存档。</p>
+
+    <div class="card">
+      <h2 class="title">页面入口（本地相对路径）</h2>
+      <div class="row">
+        <button class="btn" onclick="openUrl('person.html')">打开个人页</button>
+        <button class="btn" onclick="openUrl('har_excel_h5.html')">打开 H5 (HAR→Excel)</button>
+        <button class="btn" onclick="openUrl('archives/latest_localhost.json')">查看最新存档 JSON</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="title">内嵌预览 · 个人页</h2>
+      <p class="sub">下方为当前目录下的 person.html 的内嵌预览。</p>
+      <iframe id="personFrame" src="person.html" loading="lazy"></iframe>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" onclick="document.getElementById('personFrame').src='person.html'">刷新内嵌预览</button>
+        <button class="btn" onclick="openUrl('person.html')">新窗口打开</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="title">内嵌预览 · HAR→Excel H5</h2>
+      <p class="sub">若存在 har_excel_h5.html，将在下方展示内嵌预览。</p>
+      <iframe id="h5Frame" src="har_excel_h5.html" loading="lazy"></iframe>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" onclick="document.getElementById('h5Frame').src='har_excel_h5.html'">刷新内嵌预览</button>
+        <button class="btn" onclick="openUrl('har_excel_h5.html')">新窗口打开</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="title">最新存档（优先本地）</h2>
+      <p class="sub">优先从 <code>archives/latest_localhost.json</code> 读取；若不存在且服务端可用，再尝试 <code>/api/archives/latest</code>。</p>
+      <pre id="latestJson">加载中…</pre>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" onclick="loadLatest()">重新加载</button>
+        <button class="btn" onclick="copyLatest()">复制 JSON</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="title">使用说明</h2>
+      <ul>
+        <li>将本目录整体复制或打包，即可离线查看上述页面与最新存档。</li>
+        <li>如需在线访问，请使用服务端路由：<code>/person.html</code>、<code>/har_excel_h5.html</code>、<code>/api/archives/latest</code>。</li>
+        <li>若页内图表或占位图未显示，属外部 CDN 被移除，已在离线页改为本地 vendor。</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function openUrl(p){ try{ window.open(p, '_blank', 'noopener'); }catch(e){} }
+
+    async function loadLatest(){
+      const out = document.getElementById('latestJson');
+      out.textContent = '加载中…';
+      try{
+        // 1) 优先本地文件（离线）
+        let payload = null;
+        try{
+          const respLocal = await fetch('archives/latest_localhost.json');
+          if(!respLocal.ok){ const t = await respLocal.text(); throw new Error(t || '本地最新存档缺失'); }
+          payload = await respLocal.json();
+        }catch(localErr){
+          // 2) 若本地不存在，且服务端存在，则尝试服务端 API
+          try{
+            const clientId = location.hostname || 'default';
+            const respSrv = await fetch(`/api/archives/latest?client_id=${encodeURIComponent(clientId)}`);
+            if(!respSrv.ok){ const t2 = await respSrv.text(); throw new Error(t2 || '服务端最新存档缺失'); }
+            payload = await respSrv.json();
+          }catch(srvErr){ throw srvErr; }
+        }
+        out.textContent = JSON.stringify(payload, null, 2);
+      }catch(e){ out.textContent = `加载失败：${e && e.message ? e.message : e}`; }
+    }
+
+    function copyLatest(){
+      try{
+        const out = document.getElementById('latestJson');
+        const txt = out ? out.textContent || '' : '';
+        if(!txt.trim()){ alert('内容为空'); return; }
+        navigator.clipboard.writeText(txt).then(()=>{ alert('已复制'); }).catch(()=>{
+          const ta = document.createElement('textarea');
+          ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+          alert('已复制');
+        });
+      }catch(e){ alert('复制失败'); }
+    }
+
+    loadLatest();
+  </script>
+</body>
+</html>

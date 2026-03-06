@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时区检验工具</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #252526;
+            border-radius: 5px;
+            border-left: 3px solid #007acc;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #4ec9b0;
+        }
+        .result {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error { color: #f48771; }
+        .success { color: #4ec9b0; }
+        .warning { color: #dcdcaa; }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #005a9e; }
+    </style>
+</head>
+<body>
+    <h1>🔍 时区检验工具</h1>
+    
+    <div class="section">
+        <h2>1. 检查 localStorage 中的数据格式</h2>
+        <button onclick="checkLocalStorage()">检查 localStorage</button>
+        <div id="localStorageResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. 检查服务器返回的数据格式</h2>
+        <button onclick="checkServerData()">检查服务器数据</button>
+        <div id="serverResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. 验证时区转换逻辑</h2>
+        <button onclick="checkTimezoneConversion()">验证时区转换</button>
+        <div id="timezoneResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. 检查 2026-01-31 的数据详情</h2>
+        <button onclick="checkSpecificDate()">检查 2026-01-31</button>
+        <div id="dateResult" class="result"></div>
+    </div>
+
+    <script>
+        function log(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            const prefix = type === 'error' ? '❌ ' : type === 'success' ? '✅ ' : type === 'warning' ? '⚠️ ' : 'ℹ️ ';
+            el.textContent += prefix + message + '\n';
+        }
+
+        function clear(elementId) {
+            document.getElementById(elementId).textContent = '';
+        }
+
+        async function checkLocalStorage() {
+            clear('localStorageResult');
+            const resultEl = document.getElementById('localStorageResult');
+            
+            try {
+                log('localStorageResult', '检查 localStorage 中的 memberRaw 数据...', 'info');
+                
+                // 检查所有日期
+                const dates = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('memberRaw:')) {
+                        const date = key.replace('memberRaw:', '');
+                        dates.push(date);
+                    }
+                }
+                
+                log('localStorageResult', `找到 ${dates.length} 个日期的数据`, dates.length > 0 ? 'success' : 'warning');
+                
+                if (dates.length === 0) {
+                    log('localStorageResult', 'localStorage 中没有找到 memberRaw 数据', 'warning');
+                    return;
+                }
+
+                // 检查最新的日期（假设是 2026-01-31）
+                const targetDate = '2026-01-31';
+                const rawKey = `memberRaw:${targetDate}`;
+                const raw = localStorage.getItem(rawKey);
+                
+                if (!raw) {
+                    log('localStorageResult', `${targetDate} 的数据不存在，检查最新日期: ${dates.sort().pop()}`, 'warning');
+                    const latestDate = dates.sort().pop();
+                    if (latestDate) {
+                        const latestRaw = localStorage.getItem(`memberRaw:${latestDate}`);
+                        if (latestRaw) {
+                            analyzeRawData(latestRaw, latestDate, 'localStorageResult');
+                        }
+                    }
+                    return;
+                }
+
+                analyzeRawData(raw, targetDate, 'localStorageResult');
+                
+            } catch (e) {
+                log('localStorageResult', `错误: ${e.message}`, 'error');
+                console.error(e);
+            }
+        }
+
+        function analyzeRawData(raw, date, elementId) {
+            try {
+                const obj = JSON.parse(raw);
+                const entries = obj?.log?.entries || [];
+                
+                log(elementId, `\n分析 ${date} 的数据:`, 'info');
+                log(elementId, `总条目数: ${entries.length}`, entries.length > 0 ? 'success' : 'warning');
+                
+                if (entries.length === 0) {
+                    log(elementId, '没有找到 entries 数据', 'error');
+                    return;
+                }
+
+                // 检查前10个条目的时间格式
+                log(elementId, '\n前10个条目的 startedDateTime 格式:', 'info');
+                const timeFormats = new Set();
+                const hourDistribution = {};
+                
+                entries.slice(0, Math.min(10, entries.length)).forEach((e, idx) => {
+                    const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+                    if (!t) {
+                        log(elementId, `条目 ${idx + 1}: 没有 startedDateTime`, 'warning');
+                        return;
+                    }
+                    
+                    const tStr = String(t);
+                    const hasZ = tStr.includes('Z');
+                    const hasTimezone = /[+-]\d{2}:?\d{2}$/.test(tStr);
+                    
+                    timeFormats.add(hasZ ? 'UTC (带Z)' : hasTimezone ? '带时区偏移' : '无时区标识');
+                    
+                    // 解析时间
+                    const dt = new Date(t);
+                    const utcDate = dt.toISOString().split('T')[0];
+                    const utcHour = dt.getUTCHours();
+                    const localDate = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+                    const localHour = dt.getHours();
+                    
+                    const hourKey = `${utcHour}点(UTC) -> ${localHour}点(本地)`;
+                    hourDistribution[hourKey] = (hourDistribution[hourKey] || 0) + 1;
+                    
+                    log(elementId, `条目 ${idx + 1}:`, 'info');
+                    log(elementId, `  原始值: ${tStr}`, 'info');
+                    log(elementId, `  格式: ${hasZ ? 'UTC (带Z)' : hasTimezone ? '带时区偏移' : '无时区标识'}`, hasZ ? 'success' : 'warning');
+                    log(elementId, `  UTC日期: ${utcDate}, UTC小时: ${utcHour}`, 'info');
+                    log(elementId, `  本地日期: ${localDate}, 本地小时: ${localHour}`, 'info');
+                    log(elementId, `  时差: ${localHour - utcHour} 小时`, 'info');
+                });
+
+                // 统计小时分布
+                log(elementId, '\n小时分布统计:', 'info');
+                Object.entries(hourDistribution).sort().forEach(([key, count]) => {
+                    log(elementId, `  ${key}: ${count} 条`, 'info');
+                });
+
+                // 检查所有条目的时间范围
+                let minTime = null, maxTime = null;
+                entries.forEach(e => {
+                    const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+                    if (t) {
+                        const dt = new Date(t);
+                        if (!minTime || dt < minTime) minTime = dt;
+                        if (!maxTime || dt > maxTime) maxTime = dt;
+                    }
+                });
+
+                if (minTime && maxTime) {
+                    log(elementId, '\n时间范围:', 'info');
+                    log(elementId, `  最早: ${minTime.toISOString()} (UTC)`, 'info');
+                    log(elementId, `  最晚: ${maxTime.toISOString()} (UTC)`, 'info');
+                    log(elementId, `  最早: ${minTime.toLocaleString('zh-CN')} (本地)`, 'info');
+                    log(elementId, `  最晚: ${maxTime.toLocaleString('zh-CN')} (本地)`, 'info');
+                    
+                    const minLocalHour = minTime.getHours();
+                    const maxLocalHour = maxTime.getHours();
+                    log(elementId, `  本地小时范围: ${minLocalHour}点 - ${maxLocalHour}点`, 'info');
+                }
+
+            } catch (e) {
+                log(elementId, `解析错误: ${e.message}`, 'error');
+                console.error(e);
+            }
+        }
+
+        async function checkServerData() {
+            clear('serverResult');
+            const resultEl = document.getElementById('serverResult');
+            
+            try {
+                log('serverResult', '正在从服务器获取数据...', 'info');
+                
+                const clientId = location.hostname || 'default';
+                const cacheBust = '_t=' + Date.now();
+                const url = `/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1&${cacheBust}`;
+                
+                log('serverResult', `请求 URL: ${url}`, 'info');
+                
+                const resp = await fetch(url, { mode: 'cors', cache: 'no-store' });
+                
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    log('serverResult', `请求失败: ${resp.status} ${text}`, 'error');
+                    return;
+                }
+                
+                const payload = await resp.json();
+                
+                log('serverResult', '✅ 成功获取服务器数据', 'success');
+                log('serverResult', `返回的日期数量: ${Object.keys(payload.memberRaw || {}).length}`, 'info');
+                
+                const rawMap = payload.memberRaw || {};
+                const targetDate = '2026-01-31';
+                
+                if (rawMap[targetDate]) {
+                    log('serverResult', `\n找到 ${targetDate} 的数据`, 'success');
+                    analyzeRawData(rawMap[targetDate], targetDate, 'serverResult');
+                } else {
+                    log('serverResult', `${targetDate} 的数据不存在`, 'warning');
+                    const dates = Object.keys(rawMap).sort();
+                    log('serverResult', `可用的日期: ${dates.join(', ')}`, 'info');
+                    if (dates.length > 0) {
+                        const latestDate = dates[dates.length - 1];
+                        log('serverResult', `分析最新日期: ${latestDate}`, 'info');
+                        analyzeRawData(rawMap[latestDate], latestDate, 'serverResult');
+                    }
+                }
+                
+            } catch (e) {
+                log('serverResult', `错误: ${e.message}`, 'error');
+                console.error(e);
+            }
+        }
+
+        function checkTimezoneConversion() {
+            clear('timezoneResult');
+            
+            log('timezoneResult', '验证时区转换逻辑...', 'info');
+            log('timezoneResult', `当前浏览器时区偏移: ${new Date().getTimezoneOffset()} 分钟 (${-new Date().getTimezoneOffset()/60} 小时)`, 'info');
+            
+            // 测试几个关键时间点
+            const testTimes = [
+                '2026-01-31T00:00:00.000Z',  // UTC 0点
+                '2026-01-31T03:00:00.000Z',  // UTC 3点
+                '2026-01-31T04:00:00.000Z',  // UTC 4点
+                '2026-01-31T11:00:00.000Z',  // UTC 11点
+                '2026-01-31T16:00:00.000Z', // UTC 16点
+            ];
+            
+            log('timezoneResult', '\n测试时间转换:', 'info');
+            testTimes.forEach(tStr => {
+                const dt = new Date(tStr);
+                const utcDate = dt.toISOString().split('T')[0];
+                const utcHour = dt.getUTCHours();
+                const localDate = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+                const localHour = dt.getHours();
+                const localMinute = dt.getMinutes();
+                
+                log('timezoneResult', `\n${tStr}:`, 'info');
+                log('timezoneResult', `  UTC日期: ${utcDate}, UTC小时: ${utcHour}`, 'info');
+                log('timezoneResult', `  本地日期: ${localDate}, 本地小时: ${localHour}:${String(localMinute).padStart(2,'0')}`, 'info');
+                log('timezoneResult', `  使用 getHours(): ${dt.getHours()}`, 'info');
+                log('timezoneResult', `  使用 getUTCHours(): ${dt.getUTCHours()}`, 'info');
+            });
+            
+            // 测试当前代码逻辑
+            log('timezoneResult', '\n\n当前代码逻辑测试:', 'info');
+            const testEntry = {
+                startedDateTime: '2026-01-31T03:00:00.000Z'
+            };
+            
+            // 模拟 buildHourlyMapForDate 的逻辑
+            const t = testEntry.startedDateTime;
+            const dt = new Date(t);
+            const y = dt.getFullYear();
+            const m = String(dt.getMonth()+1).padStart(2,'0');
+            const d = String(dt.getDate()).padStart(2,'0');
+            const dsLocal = `${y}-${m}-${d}`;
+            const hh = String(dt.getHours()).padStart(2,'0') + ':00';
+            
+            log('timezoneResult', `输入: ${t}`, 'info');
+            log('timezoneResult', `匹配日期: ${dsLocal}`, 'info');
+            log('timezoneResult', `生成的小时标签: ${hh}`, 'info');
+            log('timezoneResult', `如果目标日期是 2026-01-31，匹配结果: ${dsLocal === '2026-01-31' ? '✅ 匹配' : '❌ 不匹配'}`, dsLocal === '2026-01-31' ? 'success' : 'error');
+        }
+
+        async function checkSpecificDate() {
+            clear('dateResult');
+            
+            const targetDate = '2026-01-31';
+            log('dateResult', `检查 ${targetDate} 的详细数据...`, 'info');
+            
+            // 检查 localStorage
+            const rawKey = `memberRaw:${targetDate}`;
+            const raw = localStorage.getItem(rawKey);
+            
+            if (!raw) {
+                log('dateResult', 'localStorage 中没有该日期的数据', 'warning');
+                log('dateResult', '尝试从服务器获取...', 'info');
+                
+                try {
+                    const clientId = location.hostname || 'default';
+                    const cacheBust = '_t=' + Date.now();
+                    const url = `/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1&${cacheBust}`;
+                    const resp = await fetch(url, { mode: 'cors', cache: 'no-store' });
+                    
+                    if (resp.ok) {
+                        const payload = await resp.json();
+                        const rawMap = payload.memberRaw || {};
+                        if (rawMap[targetDate]) {
+                            analyzeRawData(rawMap[targetDate], targetDate, 'dateResult');
+                        } else {
+                            log('dateResult', '服务器也没有该日期的数据', 'error');
+                        }
+                    }
+                } catch (e) {
+                    log('dateResult', `获取失败: ${e.message}`, 'error');
+                }
+                return;
+            }
+            
+            analyzeRawData(raw, targetDate, 'dateResult');
+            
+            // 额外分析：检查小时分布
+            try {
+                const obj = JSON.parse(raw);
+                const entries = obj?.log?.entries || [];
+                
+                log('dateResult', '\n\n小时分布详细分析:', 'info');
+                
+                const hourMap = {};
+                entries.forEach(e => {
+                    const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+                    if (t) {
+                        const dt = new Date(t);
+                        const localHour = dt.getHours();
+                        const utcHour = dt.getUTCHours();
+                        const key = `本地${localHour}点(UTC${utcHour}点)`;
+                        if (!hourMap[key]) {
+                            hourMap[key] = [];
+                        }
+                        hourMap[key].push(t);
+                    }
+                });
+                
+                Object.keys(hourMap).sort().forEach(key => {
+                    log('dateResult', `${key}: ${hourMap[key].length} 条`, 'info');
+                });
+                
+                // 检查是否有 0-11 点的数据
+                const hasHours = {};
+                for (let h = 0; h < 12; h++) {
+                    hasHours[h] = false;
+                    entries.forEach(e => {
+                        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+                        if (t) {
+                            const dt = new Date(t);
+                            if (dt.getHours() === h) {
+                                hasHours[h] = true;
+                            }
+                        }
+                    });
+                }
+                
+                log('dateResult', '\n本地小时 0-11 点数据存在情况:', 'info');
+                for (let h = 0; h < 12; h++) {
+                    log('dateResult', `  ${h}点: ${hasHours[h] ? '✅' : '❌'}`, hasHours[h] ? 'success' : 'error');
+                }
+                
+            } catch (e) {
+                log('dateResult', `分析错误: ${e.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

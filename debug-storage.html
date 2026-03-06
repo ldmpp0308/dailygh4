@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>LocalStorage 诊断</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+    h2 { margin-top: 30px; border-bottom: 2px solid #4c6ef5; padding-bottom: 10px; }
+    pre { background: #f9f9f9; padding: 15px; border-left: 3px solid #4c6ef5; overflow-x: auto; max-height: 400px; }
+    .date-key { color: #137333; font-weight: bold; }
+    .section { margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>LocalStorage 诊断工具</h1>
+    
+    <div class="section">
+      <h2>已保存的日期</h2>
+      <div id="dates"></div>
+    </div>
+    
+    <div class="section">
+      <h2>选择日期查看数据</h2>
+      <select id="dateSelector" style="padding: 8px; font-size: 14px;">
+        <option value="">请选择日期</option>
+      </select>
+    </div>
+    
+    <div class="section">
+      <h2>日级数据 (memberData)</h2>
+      <pre id="memberData"></pre>
+    </div>
+    
+    <div class="section">
+      <h2>小时级数据 (memberRaw, HAR)</h2>
+      <button onclick="showRawSummary()" style="padding: 8px 16px; margin-bottom: 10px;">显示摘要</button>
+      <button onclick="showRawFull()" style="padding: 8px 16px; margin-bottom: 10px;">显示完整</button>
+      <pre id="memberRaw"></pre>
+    </div>
+  </div>
+
+  <script>
+    function listStoredDates(){
+      const dates = new Set();
+      try{
+        for(let i=0;i<localStorage.length;i++){
+          const k = localStorage.key(i);
+          if(!k) continue;
+          if(k.startsWith('memberRaw:') || k.startsWith('memberData:')){
+            const d = k.split(':')[1];
+            if(d) dates.add(d);
+          }
+        }
+      }catch(e){}
+      return Array.from(dates).sort();
+    }
+
+    function showDates(){
+      const dates = listStoredDates();
+      const el = document.getElementById('dates');
+      if(!dates.length){
+        el.innerHTML = '<p style="color: #d93025;">未找到任何数据</p>';
+        return;
+      }
+      el.innerHTML = '<ul>' + dates.map(d => `<li><span class="date-key">${d}</span></li>`).join('') + '</ul>';
+      
+      const selector = document.getElementById('dateSelector');
+      selector.innerHTML = '<option value="">请选择日期</option>' + dates.map(d => `<option value="${d}">${d}</option>`).join('');
+    }
+
+    function showData(){
+      const dateSelector = document.getElementById('dateSelector');
+      const date = dateSelector.value;
+      if(!date) return;
+      
+      // 显示 memberData
+      try{
+        const memberData = localStorage.getItem(`memberData:${date}`);
+        const el = document.getElementById('memberData');
+        if(memberData){
+          const parsed = JSON.parse(memberData);
+          el.textContent = JSON.stringify(parsed, null, 2);
+        } else {
+          el.textContent = '无数据';
+        }
+      }catch(e){
+        document.getElementById('memberData').textContent = '解析失败: ' + e.message;
+      }
+      
+      // 显示 memberRaw 摘要
+      showRawSummary();
+    }
+
+    function showRawSummary(){
+      const dateSelector = document.getElementById('dateSelector');
+      const date = dateSelector.value;
+      if(!date) return;
+      
+      try{
+        const memberRaw = localStorage.getItem(`memberRaw:${date}`);
+        const el = document.getElementById('memberRaw');
+        if(!memberRaw){
+          el.textContent = '无数据';
+          return;
+        }
+        
+        const obj = JSON.parse(memberRaw);
+        const entries = obj?.log?.entries || [];
+        console.log('Total entries:', entries.length);
+        
+        // 显示第一条条目的完整信息
+        if(entries.length > 0){
+          const firstEntry = entries[0];
+          const summary = {
+            totalEntries: entries.length,
+            firstEntryKeys: Object.keys(firstEntry),
+            firstEntryStartedDateTime: firstEntry?.startedDateTime,
+            firstEntryResponseContentText_length: String(firstEntry?.response?.content?.text || '').length,
+            firstEntry_sample: {
+              startedDateTime: firstEntry?.startedDateTime,
+              request_method: firstEntry?.request?.method,
+              response_status: firstEntry?.response?.status,
+              response_content_text_sample: String(firstEntry?.response?.content?.text || '').substring(0, 200)
+            }
+          };
+          el.textContent = JSON.stringify(summary, null, 2);
+        } else {
+          el.textContent = 'No entries in HAR log';
+        }
+      }catch(e){
+        document.getElementById('memberRaw').textContent = '解析失败: ' + e.message;
+      }
+    }
+
+    function showRawFull(){
+      const dateSelector = document.getElementById('dateSelector');
+      const date = dateSelector.value;
+      if(!date) return;
+      
+      try{
+        const memberRaw = localStorage.getItem(`memberRaw:${date}`);
+        const el = document.getElementById('memberRaw');
+        if(memberRaw){
+          el.textContent = memberRaw;
+        } else {
+          el.textContent = '无数据';
+        }
+      }catch(e){
+        el.textContent = '解析失败: ' + e.message;
+      }
+    }
+
+    document.getElementById('dateSelector').addEventListener('change', showData);
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      showDates();
+    });
+  </script>
+</body>
+</html>

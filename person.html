@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎀 个人主页</title>
+  <style>
+    /* 基础配色与容器样式，沿用主页面紫色渐变视觉 */
+    :root {
+      --purple-1: #8e73ff;
+      --purple-2: #c3a8ff;
+      --purple-3: #6f8af8;
+      --text-strong: #2c2c2c;
+      --text-muted: #666;
+      --card-bg: #fff;
+      --border: rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f6f7fb; color: var(--text-strong); }
+    .container { max-width: 920px; margin: 0 auto; background: #fff; border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,0.06); padding: 50px 12px 36px; position: relative; }
+    .container::before { content:""; position: absolute; left:0; top:0; width:100%; height:30px; background: linear-gradient(90deg, var(--purple-1), var(--purple-2), var(--purple-3)); border-top-left-radius: 14px; border-top-right-radius: 14px; }
+    .page-header { padding: 0 0 14px; border-bottom: 1px solid var(--border); }
+    .title-wrap { position: relative; }
+    .title-wrap h1 { margin: 0; font-size: 22px; line-height: 1.4; font-weight: 800; letter-spacing: 0.5px; }
+    .title-wrap h1::after { content:""; display:block; width: 100%; height: 2px; margin-top: 8px; background: linear-gradient(90deg, var(--purple-1), var(--purple-2), var(--purple-3)); opacity: 0.82; border-radius: 2px; }
+    .back-link { position:absolute; right:0; top:0; font-size: 13px; color: #4c6ef5; text-decoration: none; padding: 4px 8px; border-radius: 6px; background: rgba(76,110,245,0.1); }
+
+    .profile { display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: center; margin-top: 16px; }
+    .avatar { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; background: #eee; border: 1px solid var(--border); }
+    .info .name { font-size: 20px; font-weight: 700; }
+    .info .nick { font-size: 14px; color: var(--text-muted); margin-left: 8px; }
+    .info .meta { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+
+    .stats { display:none; }
+    .metrics-inline { margin-top: 16px; display: flex; justify-content: center; gap: 10px; }
+    .metrics-inline .metric { display: flex; align-items: baseline; justify-content: center; text-align: center; font-size: 14px; color: var(--text-strong); gap: 6px; }
+    .metrics-inline .value { font-weight: 700; }
+
+    .controls { display:flex; align-items:center; gap:10px; margin-top: 18px; }
+    .seg { display:flex; border:1px solid var(--border); border-radius: 8px; overflow:hidden; }
+    .seg button { padding: 8px 12px; background:#fff; border:none; border-right:1px solid var(--border); font-size: 13px; cursor:pointer; }
+    .seg button:last-child { border-right:none; }
+    .seg button.active { background: rgba(142,115,255,0.14); color:#4c3bb3; }
+
+    .chart-wrap { margin-top: 10px; background: var(--card-bg); border:1px solid var(--border); border-radius: 12px; padding: 12px; }
+    .empty { margin-top: 12px; color: var(--text-muted); font-size: 13px; }
+    /* 更多成员标签点击态样式 */
+    .more-members .chk { cursor: pointer; user-select: none; }
+    .more-members .chk.active { background: rgba(142,115,255,0.12); border-color: var(--purple-1); }
+    /* 隐藏文本的辅助类：用于特定区域清空文本显示 */
+    .hide-text, .hide-text * { color: transparent !important; }
+    /* 隐藏整块控制区容器 */
+    .hide-controls { display: none !important; }
+
+    @media (max-width: 640px){
+      .container { padding: 50px 12px 36px; }
+      .profile { grid-template-columns: 72px 1fr; }
+      .avatar { width: 72px; height: 72px; border-radius: 10px; }
+      .stats { grid-template-columns: 1fr; }
+      .metrics-inline { gap: 8px; }
+      .metrics-inline .metric { font-size: 13px; }
+    }
+    /* 页脚 LOGO：居中显示，响应式宽度与回退文本 */
+    .footer-logo { margin-top: 16px; margin-bottom: 8px; text-align: center; }
+    .footer-logo img { display: block; margin: 0 auto; width: min(420px, 86vw); height: auto; max-width: 100%; }
+    .footer-logo .logo-fallback { display: none; font-size: 13px; color: #444; opacity: 0.75; }
+    @media (max-width: 640px){
+      .footer-logo img { width: min(360px, 86vw); }
+    }
+    /* 状态徽章样式：用于拉取/刷新状态与最后同步时间 */
+    .status-badge { display:inline-block; padding:4px 8px; border-radius: 999px; background: rgba(142,115,255,0.08); border:1px solid var(--border); font-size:12px; line-height:1.2; }
+    .status-info { color:#4c6ef5; background: rgba(76,110,245,0.10); border-color: rgba(76,110,245,0.18); }
+    .status-success { color:#137333; background: rgba(19,115,51,0.10); border-color: rgba(19,115,51,0.18); }
+    .status-error { color:#d93025; background: rgba(217,48,37,0.10); border-color: rgba(217,48,37,0.18); }
+    .status-muted { color: var(--text-muted); background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+  </style>
+  <!-- 引入 Chart.js 用于趋势可视化（离线） -->
+  <script src="vendor/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <div class="title-wrap">
+        <h1>🎀 个人主页</h1>
+        <a class="back-link" href="index.html">返回榜单</a>
+      </div>
+    </div>
+
+    <div class="profile">
+      <img id="profileAvatar" class="avatar" alt="头像" onerror="this.style.display='none'" />
+      <div class="info">
+        <div class="name">
+          <span id="profileName">—</span>
+          <span id="profileNick" class="nick">—</span>
+        </div>
+        <div class="meta">用户ID：<span id="profileUserId">—</span></div>
+        <div class="meta">生日：<span id="profileBirth">—</span></div>
+        <div class="meta">年龄：<span id="profileAge">—</span> · <span id="profileZodiac">—</span></div>
+      </div>
+    </div>
+
+    <div class="metrics-inline">
+      <div class="metric"><span class="label">粉丝数</span>：<span id="statFans" class="value">—</span></div>
+      <div class="metric"><span class="label">收藏数</span>：<span id="statCollect" class="value">—</span></div>
+      <div class="metric"><span class="label">点赞数</span>：<span id="statLike" class="value">—</span></div>
+    </div>
+
+    <div class="controls" id="dateNavigation" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div class="label" style="font-size:13px; color:var(--text-muted);">选择日期：</div>
+      <select id="dateSelector" style="padding:4px 8px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+        <option value="">请选择日期</option>
+      </select>
+    </div>
+    <div class="controls">
+      <div class="label" style="font-size:13px; color:var(--text-muted);">时间维度：</div>
+      <div class="seg" id="granularity">
+        <button data-mode="day" class="active">天</button>
+        <button data-mode="week">周</button>
+        <button data-mode="month">月</button>
+      </div>
+    </div>
+    <div class="controls hide-controls" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div class="label" style="font-size:13px; color:var(--text-muted);">存档：</div>
+      <button id="restoreLatestBtn" class="btn-light" title="从服务器拉取最新归档并合并到本地">从服务器恢复最新存档</button>
+      <button id="localRefreshBtn" class="btn-light" title="从本地原始存档扫描缺失并重渲染">从本地刷新并重渲染</button>
+      <span id="restoreStatus" class="status-badge"></span>
+      <span id="localRefreshStatus" class="status-badge"></span>
+      <span id="lastSyncTimePerson" class="status-badge status-muted">最后同步时间：—</span>
+    </div>
+    <!-- 显示内容勾选：默认仅显示粉丝数，勾选显示点赞/收藏 -->
+    <div class="controls" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div class="label" style="font-size:13px; color:var(--text-muted);">数据维度：</div>
+      <div id="metricToggles" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+          <input id="toggleFans" type="radio" name="metric" checked /> 粉丝数
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+          <input id="toggleLike" type="radio" name="metric" /> 点赞数
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+          <input id="toggleCollect" type="radio" name="metric" /> 收藏数
+        </label>
+      </div>
+    </div>
+    <!-- 趋势类型：增长/总数切换 -->
+    <div class="controls" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div class="label" style="font-size:13px; color:var(--text-muted);">趋势类型：</div>
+      <div class="seg" id="trendType">
+        <button data-type="growth" class="active">增长趋势</button>
+        <button data-type="total">粉丝总数趋势</button>
+      </div>
+    </div>
+    <!-- 已移除日维度日期导航：仅保留周/月 -->
+    
+
+    <div class="chart-wrap">
+      <canvas id="trendChart" height="220"></canvas>
+      <div id="emptyMsg" class="empty" style="display:none;">暂无该成员历史数据，请先在榜单页保存当日数据。</div>
+    </div>
+    <!-- 成员选择模块：移至折线图下方（每行 6 个，移除“更多成员”文本） -->
+    <div class="filters" style="display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-top:8px;">
+      <div id="moreMembers" class="more-members" style="display:grid; grid-template-columns: repeat(7, auto); gap:8px; justify-content:center; width:max-content; margin:0 auto;"></div>
+    </div>
+    <!-- 页脚LOGO（图片加载失败时显示回退文本） -->
+    <div class="footer-logo" role="contentinfo" aria-label="站点Logo">
+      <img src="assets/tf-family-logo-dark.png" alt="TF FAMILY LOGO" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" />
+      <div class="logo-fallback" aria-hidden="true">TF FAMILY · TF家族</div>
+    </div>
+
+  </div>
+
+  <script>
+    // 复用主页面的本地存储结构
+    // 统一使用稳定 API 域名；页面将优先通过同源 /api 代理转发
+    const API_BASE = 'https://api.rank.dailygh4.com';
+    function storageKey(dateStr){ return `memberData:${dateStr}`; }
+    function storageRawKey(dateStr){ return `memberRaw:${dateStr}`; }
+    function listStoredDates(){
+      const dates = new Set();
+      try{
+        for(let i=0;i<localStorage.length;i++){
+          const k = localStorage.key(i);
+          if(!k) continue;
+          if(k.startsWith('memberRaw:') || k.startsWith('memberData:')){
+            const d = k.split(':')[1];
+            if(d) dates.add(d);
+          }
+        }
+      }catch(e){}
+      return Array.from(dates).sort();
+    }
+    function getStoredRowsForDate(dateStr){
+      if(!dateStr) return [];
+      try{ const v = localStorage.getItem(storageKey(dateStr)); return v ? JSON.parse(v) : []; }catch(e){ return []; }
+    }
+    function getWeekStart(dateStr){
+      const d = new Date(dateStr);
+      const day = d.getDay();
+      const delta = -day; // Sunday as start (周日起始)
+      const start = new Date(d);
+      start.setDate(d.getDate() + delta);
+      return start.toISOString().split('T')[0];
+    }
+    function getMonthStart(dateStr){
+      const d = new Date(dateStr);
+      const y = d.getFullYear(); const m = d.getMonth()+1;
+      const mm = String(m).padStart(2,'0');
+      return `${y}-${mm}-01`;
+    }
+    // 计算日期列表：周（日-六）与月（1日至最后一日）
+    function addDays(dateStr, days){
+      const d = new Date(dateStr);
+      const nd = new Date(d);
+      nd.setDate(d.getDate() + Number(days));
+      return nd.toISOString().split('T')[0];
+    }
+    function listDatesInWeek(dateStr){
+      if(!dateStr) return [];
+      const start = getWeekStart(dateStr);
+      const labels = [];
+      for(let i=0;i<7;i++) labels.push(addDays(start, i));
+      return labels;
+    }
+    function listDatesInMonth(dateStr){
+      if(!dateStr) return [];
+      const d = new Date(dateStr);
+      const y = d.getFullYear();
+      const m = d.getMonth()+1; // 1-12
+      const lastDay = new Date(y, m, 0).getDate();
+      const mm = String(m).padStart(2,'0');
+      const labels = [];
+      for(let dd=1; dd<=lastDay; dd++){
+        const ddStr = String(dd).padStart(2,'0');
+        labels.push(`${y}-${mm}-${ddStr}`);
+      }
+      return labels;
+    }
+
+    // 最后同步时间显示与持久化
+    function initLastSyncPerson(){ try{ const v = Number(localStorage.getItem('last_sync_time')); const el = document.getElementById('lastSyncTimePerson'); if(el){ el.textContent = v ? `最后同步时间：${new Date(v).toLocaleString('zh-CN',{hour12:false})}` : '最后同步时间：—'; } }catch(e){} }
+    function setLastSync(ts){ try{ const v = (ts instanceof Date) ? ts.getTime() : Number(ts)||Date.now(); localStorage.setItem('last_sync_time', String(v)); const el1 = document.getElementById('lastSyncTimePerson'); if(el1){ el1.textContent = `最后同步时间：${new Date(v).toLocaleString('zh-CN',{hour12:false})}`; } const el2 = document.getElementById('lastSyncTime'); if(el2){ el2.textContent = `最后同步时间：${new Date(v).toLocaleString('zh-CN',{hour12:false})}`; } }catch(e){} }
+    document.addEventListener('DOMContentLoaded', initLastSyncPerson);
+
+    // 将 API 返回的行格式（含 info 嵌套）标准化为页面使用的平铺格式，避免展示为 0
+    function normalizeMemberRow(r){
+      if(!r || typeof r !== 'object') return null;
+      const info = r.info || {};
+      const name = String(r.realName ?? r.姓名 ?? '').trim();
+      if(!name) return null;
+      const fans = Number(r.fansNum ?? r.粉丝数 ?? info.fansNum ?? info.粉丝数 ?? 0);
+      const like = Number(r.likeNum ?? r.点赞数 ?? info.likeNum ?? info.点赞数 ?? 0);
+      const collect = Number(r.collectNum ?? r.收藏数 ?? info.collectNum ?? info.收藏数 ?? 0);
+      return {
+        realName: name,
+        姓名: name,
+        fansNum: fans,
+        粉丝数: fans,
+        likeNum: like,
+        点赞数: like,
+        collectNum: collect,
+        收藏数: collect,
+        startedDateTime: r.startedDateTime ?? null
+      };
+    }
+
+    // 从服务器恢复最新存档并合并到本地（多源拉取：同源 /api → api.rank → api.dailygh4 → 静态文件）
+    async function restoreLatestFromServer(){
+      const statusEl = document.getElementById('restoreStatus');
+      function setStatus(type, msg){ if(statusEl) { statusEl.style.color = (type==='error') ? '#d93025' : (type==='success' ? '#137333' : 'var(--text-muted)'); statusEl.textContent = msg; } }
+      const prevSelected = selectedDate;
+      try{
+        setStatus('info','正在拉取最新存档…');
+        const clientId = location.hostname || 'default';
+        const query = `client_id=${encodeURIComponent(clientId)}&raw=1`;
+        const apiCandidates = [
+          () => fetch(`/api/archives/latest?${query}`, { mode: 'cors', cache: 'no-store' }),
+          () => fetch(`${API_BASE}/api/archives/latest?${query}`, { mode: 'cors', cache: 'no-store' }),
+          () => fetch(`https://api.dailygh4.com/api/archives/latest?${query}`, { mode: 'cors', cache: 'no-store' })
+        ];
+        const staticCandidates = [
+          'archives/latest_localhost.json',
+          'archives/latest_rank.dailygh4.com.json',
+          'archives/latest.json'
+        ];
+        let payload = null;
+        let lastErr = null;
+        for(const attempt of apiCandidates){
+          try{
+            const resp = await attempt();
+            if(!resp.ok){ lastErr = new Error(await resp.text() || '拉取失败'); continue; }
+            const data = await resp.json();
+            const rawMap = data.memberRaw || {};
+            const dataMap = data.memberData || {};
+            const hasData = Object.keys(rawMap).length > 0 || Object.keys(dataMap).length > 0;
+            if(hasData){ payload = data; lastErr = null; break; }
+            lastErr = new Error('接口返回无有效数据');
+          }catch(e){ lastErr = e; }
+        }
+        if(!payload && staticCandidates.length){
+          for(const path of staticCandidates){
+            try{
+              const resp = await fetch(path, { cache: 'no-store' });
+              if(!resp.ok) continue;
+              const data = await resp.json();
+              const rawMap = data.memberRaw || {};
+              const dataMap = data.memberData || {};
+              const hasData = Object.keys(rawMap).length > 0 || Object.keys(dataMap).length > 0;
+              if(hasData){ payload = data; lastErr = null; break; }
+            }catch(e){ }
+          }
+        }
+        if(!payload){
+          setStatus('error', lastErr && lastErr.message ? `拉取失败：${lastErr.message}` : '所有数据源均不可用，请稍后重试');
+          return;
+        }
+        const rawMap = payload.memberRaw || {};
+        const dataMap = payload.memberData || {};
+        const unionDates = Array.from(new Set([ ...Object.keys(rawMap), ...Object.keys(dataMap) ])).sort();
+        let updatedCount = 0, keptCount = 0;
+
+        // 通过行数据提取指定日期的最大 startedDateTime
+        function getMaxIsoFromRowsForDate(rows, date){
+          try{
+            if(!Array.isArray(rows) || !rows.length || !date) return null;
+            let maxTs = -Infinity; let maxIso = null;
+            for(const r of rows){
+              const iso = r && r.startedDateTime ? String(r.startedDateTime) : null;
+              if(!iso) continue;
+              const dt = new Date(iso);
+              const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0');
+              const dsLocal = `${y}-${m}-${d}`;
+              if(dsLocal !== date) continue;
+              const ts = Date.parse(iso);
+              if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxIso = iso; }
+            }
+            return maxIso;
+          }catch(e){ return null; }
+        }
+        // 从原始文本中检测指定日期的最大 startedDateTime（优先解析 HAR，失败时用正则兜底）
+        function detectMaxTsForDateFromText(rawText, targetDate){
+          if(!rawText || !rawText.trim() || !targetDate) return null;
+          try{
+            const obj = JSON.parse(rawText);
+            const entries = obj?.log?.entries;
+            if(Array.isArray(entries) && entries.length){
+              let maxTs = -Infinity; let maxStr = null;
+              for(const e of entries){
+                const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+                if(!t) continue;
+                const dt = new Date(t);
+                const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0');
+                const dsLocal = `${y}-${m}-${d}`;
+                if(dsLocal !== targetDate) continue;
+                const ts = Date.parse(String(t));
+                if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxStr = String(t); }
+              }
+              if(maxStr) return maxStr;
+            }
+          }catch(e){}
+          try{
+            const re = new RegExp(`(\\d{4}-\\d{2}-\\d{2})[T\\s]([0-9:.-]+(?:Z|[+-][0-9:]+)?)`, 'g');
+            const matches = String(rawText).matchAll(re);
+            if(matches){
+              let maxTs = -Infinity; let maxStr = null;
+              for(const match of matches){
+                const datePart = match[1];
+                const timePart = match[2];
+                const iso = `${datePart}T${timePart}`.replace(' ', 'T');
+                const dt = new Date(iso);
+                const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0');
+                const dsLocal = `${y}-${m}-${d}`;
+                if(dsLocal !== targetDate) continue;
+                const ts = Date.parse(iso);
+                if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxStr = iso; }
+              }
+              if(maxStr) return maxStr;
+            }
+          }catch(e){}
+          return null;
+        }
+
+        for(const d of unionDates){
+          try{
+            const srvRaw = rawMap[d] || '';
+            const srvRowsRaw = Array.isArray(dataMap[d]) ? dataMap[d] : [];
+            const srvRows = srvRowsRaw.map(normalizeMemberRow).filter(Boolean);
+            const locRaw = localStorage.getItem(storageRawKey(d)) || '';
+            const locRowsStr = localStorage.getItem(storageKey(d));
+            const locRows = locRowsStr ? (function(){ try{ return JSON.parse(locRowsStr); }catch(e){ return []; } })() : [];
+
+            const hasLocal = (!!locRaw && locRaw.trim()) || (Array.isArray(locRows) && locRows.length);
+            const hasServer = (!!srvRaw && srvRaw.trim()) || (Array.isArray(srvRows) && srvRows.length);
+
+            let srvMaxIso = srvRaw ? detectMaxTsForDateFromText(srvRaw, d) : null;
+            if(!srvMaxIso && srvRows.length){ srvMaxIso = getMaxIsoFromRowsForDate(srvRows, d); }
+            const srvMax = srvMaxIso ? Date.parse(srvMaxIso) : null;
+
+            let locMaxIso = locRaw ? detectMaxTsForDateFromText(locRaw, d) : null;
+            if(!locMaxIso && locRows.length){ locMaxIso = getMaxIsoFromRowsForDate(locRows, d); }
+            const locMax = locMaxIso ? Date.parse(locMaxIso) : null;
+
+            if(hasLocal && hasServer && locMax!=null && srvMax!=null){
+              if(locMax >= srvMax){ keptCount++; continue; }
+              try{ if(srvRaw && srvRaw.trim()) localStorage.setItem(storageRawKey(d), srvRaw); }catch(e){}
+              try{ localStorage.setItem(storageKey(d), JSON.stringify(srvRows)); }catch(e){}
+              updatedCount++; continue;
+            }
+            if(hasLocal && !hasServer){ keptCount++; continue; }
+            if(!hasLocal && hasServer){
+              try{ if(srvRaw && srvRaw.trim()) localStorage.setItem(storageRawKey(d), srvRaw); }catch(e){}
+              try{ localStorage.setItem(storageKey(d), JSON.stringify(srvRows)); }catch(e){}
+              updatedCount++; continue;
+            }
+            // 两边都没有有效数据，不做处理
+          }catch(e){ /* 单个日期合并失败忽略 */ }
+        }
+        setStatus('success', `拉取完成：保留本地 ${keptCount} 项，新增/更新 ${updatedCount} 项`);
+        setLastSync(Date.now());
+
+        // 恢复后：只有在用户没有选择日期时才切换到最新日期并重渲染（尊重用户选择的历史日期）
+        try{
+          allDates = listStoredDates();
+          if(!prevSelected && allDates.length) selectedDate = allDates[allDates.length-1];
+          else if(prevSelected) { /* 保持用户选择的日期，不覆盖 */ }
+          else if(allDates.length) selectedDate = allDates[allDates.length-1];
+          // 仅重建当前成员的序列并重渲染，不重复绑定事件
+          const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
+          const dates = listStoredDates();
+          const seriesRaw = [];
+          for(const dd of dates){
+            const rows = getStoredRowsForDate(dd) || [];
+            let found = null;
+            for(const r of rows){
+              const rn = r.realName || r.姓名 || '';
+              if(String(rn).trim() === name){ found = r; break; }
+            }
+            if(!found) continue;
+            const fans = Number(found.fansNum != null ? found.fansNum : found.粉丝数 || 0);
+            const like = Number(found.likeNum != null ? found.likeNum : found.点赞数 || 0);
+            const collect = Number(found.collectNum != null ? found.collectNum : found.收藏数 || 0);
+            seriesRaw.push({ date: dd, fans, like, collect });
+          }
+          // 更新顶部的最新统计
+          const latest = seriesRaw.length ? seriesRaw[seriesRaw.length-1] : null;
+          const domFans = document.getElementById('statFans');
+          const domLike = document.getElementById('statLike');
+          const domCollect = document.getElementById('statCollect');
+          if(domFans) domFans.textContent = latest ? (latest.fans ?? '—') : '—';
+          if(domLike) domLike.textContent = latest ? (latest.like ?? '—') : '—';
+          if(domCollect) domCollect.textContent = latest ? (latest.collect ?? '—') : '—';
+
+          renderChartUnified(seriesRaw, buildCompareMap(mode));
+        }catch(e){ /* 刷新失败忽略 */ }
+      }catch(err){ setStatus('error', `拉取失败：${err && err.message ? err.message : err}`); }
+    }
+
+    // 从本地原始存档扫描缺失并重渲染
+    async function refreshFromLocal(opts){
+      const statusEl = document.getElementById('localRefreshStatus');
+      function setStatus(type, msg){ if(statusEl) { statusEl.style.color = (type==='error') ? '#d93025' : (type==='success' ? '#137333' : 'var(--text-muted)'); statusEl.textContent = msg; } }
+      try{
+        const force = !!(opts && (opts.force === true || opts === true));
+        const targetDates = (opts && Array.isArray(opts.dates) && opts.dates.length) ? opts.dates.filter(Boolean) : null;
+        setStatus('info','正在扫描本地原始存档…');
+        const dates = targetDates || listStoredDates();
+        let updatedDays = 0; let addedRecords = 0; let overriddenRecords = 0;
+        for(const d of dates){
+          try{
+            const rows = getStoredRowsForDate(d) || [];
+            const byNameIndex = new Map();
+            for(let i=0;i<rows.length;i++){
+              const nm = String(rows[i].realName || rows[i].姓名 || '').trim();
+              if(nm) byNameIndex.set(nm, i);
+            }
+            const existNames = new Set(byNameIndex.keys());
+            const hourlyMap = buildHourlyMapForDate(d); // name -> Map(hour -> {fans, like, collect, ts})
+            let addedForDate = 0; let updatedForDate = 0;
+            for(const [nm, mm] of hourlyMap.entries()){
+              const name = String(nm||'').trim();
+              if(!name) continue;
+              // 取该日内的最新记录作为日快照
+              let best = null;
+              for(const rec of mm.values()){
+                if(!best || ((rec?.ts ?? -Infinity) > (best?.ts ?? -Infinity))) best = rec;
+              }
+              if(!best) continue;
+              const fans = Number(best.fans||0), like = Number(best.like||0), collect = Number(best.collect||0);
+              if(existNames.has(name)){
+                if(force){
+                  const idx = byNameIndex.get(name);
+                  const cur = rows[idx] || {};
+                  const curFans = Number(cur.fansNum != null ? cur.fansNum : cur.粉丝数 || 0);
+                  const curLike = Number(cur.likeNum != null ? cur.likeNum : cur.点赞数 || 0);
+                  const curCollect = Number(cur.collectNum != null ? cur.collectNum : cur.收藏数 || 0);
+                  if(curFans !== fans || curLike !== like || curCollect !== collect){
+                    rows[idx] = { realName: name, fansNum: fans, likeNum: like, collectNum: collect };
+                    updatedForDate += 1; overriddenRecords += 1;
+                  }
+                }
+                // 非强制模式：保留本地，不覆盖
+                continue;
+              } else {
+                rows.push({ realName: name, fansNum: fans, likeNum: like, collectNum: collect });
+                existNames.add(name);
+                addedForDate += 1;
+              }
+            }
+            if(addedForDate > 0 || updatedForDate > 0){
+              try{ localStorage.setItem(storageKey(d), JSON.stringify(rows)); }catch(e){}
+              updatedDays += 1;
+              addedRecords += addedForDate;
+            }
+          }catch(e){ /* 某日失败忽略 */ }
+        }
+        setStatus('success', `本地刷新完成：更新 ${updatedDays} 日，新增 ${addedRecords} 条记录${force ? `，覆盖 ${overriddenRecords} 条` : ''}`);
+        // 刷新后：只有在用户没有选择日期时才更新为最新日期（尊重用户选择的历史日期）
+        try{
+          const prevSelected = selectedDate;
+          allDates = listStoredDates();
+          const newLatest = allDates.length ? allDates[allDates.length-1] : null;
+          if(!prevSelected && newLatest) selectedDate = newLatest;
+          else if(prevSelected && newLatest && prevSelected !== newLatest) { /* 用户选了历史日期，不覆盖 */ }
+          else if(!selectedDate && allDates.length) selectedDate = allDates[allDates.length-1];
+          const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
+          const seriesRaw = [];
+          for(const dd of allDates){
+            const rows = getStoredRowsForDate(dd) || [];
+            let found = null;
+            for(const r of rows){
+              const rn = r.realName || r.姓名 || '';
+              if(String(rn).trim() === name){ found = r; break; }
+            }
+            if(!found) continue;
+            const fans = Number(found.fansNum != null ? found.fansNum : found.粉丝数 || 0);
+            const like = Number(found.likeNum != null ? found.likeNum : found.点赞数 || 0);
+            const collect = Number(found.collectNum != null ? found.collectNum : found.收藏数 || 0);
+            seriesRaw.push({ date: dd, fans, like, collect });
+          }
+          const latest = seriesRaw.length ? seriesRaw[seriesRaw.length-1] : null;
+          const domFans = document.getElementById('statFans');
+          const domLike = document.getElementById('statLike');
+          const domCollect = document.getElementById('statCollect');
+          if(domFans) domFans.textContent = latest ? (latest.fans ?? '—') : '—';
+          if(domLike) domLike.textContent = latest ? (latest.like ?? '—') : '—';
+          if(domCollect) domCollect.textContent = latest ? (latest.collect ?? '—') : '—';
+          renderChartUnified(seriesRaw, buildCompareMap(mode));
+        }catch(e){ /* 刷新失败忽略 */ }
+      }catch(err){ setStatus('error', `本地刷新失败：${err && err.message ? err.message : err}`); }
+    }
+
+    // 昵称回退映射：源数据缺失时用于展示
+    const nicknameFallbacks = Object.freeze({
+      '官俊臣': '害羞游泳圈'
+    });
+    // 用户ID回退映射：源数据缺失时用于展示
+    const userIdFallbacks = Object.freeze({
+      '官俊臣': 16823098
+    });
+    // 出生日期回退映射：源数据缺失时用于展示与计算（ISO UTC）
+    const birthFallbacks = Object.freeze({
+      '官俊臣': '2007-07-04T00:00:00Z',
+      '汪浚熙': '2008-09-11T00:00:00Z',
+      '王浩':   '2008-11-05T00:00:00Z',
+      '张桂源': '2009-05-11T00:00:00Z',
+      '张函瑞': '2009-10-18T00:00:00Z',
+      '王橹杰': '2010-01-08T00:00:00Z',
+      '李嘉森': '2010-01-19T00:00:00Z',
+      '王烁然': '2010-03-15T00:00:00Z',
+      '左奇函': '2010-03-19T00:00:00Z',
+      '陈奕恒': '2010-05-09T00:00:00Z',
+      '杨博文': '2010-06-01T00:00:00Z',
+      '杨涵博': '2010-06-08T00:00:00Z',
+      '张奕然': '2010-09-15T00:00:00Z',
+      '聂玮辰': '2011-02-18T00:00:00Z',
+      '陈思罕': '2011-11-08T00:00:00Z',
+      '魏子宸': '2011-12-19T00:00:00Z',
+      '李煜东': '2012-03-15T00:00:00Z',
+      '陈浚铭': '2012-05-17T00:00:00Z'
+    });
+
+    // 成员色值映射（仅用于图表与折线）
+    const memberColors = Object.freeze({
+      '官俊臣': '#7c4dff',
+      '汪浚熙': '#36cfc9',
+      '王浩': '#ff7f50',
+      '张桂源': '#ffd21f',
+      '张函瑞': '#2ea987',
+      '王橹杰': '#5db7d7',
+      '李嘉森': '#ff9f40',
+      '王烁然': '#3b82f6',
+      '左奇函': '#4c6ef5',
+      '陈奕恒': '#8b5cf6',
+      '杨博文': '#ff7ab7',
+      '杨涵博': '#ff1475',
+      '张奕然': '#f59e0b',
+      '聂玮辰': '#153f94',
+      '陈思罕': '#34d399',
+      '魏子宸': '#9ca3af',
+      '李煜东': '#e5e7eb',
+      '陈浚铭': '#ff0000',
+      // 额外成员保留原映射
+    });
+
+    // 名称到颜色（未知名称生成稳定HSL色）
+    function colorOf(n){
+      const key = String(n||'').trim();
+      if(!key) return '#7c4dff';
+      if(memberColors[key]) return memberColors[key];
+      let hash = 0;
+      for(let i=0;i<key.length;i++){ hash = (hash*31 + key.charCodeAt(i)) >>> 0; }
+      const hue = hash % 360;
+      return `hsl(${hue}, 65%, 55%)`;
+    }
+
+    function hexToRGBA(hex, alpha){
+      const h = hex.replace('#','').trim();
+      if(h.length===3){
+        const r = parseInt(h[0]+h[0],16);
+        const g = parseInt(h[1]+h[1],16);
+        const b = parseInt(h[2]+h[2],16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }else if(h.length===6){
+        const r = parseInt(h.slice(0,2),16);
+        const g = parseInt(h.slice(2,4),16);
+        const b = parseInt(h.slice(4,6),16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+      return hex;
+    }
+
+    function colorWithAlpha(c, alpha){
+      const s = String(c||'');
+      if(s.startsWith('#')) return hexToRGBA(s, alpha);
+      if(s.startsWith('hsl(')) return s.replace('hsl(','hsla(').replace(')',`, ${alpha})`);
+      return s;
+    }
+
+    // 将序列转换为相对增长（以首个非空值为基准）
+    function toGrowthSeries(arr){
+      const first = arr.find(v => v != null);
+      if(first == null) return arr.slice();
+      return arr.map(v => (v==null ? null : (v - first)));
+    }
+
+    // 顺序差值转换：每一点与前一点的变化幅度（首个为 null）
+    function toSequentialDelta(arr){
+      const out = new Array(arr.length).fill(null);
+      for(let i=1; i<arr.length; i++){
+        const prev = arr[i-1];
+        const curr = arr[i];
+        out[i] = (prev != null && curr != null) ? (Number(curr) - Number(prev)) : null;
+      }
+      return out;
+    }
+
+    // 首日亦显示增长：以首个标签前的最近一日为基准，若不存在则为0
+    function toSequentialDeltaWithFirst(arr, labels, objMap, field){
+      const out = new Array(arr.length).fill(null);
+      const firstLabel = (labels && labels.length) ? String(labels[0]) : null;
+      let prevVal = null;
+      try{
+        if(firstLabel){
+          const keys = Array.from(objMap.keys()).filter(k => String(k) < firstLabel).sort();
+          const prevKey = keys.length ? keys[keys.length-1] : null;
+          if(prevKey){
+            const obj = objMap.get(prevKey);
+            const v = obj ? Number(obj[field]) : null;
+            prevVal = Number.isFinite(v) ? v : null;
+          }
+        }
+      }catch(e){}
+      if(arr.length > 0){
+        const curr0 = arr[0];
+        out[0] = (prevVal != null && curr0 != null) ? (Number(curr0) - Number(prevVal)) : (curr0 != null ? 0 : null);
+      }
+      for(let i=1; i<arr.length; i++){
+        const prev = arr[i-1];
+        const curr = arr[i];
+        out[i] = (prev != null && curr != null) ? (Number(curr) - Number(prev)) : null;
+      }
+      return out;
+    }
+
+    // 值映射版本：用于对比成员的数值映射
+    function toSequentialDeltaWithFirstForValueMap(arr, labels, valueMap){
+      const out = new Array(arr.length).fill(null);
+      const firstLabel = (labels && labels.length) ? String(labels[0]) : null;
+      let prevVal = null;
+      try{
+        if(firstLabel){
+          const keys = Array.from(valueMap.keys()).filter(k => String(k) < firstLabel).sort();
+          const prevKey = keys.length ? keys[keys.length-1] : null;
+          if(prevKey){
+            const v = valueMap.get(prevKey);
+            const n = Number(v);
+            prevVal = Number.isFinite(n) ? n : null;
+          }
+        }
+      }catch(e){}
+      if(arr.length > 0){
+        const curr0 = arr[0];
+        out[0] = (prevVal != null && curr0 != null) ? (Number(curr0) - Number(prevVal)) : (curr0 != null ? 0 : null);
+      }
+      for(let i=1; i<arr.length; i++){
+        const prev = arr[i-1];
+        const curr = arr[i];
+        out[i] = (prev != null && curr != null) ? (Number(curr) - Number(prev)) : null;
+      }
+      return out;
+    }
+
+    // 新增：小时级增长的首点基准（若存在上一小时用其作为基准，否则为0）
+    function toSequentialDeltaWithFirstForHourMap(arr, labels, hourMap, field){
+      const out = new Array(arr.length).fill(null);
+      const firstLabel = (labels && labels.length) ? String(labels[0]) : null;
+      let prevVal = null;
+      try{
+        if(firstLabel){
+          const keys = Array.from(hourMap.keys()).filter(k => String(k) < firstLabel).sort();
+          const prevKey = keys.length ? keys[keys.length-1] : null;
+          if(prevKey){
+            const obj = hourMap.get(prevKey);
+            const v = obj ? Number(obj[field]) : null;
+            prevVal = Number.isFinite(v) ? v : null;
+          }
+        }
+      }catch(e){}
+      if(arr.length > 0){
+        const curr0 = arr[0];
+        out[0] = (prevVal != null && curr0 != null) ? (Number(curr0) - Number(prevVal)) : (curr0 != null ? 0 : null);
+      }
+      for(let i=1; i<arr.length; i++){
+        const prev = arr[i-1];
+        const curr = arr[i];
+        out[i] = (prev != null && curr != null) ? (Number(curr) - Number(prev)) : null;
+      }
+      return out;
+    }
+
+    // 自动计算 Y 轴范围与步长
+    function niceStep(rawSpan){
+      const n = Math.max(1, Number(rawSpan) || 1);
+      const pow = Math.pow(10, Math.floor(Math.log10(n)));
+      const base = n / pow;
+      let factor = 1;
+      if(base <= 1) factor = 1; else if(base <= 2) factor = 2; else if(base <= 5) factor = 5; else factor = 10;
+      return Math.max(1, Math.round(factor * pow));
+    }
+    function computeYAxisScale(datasets){
+      try{
+        const vals = [];
+        for(const ds of (datasets || [])){
+          const arr = Array.isArray(ds?.data) ? ds.data : [];
+          for(const v of arr){ if(v != null && Number.isFinite(Number(v))) vals.push(Number(v)); }
+        }
+        if(!vals.length){ return { min: 0, max: 1, step: 1 }; }
+        const mn = Math.min(...vals);
+        const mx = Math.max(...vals);
+        if(mn === mx){
+          const pad = Math.max(1, Math.round(Math.abs(mx) * 0.1) || 1);
+          const min = mn - pad;
+          const max = mx + pad;
+          const step = niceStep((max - min) / 6);
+          return { min, max, step };
+        }
+        const range = mx - mn;
+        const min = Math.floor(mn - range * 0.06);
+        const max = Math.ceil(mx + range * 0.06);
+        const step = niceStep(range / 6);
+        return { min, max, step };
+      }catch(e){ return { min: 0, max: 1, step: 1 }; }
+    }
+
+
+    function aggregateSeries(series, mode){
+      if(mode === 'day' || !mode) return series.slice();
+      const map = new Map();
+      for(const it of series){
+        const key = (mode === 'week') ? getWeekStart(it.date) : getMonthStart(it.date);
+        if(!map.has(key)){
+          map.set(key, { date: key, fans: it.fans, like: it.like, collect: it.collect });
+        } else {
+          // 使用最后一次记录覆盖，保证时间靠后的值更真实
+          map.set(key, { date: key, fans: it.fans, like: it.like, collect: it.collect });
+        }
+      }
+      return Array.from(map.values()).sort((a,b)=> new Date(a.date) - new Date(b.date));
+    }
+
+    // 构建指定日期的小时级数据（解析 HAR 原始日志）
+    function buildHourlyMapForDate(dateStr){
+      if(!dateStr) {
+        console.warn('[buildHourlyMapForDate] dateStr is empty');
+        return new Map();
+      }
+      let raw = '';
+      try{ raw = localStorage.getItem(storageRawKey(dateStr)) || ''; }catch(e){ raw = ''; }
+      if(!raw || !raw.trim()) {
+        console.warn(`[buildHourlyMapForDate] No memberRaw data for ${dateStr}, key: ${storageRawKey(dateStr)}`);
+        return new Map();
+      }
+      let obj = null;
+      try{ obj = JSON.parse(raw); }
+      catch(e){ const m = String(raw).match(/\{[\s\S]*\}/); if(m){ try{ obj = JSON.parse(m[0]); }catch(e2){ obj = null; } } }
+      const map = new Map(); // name -> Map(hourStr -> {fans, like, collect, ts})
+      try{
+        const entries = obj?.log?.entries;
+        if(Array.isArray(entries)){
+          for(const entry of entries){
+            const t = entry?.startedDateTime || entry?.request?.startedDateTime || entry?.response?.startedDateTime;
+            if(!t) continue;
+            const dt = new Date(t);
+            const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0');
+            const dsLocal = `${y}-${m}-${d}`;
+            if(dsLocal !== dateStr) continue;
+            const hh = String(dt.getHours()).padStart(2,'0') + ':00';
+            const textVal = entry?.response?.content?.text;
+            if(!textVal) continue;
+            let payload = null;
+            try{ payload = JSON.parse(textVal); }
+            catch(e){ const mm = String(textVal).match(/\{[\s\S]*\}/); if(mm){ try{ payload = JSON.parse(mm[0]); }catch(e2){ payload=null; } } }
+            if(!payload || typeof payload !== 'object') continue;
+            const data = payload?.data || payload || {}; const info = (data && data.info) || {};
+            const name = String(data?.realName || data?.姓名 || '').trim();
+            if(!name) continue;
+            const fans = Number(info?.fansNum ?? data?.fansNum ?? data?.粉丝数 ?? 0);
+            const like = Number(info?.likeNum ?? data?.likeNum ?? data?.点赞数 ?? 0);
+            const collect = Number(info?.collectNum ?? data?.collectNum ?? data?.收藏数 ?? 0);
+            if(!map.has(name)) map.set(name, new Map());
+            map.get(name).set(hh, { fans, like, collect, ts: Date.parse(t) });
+          }
+        } else {
+          // 直接接口 JSON：作为单点快照
+          const data = obj?.data || {}; const info = data?.info || {};
+          const name = String(data?.realName || data?.姓名 || '').trim();
+          if(name){ const m = new Map(); m.set('00:00', { fans: Number(info?.fansNum||0), like: Number(info?.likeNum||0), collect: Number(info?.collectNum||0), ts: Date.now() }); map.set(name, m); }
+        }
+      }catch(e){ return new Map(); }
+      return map;
+    }
+
+    function fmtBirth(ts){
+      if(ts==null || !Number.isFinite(Number(ts))) return '未知';
+      try{ return new Date(Number(ts)).toISOString().slice(0,10); }catch(e){ return '未知'; }
+    }
+
+    function fmtAge(ts, refDate){
+      if(ts==null || !Number.isFinite(Number(ts))) return '未知';
+      try{
+        const birth = new Date(Number(ts));
+        const ref = refDate instanceof Date ? refDate : new Date();
+        let age = ref.getFullYear() - birth.getFullYear();
+        const refMd = (ref.getMonth()+1)*100 + ref.getDate();
+        const birthMd = (birth.getMonth()+1)*100 + birth.getDate();
+        if(refMd < birthMd) age -= 1;
+        if(age < 0 || !Number.isFinite(age)) return '未知';
+        return `${age}岁`;
+      }catch(e){ return '未知'; }
+    }
+
+    function fmtZodiac(ts){
+      if(ts==null || !Number.isFinite(Number(ts))) return '未知';
+      try{
+        const d = new Date(Number(ts));
+        const m = d.getUTCMonth()+1; // 1-12
+        const day = d.getUTCDate();
+        const md = m*100 + day;
+        if(md >= 120 && md <= 218) return '水瓶座';
+        if(md >= 219 && md <= 320) return '双鱼座';
+        if(md >= 321 && md <= 419) return '白羊座';
+        if(md >= 420 && md <= 520) return '金牛座';
+        if(md >= 521 && md <= 621) return '双子座';
+        if(md >= 622 && md <= 722) return '巨蟹座';
+        if(md >= 723 && md <= 822) return '狮子座';
+        if(md >= 823 && md <= 922) return '处女座';
+        if(md >= 923 && md <= 1023) return '天秤座';
+        if(md >= 1024 && md <= 1122) return '天蝎座';
+        if(md >= 1123 && md <= 1221) return '射手座';
+        // 摩羯座跨年：12/22~1/19
+        if(md >= 1222 || md <= 119) return '摩羯座';
+        return '未知';
+      }catch(e){ return '未知'; }
+    }
+
+    let chart; let compareNames = new Set(); let currentName = null; let showFans = true; let showLike = false; let showCollect = false; let mode = 'week'; let trendType = 'growth'; let selectedDate = null; let allDates = [];
+    
+    // 统一渲染函数：根据模式选择正确的渲染方法
+    function renderChartUnified(series, compareMap) {
+      if (mode === 'day') {
+        renderChartDayHourly();
+      } else {
+        renderChart(series, compareMap);
+      }
+    }
+    
+    function renderChart(series, compareMap){
+      const empty = document.getElementById('emptyMsg');
+      const ctx = document.getElementById('trendChart');
+      // 根据时间维度生成当期按日标签：周（日-六）或月（1-末）
+      let labels = (mode === 'month') ? listDatesInMonth(selectedDate) : listDatesInWeek(selectedDate);
+      if(!labels.length){ empty.style.display='block'; if(chart){ chart.destroy(); } return; }
+      empty.style.display='none';
+      // 主成员：按日填充数据，缺失为 null 以断线
+      const mainMap = new Map((series || []).map(it => [String(it.date), { fans: it.fans, like: it.like, collect: it.collect }]));
+      let dataFans = labels.map(d => (mainMap.get(d)?.fans ?? null));
+      let dataLike = labels.map(d => (mainMap.get(d)?.like ?? null));
+      let dataCollect = labels.map(d => (mainMap.get(d)?.collect ?? null));
+      if(trendType === 'growth'){
+        dataFans = toSequentialDeltaWithFirst(dataFans, labels, mainMap, 'fans');
+        dataLike = toSequentialDeltaWithFirst(dataLike, labels, mainMap, 'like');
+        dataCollect = toSequentialDeltaWithFirst(dataCollect, labels, mainMap, 'collect');
+      }
+      // 月视图：隐藏无数据日期，避免视觉留白（仅保留当前指标有值的日期）
+      if(mode === 'month'){
+        const mask = labels.map((_, i) => {
+          const v = showFans ? dataFans[i] : (showLike ? dataLike[i] : dataCollect[i]);
+          return v != null;
+        });
+        labels = labels.filter((_, i) => mask[i]);
+        dataFans = dataFans.filter((_, i) => mask[i]);
+        dataLike = dataLike.filter((_, i) => mask[i]);
+        dataCollect = dataCollect.filter((_, i) => mask[i]);
+        if(!labels.length){ empty.style.display='block'; if(chart){ chart.destroy(); } return; }
+      }
+      const mainColor = colorOf(currentName || '');
+      const baseDatasets = [];
+      if(showFans){ baseDatasets.push({ label: currentName, data: dataFans, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.08), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
+      if(showLike){ baseDatasets.push({ label: currentName, data: dataLike, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.07), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
+      if(showCollect){ baseDatasets.push({ label: currentName, data: dataCollect, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.06), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
+      // 追加“更多成员”对比粉丝趋势（仅在勾选粉丝数时）
+      if(compareMap && compareMap.size && showFans){
+        for(const [nm, ser] of compareMap.entries()){
+          const cmpMap = new Map((ser || []).map(it => [String(it.date), Number(it.fans)]));
+          let cmpFans = labels.map(d => (cmpMap.get(d) ?? null));
+          if(trendType === 'growth'){ cmpFans = toSequentialDeltaWithFirstForValueMap(cmpFans, labels, cmpMap); }
+          const cmpColor = colorOf(nm);
+          baseDatasets.push({ label: nm, data: cmpFans, borderColor: cmpColor, backgroundColor: colorWithAlpha(cmpColor, 0.04), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false });
+        }
+      }
+      // 追加“更多成员”对比点赞趋势（在勾选点赞数时）
+      if(compareMap && compareMap.size && showLike){
+        for(const [nm, ser] of compareMap.entries()){
+          const cmpMap = new Map((ser || []).map(it => [String(it.date), Number(it.like)]));
+          let cmpLike = labels.map(d => (cmpMap.get(d) ?? null));
+          if(trendType === 'growth'){ cmpLike = toSequentialDeltaWithFirstForValueMap(cmpLike, labels, cmpMap); }
+          const cmpColor = colorOf(nm);
+          baseDatasets.push({ label: nm, data: cmpLike, borderColor: cmpColor, backgroundColor: colorWithAlpha(cmpColor, 0.04), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false });
+        }
+      }
+      // 追加“更多成员”对比收藏趋势（在勾选收藏数时）
+      if(compareMap && compareMap.size && showCollect){
+        for(const [nm, ser] of compareMap.entries()){
+          const cmpMap = new Map((ser || []).map(it => [String(it.date), Number(it.collect)]));
+          let cmpCollect = labels.map(d => (cmpMap.get(d) ?? null));
+          if(trendType === 'growth'){ cmpCollect = toSequentialDeltaWithFirstForValueMap(cmpCollect, labels, cmpMap); }
+          const cmpColor = colorOf(nm);
+          baseDatasets.push({ label: nm, data: cmpCollect, borderColor: cmpColor, backgroundColor: colorWithAlpha(cmpColor, 0.04), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false });
+        }
+      }
+      const cfg = {
+        type: 'line',
+        data: {
+          labels,
+          datasets: baseDatasets
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          elements: { point: { radius: 0, hitRadius: 0, hoverRadius: 0 } },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              enabled: true,
+              itemSort: function(a, b){
+                const ay = (a.parsed && a.parsed.y != null) ? a.parsed.y : a.raw;
+                const by = (b.parsed && b.parsed.y != null) ? b.parsed.y : b.raw;
+                const an = Number(ay);
+                const bn = Number(by);
+                const av = Number.isFinite(an) ? an : -Infinity;
+                const bv = Number.isFinite(bn) ? bn : -Infinity;
+                return bv - av; // 降序排列
+              },
+              callbacks: {
+                label: function(ctx) {
+                  const y = (ctx.parsed && ctx.parsed.y != null) ? ctx.parsed.y : ctx.raw;
+                  if (y == null) return;
+                  const num = Number(y);
+                  const val = Number.isFinite(num) ? num.toLocaleString('zh-CN') : String(y);
+                  return ctx.dataset.label + ': ' + val;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                maxRotation: 0,
+                minRotation: 0,
+                callback: (value, index) => {
+                  const lab = (Array.isArray(labels) ? labels[index] : null);
+                  const s = String(lab ?? value);
+                  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                  return m ? `${m[2]}-${m[3]}` : s;
+                }
+              }
+            },
+            y: (function(){
+              const ys = computeYAxisScale(baseDatasets);
+              return { beginAtZero: false, min: ys.min, max: ys.max, ticks: { stepSize: ys.step, callback: function(value){ const n = Number(value); return Number.isFinite(n) ? n.toFixed(0) : value; } }, border: { display: false } };
+            })()
+          }
+        }
+      };
+      if(chart) chart.destroy();
+      chart = new Chart(ctx, cfg);
+    }
+
+    // 日维度（日内小时）渲染
+    async function renderChartDayHourly(){
+      const empty = document.getElementById('emptyMsg');
+      const ctx = document.getElementById('trendChart');
+      // 确保 selectedDate 有值
+      if(!selectedDate){
+        const dates = listStoredDates();
+        selectedDate = dates.length ? dates[dates.length-1] : null;
+      }
+      if(!selectedDate){
+        empty.style.display='block';
+        empty.textContent = '暂无数据，请先选择日期或从服务器恢复最新存档';
+        if(chart){ chart.destroy(); chart = null; }
+        return;
+      }
+      const rawKey = storageRawKey(selectedDate);
+      let hasRawLocal = localStorage.getItem(rawKey);
+      // 本地无该日 HAR 时先按需拉取，再构建 hourlyMap，避免先打 No memberRaw 再拉取
+      if(!hasRawLocal || !hasRawLocal.trim()){
+        try{
+          const clientId = location.hostname || 'default';
+          const baseCandidates = ['', API_BASE, 'https://api.dailygh4.com'];
+          for(const base of baseCandidates){
+            const url = base ? `${base}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}` : `/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}`;
+            const resp = await fetch(url, { mode: 'cors', cache: 'no-store' });
+            if(!resp.ok) continue;
+            const payload = await resp.json();
+            const rawVal = payload.memberRaw;
+            const raw = (typeof rawVal === 'string' && rawVal.trim()) ? rawVal : (rawVal && rawVal[selectedDate] ? String(rawVal[selectedDate]).trim() : '');
+            if(raw){
+              try{ localStorage.setItem(rawKey, raw); }catch(e){}
+              hasRawLocal = raw;
+              const rows = Array.isArray(payload.rows) ? payload.rows : (Array.isArray(payload.memberData && payload.memberData[selectedDate]) ? payload.memberData[selectedDate] : []);
+              if(rows.length){ try{ localStorage.setItem(storageKey(selectedDate), JSON.stringify(rows)); }catch(e){} }
+              break;
+            }
+          }
+        }catch(e){ /* 按需拉取失败 */ }
+      }
+      let hourlyMap = buildHourlyMapForDate(selectedDate);
+      const hours = new Set();
+      const addHours = (nm)=>{ 
+        const mm = hourlyMap.get(nm); 
+        if(mm){ for(const h of mm.keys()) hours.add(h); } 
+      };
+      addHours(currentName);
+      for(const nm of compareNames) addHours(nm);
+      const labels = Array.from(hours).sort((a,b)=> a.localeCompare(b));
+      if(!labels.length){ 
+        empty.style.display='block';
+        const hasRaw = localStorage.getItem(rawKey);
+        if(!hasRaw || !hasRaw.trim()){
+          empty.textContent = `暂无 ${selectedDate} 的小时级数据，请从服务器恢复最新存档`;
+        } else {
+          empty.textContent = `暂无 ${selectedDate} 的小时级数据（${currentName || '当前成员'}）`;
+        }
+        if(chart){ chart.destroy(); chart = null; }
+        return; 
+      }
+      empty.style.display='none';
+      const mainColor = colorOf(currentName || '');
+      // 主成员在 map 中的 key 可能与 currentName 略有差异（如 realName vs 姓名），做一次匹配
+      let m = hourlyMap.get(currentName);
+      if(!m || !m.size){ for(const [k,v] of hourlyMap){ if(String(k).trim() === String(currentName||'').trim() && v && v.size){ m = v; break; } } }
+      m = m || new Map();
+      let dataFans = labels.map(h => (m.get(h)?.fans ?? null));
+      let dataLike = labels.map(h => (m.get(h)?.like ?? null));
+      let dataCollect = labels.map(h => (m.get(h)?.collect ?? null));
+      if(trendType === 'growth'){
+        dataFans = toSequentialDeltaWithFirstForHourMap(dataFans, labels, m, 'fans');
+        dataLike = toSequentialDeltaWithFirstForHourMap(dataLike, labels, m, 'like');
+        dataCollect = toSequentialDeltaWithFirstForHourMap(dataCollect, labels, m, 'collect');
+      }
+      const baseDatasets = [];
+      // 天维度只使用单一 y 轴（scales 仅定义了 y），不要 yAxisID 否则 Chart.js 找不到对应 scale 会导致数据不绘制
+      if(showFans){ baseDatasets.push({ label: currentName, data: dataFans, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.08), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
+      if(showLike){ baseDatasets.push({ label: currentName, data: dataLike, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.07), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
+      if(showCollect){ baseDatasets.push({ label: currentName, data: dataCollect, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.06), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
+      if(compareNames && compareNames.size && showFans){
+        for(const nm of compareNames){
+          const mm = hourlyMap.get(nm) || new Map();
+          let cmpFans = labels.map(h => (mm.get(h)?.fans ?? null));
+          if(trendType === 'growth'){ cmpFans = toSequentialDeltaWithFirstForHourMap(cmpFans, labels, mm, 'fans'); }
+          const cmpColor = colorOf(nm);
+          baseDatasets.push({ label: nm, data: cmpFans, borderColor: cmpColor, backgroundColor: colorWithAlpha(cmpColor, 0.04), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false });
+        }
+      }
+      if(compareNames && compareNames.size && showLike){
+        for(const nm of compareNames){
+          const mm = hourlyMap.get(nm) || new Map();
+          let cmpLike = labels.map(h => (mm.get(h)?.like ?? null));
+          if(trendType === 'growth'){ cmpLike = toSequentialDeltaWithFirstForHourMap(cmpLike, labels, mm, 'like'); }
+          const cmpColor = colorOf(nm);
+          baseDatasets.push({ label: nm, data: cmpLike, borderColor: cmpColor, backgroundColor: colorWithAlpha(cmpColor, 0.04), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false });
+        }
+      }
+      if(compareNames && compareNames.size && showCollect){
+        for(const nm of compareNames){
+          const mm = hourlyMap.get(nm) || new Map();
+          let cmpCollect = labels.map(h => (mm.get(h)?.collect ?? null));
+          if(trendType === 'growth'){ cmpCollect = toSequentialDeltaWithFirstForHourMap(cmpCollect, labels, mm, 'collect'); }
+          const cmpColor = colorOf(nm);
+          baseDatasets.push({ label: nm, data: cmpCollect, borderColor: cmpColor, backgroundColor: colorWithAlpha(cmpColor, 0.04), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false });
+        }
+      }
+      const cfg = {
+        type: 'line',
+        data: { labels, datasets: baseDatasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          elements: { point: { radius: 0, hitRadius: 0, hoverRadius: 0 } },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              enabled: true,
+              itemSort: function(a, b){
+                const ay = (a.parsed && a.parsed.y != null) ? a.parsed.y : a.raw;
+                const by = (b.parsed && b.parsed.y != null) ? b.parsed.y : b.raw;
+                const an = Number(ay);
+                const bn = Number(by);
+                const av = Number.isFinite(an) ? an : -Infinity;
+                const bv = Number.isFinite(bn) ? bn : -Infinity;
+                return bv - av; // 降序排列
+              },
+              callbacks: {
+                label: function(ctx){
+                  const y = (ctx.parsed && ctx.parsed.y != null) ? ctx.parsed.y : ctx.raw;
+                  if (y == null) return;
+                  const num = Number(y);
+                  const val = Number.isFinite(num) ? num.toLocaleString('zh-CN') : String(y);
+                  return ctx.dataset.label + ': ' + val;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { maxRotation: 0, minRotation: 0 } },
+            y: (function(){
+              const ys = computeYAxisScale(baseDatasets);
+              return { beginAtZero: false, min: ys.min, max: ys.max, ticks: { stepSize: ys.step, callback: function(value){ const n = Number(value); return Number.isFinite(n) ? n.toFixed(0) : value; } }, border: { display: false } };
+            })()
+          }
+        }
+      };
+      if(chart){ chart.destroy(); }
+      chart = new Chart(ctx, cfg);
+    }
+
+    function listAllMemberNames(){
+      const set = new Set();
+      const dates = listStoredDates();
+      for(const d of dates){
+        const rows = getStoredRowsForDate(d) || [];
+        for(const r of rows){
+          const rn = String(r.realName || r.姓名 || '').trim();
+          if(rn) set.add(rn);
+        }
+      }
+      return Array.from(set).sort();
+    }
+
+    function buildSeriesForName(targetName){
+      const dates = listStoredDates();
+      const series = [];
+      for(const d of dates){
+        const rows = getStoredRowsForDate(d) || [];
+        const found = rows.find(r => String(r.realName || r.姓名 || '').trim() === targetName);
+        if(!found) continue;
+        const fans = Number(found.fansNum != null ? found.fansNum : (found.粉丝数 != null ? found.粉丝数 : 0));
+        const like = Number(found.likeNum != null ? found.likeNum : (found.点赞数 != null ? found.点赞数 : 0));
+        const collect = Number(found.collectNum != null ? found.collectNum : (found.收藏数 != null ? found.收藏数 : 0));
+        series.push({ date: d, fans, like, collect });
+      }
+      series.sort((a,b)=> new Date(a.date) - new Date(b.date));
+      return series;
+    }
+
+    function buildCompareMap(mode){
+      const names = Array.from(compareNames);
+      const map = new Map();
+      for(const n of names){
+        const raw = buildSeriesForName(n); // 返回按日的原始序列
+        map.set(n, raw);
+      }
+      return map;
+    }
+
+    function init(){
+      const params = new URLSearchParams(location.search);
+      const name = decodeURIComponent(params.get('name') || '').trim();
+      const domName = document.getElementById('profileName');
+      const domNick = document.getElementById('profileNick');
+      const domBirth = document.getElementById('profileBirth');
+      const domAge = document.getElementById('profileAge');
+      const domZodiac = document.getElementById('profileZodiac');
+      const domUserId = document.getElementById('profileUserId');
+      const domAvatar = document.getElementById('profileAvatar');
+      const domFans = document.getElementById('statFans');
+      const domLike = document.getElementById('statLike');
+      const domCollect = document.getElementById('statCollect');
+      if(!name){
+        domName.textContent = '—';
+        // 不提前返回，让默认 TOP7 逻辑继续执行
+      } else {
+        domName.textContent = name;
+        currentName = name;
+      }
+
+      const dates = listStoredDates();
+      const seriesRaw = [];
+      let avatarUrl = '';
+      let birthTs = null;
+      let nick = '';
+      let userId = null;
+      for(const d of dates){
+        const rows = getStoredRowsForDate(d) || [];
+        let found = null;
+        for(const r of rows){
+          const rn = r.realName || r.姓名 || '';
+          if(String(rn).trim() === name){ found = r; break; }
+        }
+        if(!found) continue;
+        const fans = Number(found.fansNum != null ? found.fansNum : found.粉丝数 || 0);
+        const like = Number(found.likeNum != null ? found.likeNum : found.点赞数 || 0);
+        const collect = Number(found.collectNum != null ? found.collectNum : found.收藏数 || 0);
+        seriesRaw.push({ date: d, fans, like, collect });
+        if(!avatarUrl) avatarUrl = found.avatarUrl || found.headPortrait || '';
+        if(birthTs == null && found.birthTs != null && Number.isFinite(Number(found.birthTs))) birthTs = Number(found.birthTs);
+        if(!nick) nick = found.nickName || nicknameFallbacks[found.realName] || nicknameFallbacks[name] || '';
+        if(userId == null && (found.userId != null)) userId = found.userId;
+      }
+
+      // 源数据缺失时：使用出生日期回退映射
+      if(birthTs == null && birthFallbacks[name]){
+        const parsed = Date.parse(birthFallbacks[name]);
+        if(Number.isFinite(parsed)) birthTs = parsed;
+      }
+
+      // 资料展示（优先源数据，其次回退映射）
+      const displayNick = nick || nicknameFallbacks[name] || '';
+      // 按需展示昵称，仅显示值，去掉“昵称：”前缀；缺失时不回退到姓名
+      domNick.textContent = displayNick || '';
+      domBirth.textContent = fmtBirth(birthTs);
+      domUserId.textContent = (userId != null) ? String(userId) : (userIdFallbacks[name] != null ? String(userIdFallbacks[name]) : '—');
+      domAvatar.src = avatarUrl || 'https://cdn.jsdelivr.net/gh/placeholder-logos/placeholder-user@main/avatar.png';
+
+      // 最新统计
+      const latest = seriesRaw.length ? seriesRaw[seriesRaw.length-1] : { fans:'—', like:'—', collect:'—' };
+      const latestDateStr = seriesRaw.length ? seriesRaw[seriesRaw.length-1].date : null;
+      const refDate = latestDateStr ? new Date(latestDateStr) : new Date();
+      domFans.textContent = (latest.fans ?? '—');
+      domLike.textContent = (latest.like ?? '—');
+      domCollect.textContent = (latest.collect ?? '—');
+      domAge.textContent = fmtAge(birthTs, refDate);
+      domZodiac.textContent = fmtZodiac(birthTs);
+
+      // 默认：天颗粒度
+      allDates = listStoredDates();
+      selectedDate = allDates.length ? allDates[allDates.length-1] : null;
+      mode = 'day';
+      renderChartUnified(seriesRaw, buildCompareMap(mode));
+
+      // 勾选事件：按需显示粉丝/点赞/收藏
+      const chkFans = document.getElementById('toggleFans');
+      const chkLike = document.getElementById('toggleLike');
+      const chkCollect = document.getElementById('toggleCollect');
+      if(chkFans){
+        chkFans.checked = true;
+        chkFans.addEventListener('change', () => {
+          if(!chkFans.checked) return;
+          showFans = true; showLike = false; showCollect = false;
+          restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+        });
+      }
+      if(chkLike){
+        chkLike.checked = false;
+        chkLike.addEventListener('change', () => {
+          if(!chkLike.checked) return;
+          showFans = false; showLike = true; showCollect = false;
+          restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+        });
+      }
+      if(chkCollect){
+        chkCollect.checked = false;
+        chkCollect.addEventListener('change', () => {
+          if(!chkCollect.checked) return;
+          showFans = false; showLike = false; showCollect = true;
+          restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+        });
+      }
+      const restoreBtn = document.getElementById('restoreLatestBtn');
+      restoreBtn?.addEventListener('click', restoreLatestFromServer);
+      const localBtn = document.getElementById('localRefreshBtn');
+      localBtn?.addEventListener('click', refreshFromLocal);
+      if(localBtn){
+        let forceBtn = document.getElementById('localForceRefreshBtn');
+        if(!forceBtn){
+          forceBtn = document.createElement('button');
+          forceBtn.id = 'localForceRefreshBtn';
+          forceBtn.className = 'btn-light';
+          forceBtn.title = '强制从本地原始存档补齐并覆盖当日';
+          forceBtn.textContent = '强制补齐当日';
+          forceBtn.style.marginLeft = '8px';
+          localBtn.insertAdjacentElement('afterend', forceBtn);
+        }
+        forceBtn.addEventListener('click', ()=>{
+          const d = selectedDate || (function(){ const ds = listStoredDates(); return ds.length ? ds[ds.length-1] : null; })();
+          restoreLatestFromServer().then(()=>refreshFromLocal({ force: true, dates: d ? [d] : null })).catch(()=>{});
+        });
+      }
+
+      // 更多成员筛选渲染与事件绑定
+      const moreContainer = document.getElementById('moreMembers');
+      let allCandidates = [];
+
+      // 取某成员的出生时间戳（优先源数据，其次回退映射），不存在返回 -Infinity
+      function birthTsForName(n){
+        try{
+          const name = String(n||'').trim();
+          if(!name) return -Infinity;
+          const dates = listStoredDates();
+          for(const d of dates){
+            const rows = getStoredRowsForDate(d) || [];
+            for(const r of rows){
+              const rn = String(r.realName || r.姓名 || '').trim();
+              if(rn === name){
+                const ts = (r.birthTs != null && Number.isFinite(Number(r.birthTs))) ? Number(r.birthTs) : null;
+                if(ts != null) return ts;
+              }
+            }
+          }
+          const fb = birthFallbacks[name];
+          if(fb){ const parsed = Date.parse(fb); if(Number.isFinite(parsed)) return parsed; }
+          return -Infinity;
+        }catch(e){ return -Infinity; }
+      }
+
+      function renderMoreMembers(){
+        const main = String(currentName || '').trim();
+        let list = (allCandidates || [])
+          .filter(n => String(n || '').trim())
+          .filter(n => { // 仅显示有历史记录的成员
+            try{
+              const s = buildSeriesForName(n) || [];
+              return Array.isArray(s) && s.length > 0;
+            }catch(e){ return false; }
+          });
+        // 按出生年月日时间由小到大（最年长在前）；未知出生排最后
+        list = list.sort((a,b) => {
+          const va = birthTsForName(a);
+          const vb = birthTsForName(b);
+          if(va === -Infinity && vb === -Infinity) return 0;
+          if(va === -Infinity) return 1;
+          if(vb === -Infinity) return -1;
+          return va - vb;
+        });
+        moreContainer.innerHTML = list.map(n => {
+          const c = colorOf(n);
+          const bg = colorWithAlpha(c, 0.18);
+          const bd = c;
+          return `
+          <label class="chk ${compareNames.has(n)?'active':''}" data-name="${n}" style="display:flex; align-items:center; gap:4px; font-size:13px; padding:3px 6px; border:1px solid ${bd}; border-radius:6px; background:${bg}; color:#1d1d1f; width:max-content;">
+            <span>${n}</span>
+          </label>
+          `;
+        }).join('');
+      }
+
+      function latestFansForName(n){
+        try{
+          const s = buildSeriesForName(n) || [];
+          if(!s.length) return -Infinity; // 无数据的成员不参与默认Top7
+          const last = s[s.length - 1];
+          return Number(last.fans) || 0;
+        }catch(e){ return -Infinity; }
+      }
+
+      (function populateMoreMembers(){
+        const fromStorage = listAllMemberNames().filter(n => n);
+        const fallback = Object.keys(birthFallbacks || {}).filter(n => n);
+        allCandidates = (fromStorage.length ? fromStorage : fallback);
+        // 默认：进入主页时按最新粉丝数选出 TOP7（含主页成员最多7条）
+        try{
+          const main = String(currentName || '').trim();
+          const targetTotal = 7;
+          const sortedByFans = (allCandidates || [])
+            .filter(n => String(n || '').trim())
+            .map(n => {
+              const s = buildSeriesForName(n) || [];
+              const latestFans = (s.length ? (Number(s[s.length - 1].fans) || 0) : -Infinity);
+              return { name: n, latestFans };
+            })
+            .filter(x => x.latestFans !== -Infinity)
+            .sort((a,b) => b.latestFans - a.latestFans)
+            .map(x => x.name);
+          const topList = sortedByFans.slice(0, targetTotal);
+          let compares = [];
+          if(topList.includes(main)){
+            compares = topList.filter(n => n !== main);
+          }else{
+            compares = topList.slice(0, Math.max(0, targetTotal - 1));
+          }
+          compareNames = new Set(compares);
+        }catch(e){
+          compareNames = new Set();
+        }
+        renderMoreMembers();
+        // 初始渲染包含默认TOP7对比成员
+        renderChartUnified(seriesRaw, buildCompareMap(mode));
+      })();
+
+      // 标签点击切换：选中显示该成员趋势，再次点击隐藏
+      moreContainer.addEventListener('click', (e) => {
+        const lab = e.target.closest('label.chk');
+        if(!lab) return;
+        const nm = lab.dataset.name;
+        const main = String(currentName || '').trim();
+        if(String(nm || '').trim() === main) return;
+        if(compareNames.has(nm)){
+          compareNames.delete(nm);
+          lab.classList.remove('active');
+          try{
+            const c = colorOf(nm);
+            lab.style.borderColor = c;
+            lab.style.background = colorWithAlpha(c, 0.18);
+          }catch(e){}
+        } else {
+          compareNames.add(nm);
+          lab.classList.add('active');
+          try{
+            const c = colorOf(nm);
+            lab.style.borderColor = c;
+            lab.style.background = colorWithAlpha(c, 0.28);
+          }catch(e){}
+        }
+        restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+      });
+
+      // 已移除搜索框与过滤逻辑，始终展示完整候选成员列表
+
+      // 切换颗粒度
+      const seg = document.getElementById('granularity');
+      seg.addEventListener('click', (e)=>{
+        const btn = e.target.closest('button');
+        if(!btn) return;
+        [...seg.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        mode = btn.dataset.mode || 'week';
+        // 根据模式重新渲染
+        if(mode === 'day'){
+          renderChartDayHourly();
+        } else {
+          const series = buildSeriesForName(currentName || '');
+          renderChartUnified(series, buildCompareMap(mode));
+        }
+      });
+
+      // 趋势类型切换
+      const typeSeg = document.getElementById('trendType');
+      typeSeg.addEventListener('click', (e)=>{
+        const btn = e.target.closest('button');
+        if(!btn) return;
+        [...typeSeg.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        trendType = btn.dataset.type || 'growth';
+        restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+      });
+
+      // 日期导航（所有维度均可选单日；week/month 以该日所在周/月作为区间）
+      function updateDateNavigation(){
+        const dateNav = document.getElementById('dateNavigation');
+        const dateSelector = document.getElementById('dateSelector');
+        if(!dateNav || !dateSelector) return;
+        const stored = listStoredDates().sort().reverse();
+        const fallbackToday = new Date().toISOString().split('T')[0];
+        dateNav.style.display = 'flex';
+        dateSelector.innerHTML = '<option value="">请选择日期</option>';
+        const dates = stored.length ? stored : [fallbackToday];
+        const current = selectedDate || fallbackToday;
+        dates.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d; opt.textContent = d; if(d===current) opt.selected = true; dateSelector.appendChild(opt);
+        });
+      }
+      const dateSelectorEl = document.getElementById('dateSelector');
+      if(dateSelectorEl){
+        dateSelectorEl.addEventListener('change', async (e)=>{
+          const v = e.target.value;
+          if(v){
+            selectedDate = v;
+            // 根据当前模式重新渲染图表
+            if(mode === 'day'){
+              renderChartDayHourly();
+            } else {
+              const series = buildSeriesForName(currentName || '');
+              renderChartUnified(series, buildCompareMap(mode));
+            }
+          }
+        });
+      }
+      // 在数据更新后刷新日期选择器
+      updateDateNavigation();
+      
+      // 在数据刷新后更新日期选择器
+      const originalRefreshFromLocal = refreshFromLocal;
+      refreshFromLocal = async function(opts){
+        const result = await originalRefreshFromLocal.call(this, opts);
+        updateDateNavigation();
+        return result;
+      };
+
+      // 初始化后自动拉取并重算，确保增长趋势最新，并在数据就绪后重建默认TOP7
+      restoreLatestFromServer()
+        .then(()=>refreshFromLocal())
+        .then(()=>{
+          try{
+            const fromStorage = listAllMemberNames().filter(n => n);
+            const fallback = Object.keys(birthFallbacks || {}).filter(n => n);
+            const candidates = (fromStorage.length ? fromStorage : fallback);
+            const main = String(currentName || '').trim();
+            const targetTotal = 7;
+            const sortedByFans = (candidates || [])
+              .filter(n => String(n || '').trim())
+              .map(n => {
+                const s = buildSeriesForName(n) || [];
+                const latestFans = (s.length ? (Number(s[s.length - 1].fans) || 0) : -Infinity);
+                return { name: n, latestFans };
+              })
+              .filter(x => x.latestFans !== -Infinity)
+              .sort((a,b) => b.latestFans - a.latestFans)
+              .map(x => x.name);
+            const topList = sortedByFans.slice(0, targetTotal);
+            let compares = [];
+            if(topList.includes(main)){
+              compares = topList.filter(n => n !== main);
+            }else{
+              compares = topList.slice(0, Math.max(0, targetTotal - 1));
+            }
+            compareNames = new Set(compares);
+          }catch(e){ compareNames = new Set(); }
+          renderMoreMembers();
+          renderChartUnified([], buildCompareMap(mode));
+        })
+        .catch(()=>{
+          refreshFromLocal().then(()=>{
+            try{
+              const fromStorage = listAllMemberNames().filter(n => n);
+              const fallback = Object.keys(birthFallbacks || {}).filter(n => n);
+              const candidates = (fromStorage.length ? fromStorage : fallback);
+              const main = String(currentName || '').trim();
+              const targetTotal = 7;
+              const sortedByFans = (candidates || [])
+                .filter(n => String(n || '').trim())
+                .map(n => {
+                  const s = buildSeriesForName(n) || [];
+                  const latestFans = (s.length ? (Number(s[s.length - 1].fans) || 0) : -Infinity);
+                  return { name: n, latestFans };
+                })
+                .filter(x => x.latestFans !== -Infinity)
+                .sort((a,b) => b.latestFans - a.latestFans)
+                .map(x => x.name);
+              const topList = sortedByFans.slice(0, targetTotal);
+              let compares = [];
+              if(topList.includes(main)){
+                compares = topList.filter(n => n !== main);
+              }else{
+                compares = topList.slice(0, Math.max(0, targetTotal - 1));
+              }
+              compareNames = new Set(compares);
+            }catch(e){ compareNames = new Set(); }
+            renderMoreMembers();
+            renderChartUnified([], buildCompareMap(mode));
+          });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"cb471b1deb6c4779b39901a64a726535","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

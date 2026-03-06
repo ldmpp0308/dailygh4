@@ -1,0 +1,4263 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="build-version" content="v2026.01.23.2130" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <!-- 微信浏览器兼容性配置 -->
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="x5-orientation" content="portrait" />
+  <meta name="x5-fullscreen" content="true" />
+  <meta name="x5-page-mode" content="app" />
+  <!-- 防止微信浏览器自动调整字体大小 -->
+  <style>
+    body { -webkit-text-size-adjust: 100% !important; text-size-adjust: 100% !important; }
+  </style>
+  <title>🎀 高会每日排行榜</title>
+  <!-- 优化字体加载：使用 font-display: swap 和本地回退，避免阻塞渲染 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"></noscript>
+  <!-- xlsx.js 和 html2canvas 改为按需加载，避免阻塞页面渲染 -->
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background:#f6f7fb; margin:0; }
+    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); padding: 50px 12px 36px; position: relative; }
+    h1 { font-size: 28px; margin: 0; color:#111; letter-spacing: 0.3px; line-height: 1.25; position: relative; }
+    .desc { color:#616a76; font-size: 14px; margin-top: 6px; margin-bottom: 0; line-height: 1.8; }
+    .container::before { content:""; position:absolute; top:0; left:0; right:0; height: 18px; border-top-left-radius:12px; border-top-right-radius:12px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
+    /* Page header cosmetics */
+    .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 14px; border-bottom: 1px solid #eef2f7; margin-bottom: 2px; }
+    .header-icon { width:44px; height:44px; border-radius:10px; background: linear-gradient(135deg, #7c4dff, #4c6ef5); box-shadow: 0 8px 20px rgba(76,110,245,0.25); display:flex; align-items:center; justify-content:center; color:#fff; }
+    .header-icon svg { width:22px; height:22px; }
+    .title-wrap { flex:1; }
+    .title-wrap h1::after { content:""; position:absolute; left:0; bottom:-8px; width:72px; height:3px; border-radius:2px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); opacity:0.82; }
+    /* 隐藏标题下的说明文本 */
+    .title-wrap .desc { display: none; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { background:#fafafa; border:1px solid #eee; border-radius:10px; padding:12px; }
+    label { display:block; font-size: 13px; color:#333; margin-bottom:6px; }
+    input[type=date] { width: 100%; box-sizing: border-box; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-size:14px; }
+    textarea { width: 100%; min-height: 180px; box-sizing: border-box; padding:10px; border:1px solid #ddd; border-radius:10px; font-size:13px; resize: vertical; }
+    /* 表格样式与美化 */
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #b28cff; color: #fff; font-weight: 600; white-space: nowrap; }
+    th, td { padding: 6px 10px; border-bottom: 1px solid #eee; font-size: 13px; line-height: 1.35; border-right: 1px solid #e0e0e0; text-align: center; white-space: nowrap; width: auto; }
+    thead th:last-child, tbody td:last-child { border-right: none; }
+    /* 偶数行浅灰底色（以行序号/排名为准） */
+    .zebra-even td { background-color: #efefef; }
+    /* 增长用红色，下降用绿色 */
+    .num-pos { color: #c62828; font-weight: 600; }
+    .num-neg { color: #2e7d32; font-weight: 600; }
+    .range-bar { text-align:center; color:#555; font-size:13px; margin:12px 0; display:block; width:100%; }
+    #preview .range-bar { text-align: center !important; }
+    /* 导出 PNG 时：日期区间整体居中，上下留白间距一致 */
+    #preview.export-png .range-bar { margin: 12px 0 !important; text-align: center !important; }
+    /* 统一保留的样式，去除重复的 table/th,td 定义 */
+    .tab-switcher { display:flex; gap:8px; margin: 10px 0 20px; background:#f3f5fb; padding:6px; border-radius:10px; }
+    .tab-switcher button { flex:1; border:none; background:transparent; padding:10px 14px; border-radius:8px; font-size:15.5px; font-weight:600; color:#475569; cursor:pointer; transition:background .2s ease, color .2s ease; }
+    .tab-switcher button.active { background:#ffffff; color:#1e293b; box-shadow:0 6px 18px rgba(76,110,245,0.12); }
+    .tab-panel { display:none; margin-top: -4px; }
+    .tab-panel.active { display:block; }
+    .auto-card { background:#fafafa; border:1px solid #e5e7eb; border-radius:10px; padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:12px; }
+    .auto-card-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
+    .auto-card-title { font-size:18px; font-weight:600; color:#1f2937; }
+    .auto-card-desc { font-size:13px; color:#6b7280; margin-top:2px; }
+    .auto-meta { display:flex; flex-wrap:wrap; gap:16px; font-size:13px; color:#4b5563; }
+    .auto-status { font-weight:600; }
+    .auto-status.success { color:#137333; }
+    .auto-status.error { color:#d93025; }
+    .auto-status.info { color:#1a73e8; }
+    .auto-preview { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
+    .auto-preview .muted { text-align:center; padding:20px 0; }
+    .auto-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .auto-refresh-btn { background:#4c6ef5; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; }
+    .auto-refresh-btn:disabled { opacity:0.6; cursor:not-allowed; }
+    .actions { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; }
+    button { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 600; cursor:pointer; }
+    .btn-primary { background: #4c6ef5; color:#fff; }
+    .btn-secondary { background:#20c997; color:#fff; }
+    .btn-light { background:#f1f3f5; color:#333; }
+    .msg { display:none; margin-top: 10px; padding:8px 10px; border-radius:8px; font-size:13px; }
+    .msg.error { background:#fff5f5; color:#c92a2a; border:1px solid #ffe3e3; }
+    .msg.success { background:#f4fce3; color:#2b8a3e; border:1px solid #e9fac8; }
+    .muted { color:#868e96; font-size:12px; }
+    .icon { width: 16px; height: 16px; margin-right: 4px; vertical-align: -1px; font-size: 16px; }
+
+    /* 手机端统一：左右12px、底部36px、顶部50px */
+    @media (max-width: 640px){
+      .container { padding: 50px 12px 36px; }
+    }
+    .flame-icon { display: inline-block; margin-left: 4px; font-size: 14px; line-height: 1; vertical-align: middle; }
+    /* 涨幅单元格：文本居中，火焰固定在最左侧，不遮挡文字 */
+    .growth-cell {
+      position: relative;
+      display: block;
+      width: 100%;
+      text-align: center;
+      /* 预留左右内边距，保证居中视觉不偏移，同时避免文本与火焰重叠
+         使用 max() 适配移动端 emoji 真实宽度 */
+      padding-left: max(18px, 1.6em);
+      padding-right: 18px;
+      box-sizing: border-box;
+    }
+    .growth-cell .flame-left {
+      position: absolute;
+      left: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      /* 覆盖通用火焰样式中的左外边距，确保贴近列最左侧 */
+      margin-left: 0;
+    }
+    .flame-icon { font-size: 14px; line-height: 1; }
+    /* 导出 PNG 时进一步扩大左侧预留，避免手机端遮挡 */
+    #preview.export-png .growth-cell { padding-left: max(26px, 2em) !important; }
+    #preview.export-png .growth-cell .flame-left { left: 4px; }
+    /* 导出 PNG 时文本居中、内容完整：预览区域不裁剪且所有单元格居中 */
+    #preview { overflow: visible; }
+    #preview table th, #preview table td { text-align: center !important; }
+    /* PNG 导出同步说明留白：下方间距加长 */
+    #preview.export-png .preview-notes { margin: 12px 0 18px !important; }
+    /* 头像网格：两排共14个，7列布局 */
+    .avatar-grid { margin-top: 12px; margin-bottom: 4px; display: grid; grid-template-columns: repeat(7, 1fr); column-gap: 4px; row-gap: 8px; }
+    .avatar-item { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, #7c4dff, #b28cff, #4c6ef5); padding: 1px; display: block; text-decoration: none; color: inherit; cursor: pointer; }
+    .avatar-item img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 9px; background-color: #fff; }
+    .avatar-name { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); padding: 2px 6px; font-size: 12px; line-height: 1.4; color: #fff; background: rgba(0,0,0,0.38); border-radius: 6px; white-space: nowrap; }
+    /* 手机端同步样式：日期区间与说明留白在小屏一致 */
+    @media (max-width: 640px){
+      .range-bar { margin: 12px 0 !important; text-align: center !important; }
+      #preview.export-png .range-bar { margin-top: 24px !important; margin-bottom: 12px !important; }
+      .preview-notes { margin: 12px 0 18px !important; }
+      #preview.export-png .preview-notes { margin-bottom: 32px !important; }
+      /* 手机端额外加大左边距，保证 emoji 不压到文本 */
+      .growth-cell { padding-left: max(22px, 1.8em); padding-right: 16px; }
+      #preview.export-png .growth-cell { padding-left: max(28px, 2.2em) !important; }
+      #preview.export-png .growth-cell .flame-left { left: 4px; }
+      /* 手机端头像姓名：缩小字号，不换行显示并做超长省略 */
+      .avatar-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 12px); }
+    }
+    /* 页脚 LOGO：居中显示，移动端与桌面端自适应宽度 */
+    .footer-logo { margin-top: 16px; margin-bottom: 8px; text-align: center; }
+    .footer-logo img { display: block; margin: 0 auto; width: min(420px, 86vw); height: auto; max-width: 100%; }
+    .footer-logo .logo-fallback { display: none; font-size: 13px; color: #444; opacity: 0.75; }
+    @media (max-width: 640px){
+      .footer-logo img { width: min(360px, 86vw); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <div class="title-wrap">
+        <h1>🎀 高会排行榜</h1>
+        <div class="desc">粘贴当日与前一日的代码文本，系统将解析出 姓名/收藏/点赞/粉丝 数据，按粉丝数降序排名，并生成表头为中文的Excel，同时新增"排名变化"、"距上一名"和"今日涨幅"三列（今日涨幅为与指定日期粉丝数的差值）。</div>
+        <div id="apiStatus" style="margin: 8px 0; padding: 6px 10px; border-radius: 6px; font-size: 12px; display: none;">
+          <span id="apiStatusIcon">🔄</span> <span id="apiStatusText">检查API连接状态...</span>
+        </div>
+        <div id="avatarGrid" class="avatar-grid" aria-label="成员头像展示"></div>
+      </div>
+    </div>
+    </div>
+
+    <div class="tab-switcher" role="tablist" aria-label="模式切换">
+      <button type="button" id="tab-auto-btn" class="active" data-tab="auto" aria-selected="true">自动刷新</button>
+      <button type="button" id="tab-manual-btn" data-tab="manual" aria-selected="false">手动模式</button>
+    </div>
+
+    <div id="tab-auto" class="tab-panel active" role="tabpanel" aria-labelledby="tab-auto-btn">
+      <div class="auto-card">
+        <div class="auto-card-header">
+          <div>
+            <div class="auto-card-title">自动刷新视图</div>
+            <div class="auto-card-desc">页面加载或切换到本标签时，将直接从服务器拉取最新榜单并展示结果</div>
+          </div>
+          <div class="auto-actions">
+            <button type="button" class="auto-refresh-btn" id="autoRefreshBtn" onclick="refreshAutoTab(true)">立即刷新</button>
+            <button type="button" class="btn-secondary" onclick="exportAutoImage()">导出图片</button>
+          </div>
+        </div>
+        <div class="auto-meta">
+          <span>最新日期：<strong id="autoLatestDate">—</strong></span>
+          <span>对比日期：<strong id="autoPrevDate">—</strong></span>
+          <span>上次刷新：<strong id="autoLastSync">—</strong></span>
+          <span class="auto-status" id="autoStatusText"></span>
+        </div>
+      </div>
+      <div class="actions" style="align-items:center; margin-bottom:12px;">
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="autoToggleCollect" onchange="refreshAutoTableDisplay()" /> 收藏数
+        </label>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="autoToggleLike" onchange="refreshAutoTableDisplay()" /> 点赞数
+        </label>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="autoToggleFans" checked onchange="refreshAutoTableDisplay()" /> 粉丝数
+        </label>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="autoToggleWeekGrowth" onchange="refreshAutoTableDisplay()" /> 本周涨幅
+        </label>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="autoToggleMonthGrowth" onchange="refreshAutoTableDisplay()" /> 本月涨幅
+        </label>
+      </div>
+      <div id="autoPreview" class="auto-preview">
+        <div class="muted">正在等待数据...</div>
+      </div>
+    </div>
+
+    <div id="tab-manual" class="tab-panel" role="tabpanel" aria-labelledby="tab-manual-btn">
+    <div class="grid">
+      <div class="card">
+        <label>当日日期</label>
+        <input type="date" id="todayDate" />
+        <label style="margin-top:8px;">快速选择已有日期（当日）</label>
+        <select id="todayDateSelect"><option value="">— 选择存档日期 —</option></select>
+        <button class="btn-light" onclick="clearDateStorageByDate('today')" style="margin-left:8px;">清空该日期存档</button>
+        <label style="margin-top:8px;">当日代码文本</label>
+        <div class="muted" style="margin:4px 0 6px; font-size:12px;">识别到最晚 startedDateTime：<span id="todayMaxTs" style="display:block; margin-top:2px; font-weight:600; color:#333;">—</span></div>
+        <textarea id="todayText" placeholder="粘贴当日抓取到的HAR或接口JSON……"></textarea>
+        <div class="actions" style="margin-top:8px;">
+          <button class="btn-light" onclick="selectAllText('todayText')">全选当日代码</button>
+        </div>
+      </div>
+      <div class="card">
+        <label>昨日日期</label>
+        <input type="date" id="yesterdayDate" />
+        <label style="margin-top:8px;">快速选择已有日期（昨日）</label>
+        <select id="yesterdayDateSelect"><option value="">— 选择存档日期 —</option></select>
+        <button class="btn-light" onclick="clearDateStorageByDate('yesterday')" style="margin-left:8px;">清空昨日日期存档</button>
+        <label style="margin-top:8px;">昨日代码文本</label>
+        <div class="muted" style="margin:4px 0 6px; font-size:12px;">识别到最晚 startedDateTime：<span id="yesterdayMaxTs" style="display:block; margin-top:2px; font-weight:600; color:#333;">—</span></div>
+        <textarea id="yesterdayText" placeholder="若本地没有存档，可粘贴昨日的HAR或JSON用于对比……"></textarea>
+        <div class="actions" style="margin-top:8px;">
+          <button class="btn-light" onclick="selectAllText('yesterdayText')">全选昨日代码</button>
+        </div>
+      </div>
+      </div>
+      <!-- 已按你的要求删除“昨日”输入卡片（日期/下拉/文本/全选按钮/说明），逻辑仍默认使用当日-1作为对比日期 -->
+
+    <div class="actions">
+      <button class="btn-primary" onclick="parseAndPreview()">解析并预览</button>
+      <button class="btn-primary" onclick="clearLocalArchives()" title="清除所有以 memberRaw:/memberData: 为前缀的本地缓存">清空本地存档</button>
+      <button class="btn-secondary" onclick="exportExcel()">导出Excel</button>
+      <button class="btn-secondary" onclick="exportImage()">导出图片</button>
+      <button class="btn-light" onclick="saveTodayToLocal()">保存今日数据到本地</button>
+    </div>
+    <div class="actions" style="align-items:center;">
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="toggleCollect" /> 收藏数
+      </label>
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="toggleLike" /> 点赞数
+      </label>
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="toggleFans" checked /> 粉丝数
+      </label>
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="toggleWeekGrowth" /> 本周涨幅
+      </label>
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="toggleMonthGrowth" /> 本月涨幅
+      </label>
+      <label style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="followTextDate" /> 跟随文本日期
+      </label>
+    </div>
+
+
+    <div id="msgError" class="msg error"></div>
+    <div id="msgSuccess" class="msg success"></div>
+    <div id="msgInfo" class="msg info"></div>
+
+    <div id="preview" style="margin-top: 12px;"></div>
+    
+    <!-- 页面底部的存档操作区 -->
+    <hr style="margin:16px 0; border:none; border-top:1px solid #eee;"/>
+    <div class="actions" style="margin-top:0; gap:8px;">
+      <button class="btn-light" onclick="exportLocalBackup()">导出本地存档</button>
+      <button class="btn-light" onclick="triggerImport()">导入本地存档</button>
+      <button class="btn-light" onclick="uploadLocalBackup()">上传到服务器</button>
+      <button class="btn-light" onclick="pullLatestBackup()">拉取服务器最新</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" />
+    </div>
+    
+    <!-- 状态提示区域 -->
+    <div class="status-area" style="margin-top: 12px; min-height: 24px; display: flex; flex-direction: column; gap: 4px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span id="uploadStatus" class="inline-msg" aria-live="polite"></span>
+        <span id="pullStatus" class="inline-msg" aria-live="polite"></span>
+      </div>
+      <span id="lastSyncTime" style="font-size:12px; color:var(--text-muted);">最后同步时间：—</span>
+    </div>
+
+    <!-- 页脚LOGO（图片加载失败时显示回退文本） -->
+    <div class="footer-logo" role="contentinfo" aria-label="站点Logo">
+      <img src="assets/tf-family-logo-dark.png" alt="TF FAMILY LOGO" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" />
+      <div class="logo-fallback" aria-hidden="true">TF FAMILY · TF家族</div>
+    </div>
+  </div>
+
+<script>
+// 版本标识（控制台输出，便于验证部署）
+  console.log('%c🎀 高会排行榜 v2026.01.23.2130', 'color: #8e73ff; font-size: 16px; font-weight: bold;');
+console.log('Build time:', new Date().toISOString());
+
+// ==================== 按需加载资源管理 ====================
+// html2canvas 按需加载
+let html2canvasPromise = null;
+function loadHtml2Canvas() {
+  if (typeof html2canvas !== 'undefined') {
+    return Promise.resolve(html2canvas);
+  }
+  if (html2canvasPromise) {
+    return html2canvasPromise;
+  }
+  html2canvasPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'vendor/html2canvas.min.js?v=20251112';
+    script.async = true;
+    script.onload = () => {
+      if (typeof html2canvas !== 'undefined') {
+        resolve(html2canvas);
+      } else {
+        reject(new Error('html2canvas 加载失败'));
+      }
+    };
+    script.onerror = () => reject(new Error('html2canvas 脚本加载失败'));
+    document.head.appendChild(script);
+  });
+  return html2canvasPromise;
+}
+
+// xlsx.js 按需加载
+let xlsxPromise = null;
+function loadXLSX() {
+  if (typeof XLSX !== 'undefined') {
+    return Promise.resolve(XLSX);
+  }
+  if (xlsxPromise) {
+    return xlsxPromise;
+  }
+  xlsxPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'vendor/xlsx.full.min.js?v=20251112';
+    script.async = true;
+    script.onload = () => {
+      if (typeof XLSX !== 'undefined') {
+        resolve(XLSX);
+      } else {
+        reject(new Error('XLSX 加载失败'));
+      }
+    };
+    script.onerror = () => reject(new Error('XLSX 脚本加载失败'));
+    document.head.appendChild(script);
+  });
+  return xlsxPromise;
+}
+
+  // ==================== 智能缓存管理系统 ====================
+  const CacheManager = {
+    // 缓存元数据键
+    META_KEY: 'cache_meta',
+    // 缓存有效期（毫秒）：5分钟
+    CACHE_TTL: 5 * 60 * 1000,
+    
+    // 获取缓存元数据
+    getMeta() {
+      try {
+        const metaStr = localStorage.getItem(this.META_KEY);
+        if (!metaStr) return null;
+        return JSON.parse(metaStr);
+      } catch (e) {
+        return null;
+      }
+    },
+    
+    // 保存缓存元数据
+    setMeta(meta) {
+      try {
+        localStorage.setItem(this.META_KEY, JSON.stringify({
+          ...meta,
+          lastUpdate: Date.now()
+        }));
+      } catch (e) {
+        console.warn('[CacheManager] 保存元数据失败:', e);
+      }
+    },
+    
+    // 检查缓存是否有效
+    isCacheValid(meta) {
+      if (!meta || !meta.lastUpdate) return false;
+      const age = Date.now() - meta.lastUpdate;
+      return age < this.CACHE_TTL;
+    },
+    
+    // 获取缓存的日期列表
+    getCachedDates() {
+      try {
+        const dates = new Set();
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (key.startsWith('memberData:') || key.startsWith('memberRaw:')) {
+            const date = key.split(':')[1];
+            if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+              dates.add(date);
+            }
+          }
+        }
+        return Array.from(dates).sort();
+      } catch (e) {
+        return [];
+      }
+    },
+    
+    // 从缓存加载数据（立即返回，用于快速显示）
+    loadFromCache() {
+      const cachedDates = this.getCachedDates();
+      if (!cachedDates.length) return null;
+      
+      const latestDate = cachedDates[cachedDates.length - 1];
+      const memberData = {};
+      const rawMap = {};
+      
+      // 加载所有缓存的数据
+      for (const date of cachedDates) {
+        try {
+          const dataKey = `memberData:${date}`;
+          const rawKey = `memberRaw:${date}`;
+          const dataStr = localStorage.getItem(dataKey);
+          const rawStr = localStorage.getItem(rawKey);
+          
+          if (dataStr) {
+            try {
+              memberData[date] = JSON.parse(dataStr);
+            } catch (e) {
+              console.warn(`[CacheManager] 解析 ${date} 的 memberData 失败:`, e);
+            }
+          }
+          
+          if (rawStr && rawStr.trim()) {
+            rawMap[date] = rawStr;
+          }
+        } catch (e) {
+          console.warn(`[CacheManager] 加载 ${date} 的缓存失败:`, e);
+        }
+      }
+      
+      return {
+        latestDate,
+        memberData,
+        rawMap,
+        cachedDates
+      };
+    },
+    
+    // 修复 memberRaw 类型问题：兼容 Object 和 string
+    normalizeMemberRaw(memberRaw) {
+      if (!memberRaw) return null;
+      
+      // 如果是字符串，直接返回
+      if (typeof memberRaw === 'string' && memberRaw.trim()) {
+        return memberRaw.trim();
+      }
+      
+      // 如果是对象，尝试转换为字符串
+      if (typeof memberRaw === 'object') {
+        try {
+          // 如果对象有日期键，取最新日期的值
+          if (Object.keys(memberRaw).length > 0) {
+            const dates = Object.keys(memberRaw).sort();
+            const latestDate = dates[dates.length - 1];
+            const value = memberRaw[latestDate];
+            
+            // 如果值本身是字符串，返回
+            if (typeof value === 'string' && value.trim()) {
+              return value.trim();
+            }
+            
+            // 如果值是对象，转换为 JSON 字符串
+            if (typeof value === 'object') {
+              return JSON.stringify(value);
+            }
+          }
+          
+          // 如果对象本身是 HAR 格式，转换为 JSON 字符串
+          if (memberRaw.log && memberRaw.log.entries) {
+            return JSON.stringify(memberRaw);
+          }
+          
+          // 其他情况，尝试转换为 JSON 字符串
+          return JSON.stringify(memberRaw);
+        } catch (e) {
+          console.warn('[CacheManager] 转换 memberRaw 对象失败:', e);
+          return null;
+        }
+      }
+      
+      return null;
+    },
+    
+    // 保存数据到缓存
+    saveToCache(memberData, rawMap) {
+      let savedCount = 0;
+      let rawSavedCount = 0;
+      
+      // 保存 memberData
+      for (const [date, rows] of Object.entries(memberData || {})) {
+        if (Array.isArray(rows) && rows.length) {
+          try {
+            localStorage.setItem(`memberData:${date}`, JSON.stringify(rows));
+            savedCount++;
+          } catch (e) {
+            console.warn(`[CacheManager] 保存 ${date} 的 memberData 失败:`, e);
+          }
+        }
+      }
+      
+      // 保存 memberRaw（修复类型问题）
+      for (const [date, raw] of Object.entries(rawMap || {})) {
+        const normalized = this.normalizeMemberRaw(raw);
+        if (normalized) {
+          try {
+            localStorage.setItem(`memberRaw:${date}`, normalized);
+            rawSavedCount++;
+          } catch (e) {
+            console.warn(`[CacheManager] 保存 ${date} 的 memberRaw 失败:`, e);
+          }
+        } else {
+          console.warn(`[CacheManager] ${date} 的 memberRaw 无效，未保存`);
+        }
+      }
+      
+      // 更新元数据
+      const cachedDates = this.getCachedDates();
+      this.setMeta({
+        latestDate: cachedDates.length ? cachedDates[cachedDates.length - 1] : null,
+        dates: cachedDates,
+        savedCount,
+        rawSavedCount
+      });
+      
+      console.log(`[CacheManager] ✅ 已保存 ${savedCount} 个日期的 memberData 和 ${rawSavedCount} 个日期的 memberRaw 到缓存`);
+      
+      return { savedCount, rawSavedCount };
+    },
+    
+    // 检查哪些日期需要更新（增量更新）
+    getDatesToUpdate(serverDates, cachedDates) {
+      const serverSet = new Set(serverDates || []);
+      const cachedSet = new Set(cachedDates || []);
+      
+      // 需要更新的日期：服务器有但缓存没有的，或者服务器日期列表中的最新日期
+      const toUpdate = [];
+      
+      // 添加服务器有但缓存没有的日期
+      for (const date of serverDates || []) {
+        if (!cachedSet.has(date)) {
+          toUpdate.push(date);
+        }
+      }
+      
+      // 如果服务器有新的日期（比缓存的最新日期更新），也要更新
+      if (serverDates && serverDates.length > 0) {
+        const latestServerDate = serverDates[serverDates.length - 1];
+        const latestCachedDate = cachedDates && cachedDates.length > 0 ? cachedDates[cachedDates.length - 1] : null;
+        
+        if (!latestCachedDate || latestServerDate > latestCachedDate) {
+          if (!toUpdate.includes(latestServerDate)) {
+            toUpdate.push(latestServerDate);
+          }
+        }
+      }
+      
+      return toUpdate;
+    }
+  };
+  
+  // 将 CacheManager 暴露到全局，供其他函数使用
+  window.CacheManager = CacheManager;
+// 轻提示样式
+try{
+  const style = document.createElement('style');
+  style.textContent = `.msg.info { background:#e7f5ff; color:#0b7285; border:1px solid #d0ebff; } .inline-msg{font-size:13px;color:#666;opacity:0;transition:opacity .3s ease;min-height:20px;display:inline-block;} .inline-msg.show{opacity:1;} .inline-msg.success{color:#137333;} .inline-msg.error{color:#d93025;} .inline-msg.info{color:#1a73e8;} .status-area{background:#fafafa;border-radius:6px;padding:8px 12px;border:1px solid #e8eaed;}`;
+  document.head.appendChild(style);
+}catch(e){}
+// API 基址：使用 Pages Functions 代理（会自动添加 CORS 头）
+const API_BASE = '';
+let currentTab = 'auto';
+let autoTabState = { loading: false, lastFetched: 0 };
+
+function resolveClientId(){
+  try{
+    const host = (location && location.hostname || '').trim();
+    if(!host || host === 'localhost' || host === '127.0.0.1'){
+      return 'rank.dailygh4.com';
+    }
+    return host;
+  }catch(_){
+    return 'rank.dailygh4.com';
+  }
+}
+
+function initTabSwitcher(){
+  try{
+    const buttons = document.querySelectorAll('.tab-switcher button[data-tab]');
+    buttons.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const tab = btn.getAttribute('data-tab');
+        activateTab(tab);
+      });
+    });
+    // 延迟激活自动标签页，让页面先完全渲染
+    // 使用 requestIdleCallback 或 setTimeout 进一步延迟数据加载
+    // 优化：立即激活自动标签页，减少初始延迟
+    // 先显示加载状态，然后立即开始加载数据
+    const activateAutoTab = () => {
+      // 立即显示加载状态
+      const container = document.getElementById('autoPreview');
+      if(container && !container.querySelector('table')){
+        container.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">正在加载数据...</div>';
+      }
+      // 优化：首次加载时使用缓存优先策略，不强制从服务器获取
+      // 这样有缓存时可以立即显示，后台再异步更新
+      activateTab('auto', { force: false, suppressScroll: true });
+    };
+    
+    // 减少延迟：从 800-1000ms 降至 100ms，让用户更快看到内容
+    if (window.requestIdleCallback) {
+      requestIdleCallback(activateAutoTab, { timeout: 100 });
+    } else {
+      setTimeout(activateAutoTab, 100);
+    }
+  }catch(e){
+    console.error('initTabSwitcher error', e);
+  }
+}
+
+function activateTab(tab, options){
+  if(!tab) return;
+  // 优化：切换标签时立即显示加载状态
+  if(tab === 'auto'){
+    const container = document.getElementById('autoPreview');
+    if(container && !container.querySelector('table')){
+      container.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">正在加载数据...</div>';
+    }
+  }
+  if(currentTab === tab && tab === 'auto' && !options?.force){
+    refreshAutoTab();
+    return;
+  }
+  currentTab = tab;
+  const panels = document.querySelectorAll('.tab-panel');
+  panels.forEach(panel=>{
+    const isMatch = panel.id === `tab-${tab}`;
+    panel.classList.toggle('active', isMatch);
+    if(isMatch){
+      panel.removeAttribute('hidden');
+    }else{
+      panel.setAttribute('hidden','');
+    }
+  });
+  const buttons = document.querySelectorAll('.tab-switcher button[data-tab]');
+  buttons.forEach(btn=>{
+    const isMatch = btn.getAttribute('data-tab') === tab;
+    btn.classList.toggle('active', isMatch);
+    btn.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+  });
+  if(tab === 'auto'){
+    // 优化：先尝试使用缓存快速显示，后台再更新
+    // 如果用户手动点击刷新按钮，则强制从服务器获取最新数据
+    // 否则先显示缓存（如果有），后台异步更新
+    if(options?.force){
+      // 用户手动点击刷新，强制从服务器获取
+      refreshAutoTab(true);
+    } else {
+      // 自动切换或首次加载，先尝试使用缓存，后台更新
+      refreshAutoTab(false);
+    }
+  }
+}
+
+function updateAutoStatus(state, message){
+  const statusEl = document.getElementById('autoStatusText');
+  if(!statusEl) return;
+  statusEl.textContent = message || '';
+  statusEl.classList.remove('success','error','info');
+  if(state){
+    statusEl.classList.add(state);
+  }
+}
+
+function syncPayloadToLocal(payload){
+  if(!payload || typeof payload !== 'object') return;
+  const rawMap = payload.memberRaw || {};
+  const dataMap = payload.memberData || {};
+  for(const d of Object.keys(rawMap)){
+    try{
+      // 使用 CacheManager 修复类型问题，并验证数据长度
+      const normalized = CacheManager.normalizeMemberRaw(rawMap[d]);
+      if (normalized && normalized.length > 100) {
+        localStorage.setItem(storageRawKey(d), normalized);
+      } else if (normalized) {
+        console.warn(`[syncPayloadToLocal] ⚠️ ${d} 的 memberRaw 长度太短，未保存，长度:`, normalized.length);
+      }
+    }catch(e){
+      console.warn(`[syncPayloadToLocal] 保存 ${d} 的 memberRaw 失败:`, e);
+    }
+  }
+  for(const d of Object.keys(dataMap)){
+    try{
+      const srvRows = Array.isArray(dataMap[d]) ? dedupeLatestRows(dataMap[d]) : [];
+      localStorage.setItem(storageKey(d), JSON.stringify(srvRows));
+    }catch(_){}
+  }
+}
+
+function formatNumberDisplay(val, opts){
+  if(val === '' || val == null) return '';
+  const num = Number(val);
+  if(!Number.isFinite(num)) return '';
+  if(opts?.withSign){
+    if(num === 0) return '-';
+    return (num > 0 ? '+' : '') + num.toLocaleString('zh-CN');
+  }
+  if(opts?.dashWhenZero && num === 0) return '-';
+  return num.toLocaleString('zh-CN');
+}
+
+// 自动模式的渲染数据缓存（用于复选框切换时重新渲染）
+let lastAutoRows = [];
+let lastAutoMeta = {};
+
+function renderAutoTable(rows, meta){
+  const container = document.getElementById('autoPreview');
+  if(!container){ return; }
+  
+  // 缓存数据供复选框切换使用
+  lastAutoRows = rows || [];
+  lastAutoMeta = meta || {};
+  
+  if(!rows || !rows.length){
+    container.innerHTML = '<div class="muted">暂无数据</div>';
+    try{ renderAvatarGrid([]); }catch(_){}
+    return;
+  }
+  
+  // 读取复选框状态
+  const showCollect = document.getElementById('autoToggleCollect')?.checked || false;
+  const showLike = document.getElementById('autoToggleLike')?.checked || false;
+  const showFans = document.getElementById('autoToggleFans')?.checked !== false;
+  const showWeekGrowth = document.getElementById('autoToggleWeekGrowth')?.checked || false;
+  const showMonthGrowth = document.getElementById('autoToggleMonthGrowth')?.checked || false;
+  
+  const latestDisplay = meta?.latestIso ? formatDateForRange(meta.latestIso) : (meta?.latestDate ? formatDateForRange(meta.latestDate) : '—');
+  const prevDisplay = meta?.prevIso ? formatDateForRange(meta.prevIso) : (meta?.prevDate ? formatDateForRange(meta.prevDate) : '—');
+  const maxFans = Math.max(...rows.map(r=>Number(r.粉丝数||0)));
+  const flameThreshold = 3000;
+  
+  const rangeHtml = `<div class="range-bar">日期区间：${prevDisplay || '—'} ~ ${latestDisplay || '—'}</div>`;
+  
+  // 动态构建表头（与手动模式一致）
+  const headerCols = ['排名','姓名'];
+  if (showCollect) headerCols.push('收藏数');
+  if (showLike) headerCols.push('点赞数');
+  if (showFans) headerCols.push('粉丝数');
+  headerCols.push('距上一名','今日涨幅');
+  if (showWeekGrowth) headerCols.push('本周涨幅');
+  if (showMonthGrowth) headerCols.push('本月涨幅');
+  headerCols.push('排名变化');
+  
+  let html = '<table><thead><tr>' + headerCols.map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  
+  for(const r of rows){
+    // 过滤掉张三和李四的数据
+    const name = r.姓名 || r.realName || '';
+    if(name === '张三' || name === '李四') continue;
+    const isEven = (Number(r.排名||0) % 2 === 0);
+    const fans = Number(r.粉丝数||0);
+    const pct = maxFans > 0 ? Math.round(fans / maxFans * 100) : 0;
+    
+    const growthRaw = (r.涨幅 === '' || r.涨幅 == null) ? null : Number(r.涨幅);
+    const growthText = (growthRaw == null) ? '' : (growthRaw === 0 ? '-' : (growthRaw > 0 ? `+${growthRaw}` : `${growthRaw}`));
+    const growthCls = (growthRaw == null || growthRaw === 0) ? '' : (growthRaw > 0 ? 'num-pos' : 'num-neg');
+    const showFlame = (growthRaw != null && growthRaw > flameThreshold);
+    
+    const rankChangeText = r.排名变化 === '持平' ? '-' : (r.排名变化 || '');
+    const rankChangeCls = rankChangeText.startsWith('上升') ? 'num-pos' : (rankChangeText.startsWith('下降') ? 'num-neg' : '');
+    
+    const diffPrevRaw = (r['与前一名差值'] === '' || r['与前一名差值'] == null) ? null : Number(r['与前一名差值']);
+    const diffPrevText = (diffPrevRaw == null) ? '' : (diffPrevRaw === 0 ? '-' : `${diffPrevRaw}`);
+    
+    const cells = [];
+    cells.push(`<td>${r.排名}</td>`);
+    cells.push(`<td>${r.姓名}</td>`);
+    if (showCollect) cells.push(`<td>${r.收藏数 || ''}</td>`);
+    if (showLike) cells.push(`<td>${r.点赞数 || ''}</td>`);
+    
+    if (showFans) {
+      const fansCellStyleBase = `background-image: linear-gradient(to right, #fb8c00, #ffe082); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
+      const fansCellStyle = isEven ? fansCellStyleBase + ' background-color: #efefef; background-blend-mode: multiply;' : fansCellStyleBase;
+      cells.push(`<td style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
+    }
+    
+    cells.push(`<td>${diffPrevText}</td>`);
+    
+    // 今日涨幅（带火焰）
+    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${growthText}${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}</span></td>`);
+    
+    // 本周涨幅
+    if (showWeekGrowth) {
+      const wgRaw = (r['本周涨幅'] === '' || r['本周涨幅'] == null) ? null : Number(r['本周涨幅']);
+      const wgText = (wgRaw == null) ? '' : (wgRaw === 0 ? '-' : (wgRaw > 0 ? `+${wgRaw}` : `${wgRaw}`));
+      const wgCls = (wgRaw == null || wgRaw === 0) ? '' : (wgRaw > 0 ? 'num-pos' : 'num-neg');
+      cells.push(`<td><span class="growth-cell ${wgCls}">${wgText}</span></td>`);
+    }
+    
+    // 本月涨幅
+    if (showMonthGrowth) {
+      const mgRaw = (r['本月涨幅'] === '' || r['本月涨幅'] == null) ? null : Number(r['本月涨幅']);
+      const mgText = (mgRaw == null) ? '' : (mgRaw === 0 ? '-' : (mgRaw > 0 ? `+${mgRaw}` : `${mgRaw}`));
+      const mgCls = (mgRaw == null || mgRaw === 0) ? '' : (mgRaw > 0 ? 'num-pos' : 'num-neg');
+      cells.push(`<td><span class="growth-cell ${mgCls}">${mgText}</span></td>`);
+    }
+    
+    cells.push(`<td><span class="${rankChangeCls}">${rankChangeText}</span></td>`);
+    html += `<tr${isEven ? ' class="zebra-even"' : ''}>${cells.join('')}</tr>`;
+  }
+  
+  html += '</tbody></table>';
+  
+  // 底部说明
+  const noteHtml = `
+    <div class="preview-notes" style="margin:12px 0 18px; padding-left:1ch; color:#606c76; font-size:12px; line-height:1.7;">
+      <div><strong>说明：</strong></div>
+      <div>1、今日涨幅：今日粉丝数 - 昨日粉丝数</div>
+      <div>2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）</div>
+      <div>3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数</div>
+      <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
+      <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
+    </div>`;
+  
+  container.innerHTML = rangeHtml + html + noteHtml;
+  try{ renderAvatarGrid(rows); }catch(_){}
+}
+
+// 复选框切换时重新渲染（不重新拉取数据）
+function refreshAutoTableDisplay(){
+  if(lastAutoRows && lastAutoRows.length){
+    renderAutoTable(lastAutoRows, lastAutoMeta);
+  }
+}
+
+// 导出自动模式的图片
+async function exportAutoImage(){
+  if(!lastAutoRows || !lastAutoRows.length){
+    alert('暂无数据可导出');
+    return;
+  }
+  const container = document.getElementById('autoPreview');
+  if(!container){
+    alert('无法找到预览容器');
+    return;
+  }
+  
+  // 防止重复点击
+  const btn = document.getElementById('autoRefreshBtn')?.nextElementSibling || document.querySelector('button[onclick="exportAutoImage()"]');
+  if(btn && btn.disabled) return;
+  if(btn) btn.disabled = true;
+  
+  // 移动端和微信浏览器兼容性处理
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  
+  // 显示加载提示
+  showSuccess('正在加载导出工具，请稍候...');
+  
+  try {
+    // 按需加载 html2canvas
+    await loadHtml2Canvas();
+  } catch (err) {
+    if(btn) btn.disabled = false;
+    showError('导出工具加载失败：' + (err.message || '未知错误'));
+    return;
+  }
+  
+  showSuccess('正在生成图片，请稍候...');
+  container.classList.add('export-png');
+  
+  // 优化 scale：根据设备像素比和屏幕大小动态调整
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const optimalScale = isMobile 
+    ? Math.min(devicePixelRatio, 1.2)  // 移动端进一步降低
+    : Math.min(devicePixelRatio, 1.5);  // 桌面端也降低
+  
+  html2canvas(container, {
+    backgroundColor: '#ffffff',
+    scale: optimalScale, // 优化后的 scale
+    logging: false,
+    useCORS: true,
+    allowTaint: false,
+    foreignObjectRendering: false, // 禁用 foreignObject 以提高性能
+    removeContainer: false, // 保留容器
+    imageTimeout: 0, // 图片超时设为 0（不等待外部图片）
+    ignoreElements: function(element) {
+      // 忽略不可见元素以提高性能
+      return element.style.display === 'none' || element.style.visibility === 'hidden';
+    },
+    onclone: function(clonedDoc) {
+      // 确保克隆的文档中所有样式都正确应用
+      const clonedContainer = clonedDoc.getElementById('autoPreview');
+      if(clonedContainer) {
+        clonedContainer.style.transform = 'none';
+        clonedContainer.style.position = 'relative';
+      }
+    }
+  }).catch(err => {
+    if(btn) btn.disabled = false;
+    container.classList.remove('export-png');
+    console.error('html2canvas 错误:', err);
+    if(isWeChat) {
+      showError('图片生成失败，请重试。错误：' + (err.message || '未知错误'));
+    } else {
+      alert('导出图片失败：' + (err.message || '未知错误'));
+    }
+  }).then(canvas => {
+    if(btn) btn.disabled = false;
+    if(!canvas) return;
+    container.classList.remove('export-png');
+    
+    const date = lastAutoMeta?.latestDate || new Date().toISOString().split('T')[0];
+    const fileName = `高会排行榜-${date}.png`;
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    // 微信浏览器：直接在页面显示图片，让用户长按保存
+    if(isWeChat) {
+      try {
+        // 移除之前可能存在的导出图片容器
+        const existingExport = document.getElementById('wechat-export-image');
+        if(existingExport) {
+          existingExport.remove();
+        }
+        
+        // 创建图片显示容器
+        const exportContainer = document.createElement('div');
+        exportContainer.id = 'wechat-export-image';
+        exportContainer.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
+        
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.cssText = 'max-width:100%; max-height:85vh; height:auto; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5); display:block;';
+        img.alt = fileName;
+        img.setAttribute('crossorigin', 'anonymous');
+        
+        // 确保图片加载完成
+        img.onload = function() {
+          console.log('微信导出：图片加载成功');
+        };
+        img.onerror = function(e) {
+          console.error('微信导出：图片加载失败', e);
+          showError('图片生成失败，请重试');
+          exportContainer.remove();
+        };
+        
+        const tip = document.createElement('div');
+        tip.textContent = '长按图片保存到相册';
+        tip.style.cssText = 'color:#fff; font-size:16px; margin-top:20px; padding:12px 24px; background:rgba(76,110,245,0.8); border-radius:24px; font-weight:500;';
+        
+        const closeBtn = document.createElement('div');
+        closeBtn.textContent = '✕ 关闭';
+        closeBtn.style.cssText = 'position:absolute; top:20px; right:20px; color:#fff; font-size:18px; padding:10px 20px; background:rgba(255,255,255,0.3); border-radius:20px; cursor:pointer; user-select:none;';
+        closeBtn.onclick = function() {
+          exportContainer.remove();
+        };
+        closeBtn.ontouchstart = function() {
+          exportContainer.remove();
+        };
+        
+        exportContainer.appendChild(img);
+        exportContainer.appendChild(tip);
+        exportContainer.appendChild(closeBtn);
+        document.body.appendChild(exportContainer);
+        
+        // 点击背景关闭
+        exportContainer.onclick = function(e) {
+          if(e.target === exportContainer) {
+            exportContainer.remove();
+          }
+        };
+        
+        // 防止滚动
+        document.body.style.overflow = 'hidden';
+        exportContainer.onremove = function() {
+          document.body.style.overflow = '';
+        };
+        
+        console.log('微信导出：图片容器已创建，dataUrl长度:', dataUrl.length);
+        return;
+      } catch(e) {
+        console.error('微信导出异常:', e);
+        showError('导出失败：' + (e.message || '未知错误'));
+        container.classList.remove('export-png');
+        return;
+      }
+    }
+    
+    // 移动端使用不同的下载方式
+    if(isMobile) {
+      // 移动端：优先尝试下载，如果失败则打开新窗口显示图片
+      // 先尝试使用 toBlob 和下载链接
+      canvas.toBlob(function(blob) {
+        if(!blob) {
+          alert('导出图片失败，请重试');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        
+        // 尝试创建下载链接
+        try {
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = url;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          
+          // 触发点击（在用户手势事件中调用，应该可以工作）
+          const clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          });
+          link.dispatchEvent(clickEvent);
+          
+          // 延迟清理
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }, 100);
+          
+          // 如果下载失败，打开新窗口显示图片（用户可长按保存）
+          setTimeout(() => {
+            const imgWindow = window.open();
+            if(imgWindow) {
+              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+              imgWindow.document.close();
+              showSuccess('图片已打开，请长按图片保存');
+            } else {
+              // 如果弹窗被阻止，直接显示图片URL
+              showSuccess('请长按下方链接保存图片：<br><a href="' + url + '" download="' + fileName + '" style="color:#4c6ef5; text-decoration:underline;">点击下载图片</a>');
+            }
+          }, 500);
+        } catch(e) {
+          // 如果下载失败，打开新窗口显示图片
+          const imgWindow = window.open();
+          if(imgWindow) {
+            imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+            imgWindow.document.close();
+            showSuccess('图片已打开，请长按图片保存');
+          } else {
+            // 如果弹窗被阻止，使用 data URL
+            const imgWindow = window.open();
+            if(imgWindow) {
+              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${dataUrl}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+              imgWindow.document.close();
+              showSuccess('图片已打开，请长按图片保存');
+            } else {
+              showError('无法打开图片，请检查浏览器弹窗设置');
+            }
+          }
+        }
+      }, 'image/png');
+    } else {
+      // 桌面端：使用 toDataURL
+    const link = document.createElement('a');
+    const date = lastAutoMeta?.latestDate || new Date().toISOString().split('T')[0];
+    link.download = `高会排行榜-${date}.png`;
+    link.href = canvas.toDataURL('image/png');
+      link.style.display = 'none';
+      document.body.appendChild(link);
+    link.click();
+      document.body.removeChild(link);
+      showSuccess('图片已导出');
+    }
+  }).catch(err => {
+    container.classList.remove('export-png');
+    console.error('导出图片失败:', err);
+    alert('导出图片失败：' + (err.message || err) + '\n请尝试刷新页面后重试');
+  });
+}
+
+async function refreshAutoTab(force){
+  // 强制刷新时，即使正在加载也要重新开始
+  if(autoTabState.loading && !force){
+    return;
+  }
+  // 强制刷新时，重置加载状态
+  if(force){
+    autoTabState.loading = false;
+  }
+  const btn = document.getElementById('autoRefreshBtn');
+  const latestDateEl = document.getElementById('autoLatestDate');
+  const prevDateEl = document.getElementById('autoPrevDate');
+  const lastSyncEl = document.getElementById('autoLastSync');
+  
+  // 智能缓存策略：非强制刷新时，先使用本地缓存快速显示，后台异步更新
+  // 强制刷新时，直接从服务器获取最新数据
+  
+  const clientId = resolveClientId();
+  
+  // 步骤1：非强制刷新时，先尝试从缓存快速加载并显示
+  if(!force){
+    const cachedData = CacheManager.loadFromCache();
+    const cacheMeta = CacheManager.getMeta();
+    const isCacheValid = CacheManager.isCacheValid(cacheMeta);
+    
+    if(cachedData && cachedData.latestDate && isCacheValid){
+      // 缓存有效，立即显示缓存数据（使用 requestAnimationFrame 确保立即渲染）
+      const cachedLatestDate = cachedData.latestDate;
+      const cachedTodayRows = dedupeLatestRows(cachedData.memberData[cachedLatestDate] || []);
+      const cachedPrevDate = getPrevDateStr(cachedLatestDate);
+      const cachedYesterdayRows = cachedPrevDate ? dedupeLatestRows(cachedData.memberData[cachedPrevDate] || []) : [];
+      
+      if(cachedTodayRows && cachedTodayRows.length){
+        // 使用 requestAnimationFrame 立即渲染，不等待其他操作
+        requestAnimationFrame(() => {
+          const baselineWeek = getBaselineRowsForMode('week', cachedLatestDate);
+          const baselineMonth = getBaselineRowsForMode('month', cachedLatestDate);
+          const enriched = sortAndEnrich(cachedTodayRows, cachedYesterdayRows, baselineWeek, baselineMonth);
+          
+          const latestIso = getMaxIsoFromRows(cachedTodayRows) || getMaxIsoFromStoredRows(cachedLatestDate);
+          const prevIso = cachedPrevDate ? getMaxIsoFromRows(cachedYesterdayRows) || getMaxIsoFromStoredRows(cachedPrevDate) : null;
+          
+          renderAutoTable(enriched, {
+            latestDate: cachedLatestDate,
+            prevDate: cachedPrevDate,
+            latestIso,
+            prevIso
+          });
+          if(latestDateEl) latestDateEl.textContent = cachedLatestDate || '—';
+          if(prevDateEl) prevDateEl.textContent = cachedPrevDate || '—';
+          if(lastSyncEl) lastSyncEl.textContent = cacheMeta?.lastUpdate ? new Date(cacheMeta.lastUpdate).toLocaleString('zh-CN',{ hour12:false }) : '—';
+          updateAutoStatus('info', '已加载缓存数据，正在后台检查更新...');
+        });
+        
+        // 后台异步检查更新（不阻塞显示）
+        refreshAutoTab(true).catch(err => {
+          console.warn('[refreshAutoTab] 后台更新失败，继续使用缓存:', err);
+        });
+        return;
+      }
+    }
+  }
+  
+  try{
+    autoTabState.loading = true;
+    btn?.setAttribute('disabled','disabled');
+    updateAutoStatus('info', force ? '正在从服务器获取最新数据...' : '正在检查更新...');
+    
+    // 优化：添加超时控制，避免长时间等待
+    const fetchWithTimeout = (url, options = {}, timeout = 10000) => {
+      return Promise.race([
+        fetch(url, options),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('请求超时')), timeout)
+        )
+      ]).catch(err => {
+        // 超时或其他错误，返回一个失败的 Response
+        if(err.message === '请求超时'){
+          console.warn('[refreshAutoTab] 请求超时:', url);
+        }
+        throw err;
+      });
+    };
+    
+    // 优先从 history 接口获取所有日期，找到真正的"最新"日期（确保显示真正的最新数据）
+    let latestDate = null;
+    let memberData = {};
+    let rawMap = {};
+    let allHistoryDates = []; // 保存所有历史日期，避免重复请求
+    
+    // 智能缓存策略：强制刷新时绕过缓存，否则允许使用缓存
+    const cacheOptions = force ? {
+      cache: 'no-store',
+      headers: { 
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    } : {
+      cache: 'default', // 允许使用缓存
+      headers: {}
+    };
+    
+    // 优化：优先使用 latest API 快速获取最新数据，history API 作为后台补充
+    // 这样可以避免等待 history API 的阻塞，提升首次加载速度
+    let latestApiPromise = null;
+    let historyApiPromise = null;
+    
+    // 并行发起 latest 和 history 请求
+    const timestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
+    
+    // latest API：快速获取最新数据（优先）
+    latestApiPromise = fetchWithTimeout(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
+      ...cacheOptions,
+      method: 'GET'
+    }, 5000).catch(err => {
+      console.warn('[refreshAutoTab] latest API 请求失败:', err);
+      return null;
+    });
+    
+    // history API：后台获取历史日期列表（不阻塞）
+    historyApiPromise = fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${timestamp}`, { 
+      ...cacheOptions,
+      method: 'GET'
+    }, 3000).catch(err => {
+      console.warn('[refreshAutoTab] history API 请求失败:', err);
+      return null;
+    });
+    
+    // 优先等待 latest API 响应（更快）
+    try{
+      const latestResp = await latestApiPromise;
+      if(latestResp && latestResp.ok){
+        const payload = await latestResp.json();
+        syncPayloadToLocal(payload);
+        // 使用 CacheManager 修复类型问题，确保 rawMap 中的数据有效
+        const latestRawMap = payload.memberRaw || {};
+        rawMap = {};
+        for (const [date, raw] of Object.entries(latestRawMap)) {
+          const normalized = CacheManager.normalizeMemberRaw(raw);
+          if (normalized && normalized.length > 100) {
+            rawMap[date] = normalized;
+          }
+        }
+        const latestMemberData = payload.memberData || {};
+        const dates = Object.keys(latestMemberData).sort();
+        // 从后往前找第一个有数据的日期
+        let foundLatestDate = null;
+        for(let i = dates.length - 1; i >= 0; i--){
+          const checkDate = dates[i];
+          const checkRows = latestMemberData[checkDate] || [];
+          if(checkRows && checkRows.length > 0){
+            foundLatestDate = checkDate;
+            break;
+          }
+        }
+        if(foundLatestDate){
+          latestDate = foundLatestDate;
+          memberData = { [foundLatestDate]: latestMemberData[foundLatestDate] };
+          // 使用 CacheManager 保存到缓存
+          CacheManager.saveToCache(memberData, rawMap);
+          console.log(`[refreshAutoTab] ✅ 从 latest API 快速获取到最新日期: ${latestDate}, 数据条数: ${memberData[latestDate].length}`);
+        } else if(dates.length){
+          // 如果所有日期都没有数据，使用最后一个日期
+          latestDate = dates[dates.length - 1];
+          memberData = latestMemberData;
+          CacheManager.saveToCache(memberData, rawMap);
+        }
+      }
+    }catch(err){
+      console.warn('[refreshAutoTab] latest API 处理失败:', err);
+    }
+    
+    // 后台处理 history API（不阻塞主流程）
+    try{
+      const historyResp = await historyApiPromise;
+      if(historyResp && historyResp.ok){
+        const historyPayload = await historyResp.json();
+        const histMemberData = historyPayload.memberData || {};
+        // 使用 dates 列表而不是 memberData 的 keys，因为 dates 包含所有有数据的日期
+        const allDates = (historyPayload.dates || Object.keys(histMemberData)).sort();
+        // 保存所有历史日期，避免后续重复请求
+        allHistoryDates = allDates;
+        console.log(`[refreshAutoTab] history API 返回: dates=${allDates.length}, memberData keys=${Object.keys(histMemberData).length}`);
+        
+        // 如果 latest API 没有返回数据，使用 history API 的数据
+        if(!latestDate || !memberData[latestDate] || !memberData[latestDate].length){
+          if(allDates.length){
+          // 优化：只查询最新8个日期，大幅减少初始查询数量
+          const maxInitialDates = 8; // 只查询最新8个日期
+          const latestDates = allDates.slice(-maxInitialDates); // 取最后8个（最新的）
+          console.log(`[refreshAutoTab] 优化：只查询最新 ${latestDates.length} 个日期（共 ${allDates.length} 个历史日期）`);
+          
+          // 第一步：智能收集需要查询的日期（优化：优先检查本地缓存）
+          const datesToQuery = [];
+          const cachedDates = CacheManager.getCachedDates();
+          const cachedSet = new Set(cachedDates);
+          
+          // 从最新日期开始遍历（从后往前）
+          for(let i = latestDates.length - 1; i >= 0; i--){
+            const checkDate = latestDates[i];
+            let checkRows = histMemberData[checkDate] || [];
+            if(!Array.isArray(checkRows)){
+              console.warn(`[refreshAutoTab] ${checkDate} 的 memberData 不是数组:`, typeof checkRows, checkRows);
+              checkRows = [];
+            }
+            // 优化：如果本地缓存已有该日期数据，且不是强制刷新，则跳过
+            if(!checkRows.length){
+              // 强制刷新时，即使本地有缓存也要查询（确保数据最新）
+              // 非强制刷新时，如果本地有缓存，跳过查询
+              if(force || !cachedSet.has(checkDate)){
+                datesToQuery.push(checkDate);
+              } else {
+                console.log(`[refreshAutoTab] 跳过 ${checkDate}（本地已有缓存）`);
+              }
+            }
+          }
+          
+          // 第二步：并行查询所有需要查询的日期（最多8个，全部并行查询）
+          if(datesToQuery.length > 0){
+            const maxConcurrent = 8; // 最多同时查询8个
+            const toQueryNow = datesToQuery.slice(0, maxConcurrent);
+            // 优化：不再查询剩余日期，只在需要时（计算涨幅时）再查询
+            if(datesToQuery.length > maxConcurrent){
+              console.log(`[refreshAutoTab] 只查询前 ${toQueryNow.length} 个日期，其余 ${datesToQuery.length - maxConcurrent} 个日期将在需要时（计算涨幅）再查询`);
+            } else {
+              console.log(`[refreshAutoTab] 并行查询 ${datesToQuery.length} 个日期...`);
+            }
+            
+            const queryPromises = toQueryNow.map(checkDate => {
+              const dateTimestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
+              return fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(checkDate)}${dateTimestamp}`, { 
+                ...cacheOptions,
+                method: 'GET'
+              }, 3000).then(dateHistoryResp => { // 缩短超时：5秒→3秒
+                if(dateHistoryResp.ok){
+                  return dateHistoryResp.json().then(dateHistoryPayload => {
+                    const checkRows = Array.isArray(dateHistoryPayload.rows) ? dateHistoryPayload.rows : [];
+                    if(checkRows.length){
+                      // 处理从 date 查询返回的 memberRaw
+                      const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+                      if (normalizedRaw && normalizedRaw.length > 100) {
+                        rawMap[checkDate] = normalizedRaw;
+                      }
+                      // 更新 memberData
+                      histMemberData[checkDate] = checkRows;
+                      console.log(`[refreshAutoTab] ✅ 并行查询获取到 ${checkDate} 的数据，条数: ${checkRows.length}`);
+                    }
+                    return { date: checkDate, rows: checkRows };
+                  });
+                }
+                return { date: checkDate, rows: [] };
+              }).catch(e => {
+                console.warn(`[refreshAutoTab] 并行查询日期 ${checkDate} 失败:`, e);
+                return { date: checkDate, rows: [] };
+              });
+            });
+            
+            // 等待所有并行查询完成
+            const queryResults = await Promise.allSettled(queryPromises);
+            queryResults.forEach((result, idx) => {
+              if(result.status === 'fulfilled' && result.value){
+                const { date, rows } = result.value;
+                if(rows && rows.length){
+                  histMemberData[date] = rows;
+                }
+              }
+            });
+            
+            // 优化：不再查询剩余日期，只在需要时（计算涨幅时）再查询
+            // 这样可以大幅减少初始加载的API请求数量
+            if(datesToQuery.length > maxConcurrent){
+              console.log(`[refreshAutoTab] 已查询 ${toQueryNow.length} 个日期，其余 ${datesToQuery.length - maxConcurrent} 个日期将在需要时（计算涨幅）再查询`);
+            }
+          }
+          
+          // 第三步：从后往前查找有数据的日期
+          let foundDate = null;
+          let foundRows = [];
+          for(let i = allDates.length - 1; i >= 0; i--){
+            const checkDate = allDates[i];
+            let checkRows = histMemberData[checkDate] || [];
+            if(!Array.isArray(checkRows)) checkRows = [];
+            console.log(`[refreshAutoTab] 检查日期 ${checkDate}: checkRows.length=${checkRows.length}`);
+            if(checkRows.length){
+              foundDate = checkDate;
+              foundRows = checkRows;
+              console.log(`[refreshAutoTab] 找到有数据的日期: ${foundDate}, 数据条数: ${foundRows.length}`);
+              break;
+            }
+          }
+        if(foundDate && foundRows.length){
+          latestDate = foundDate;
+          memberData[latestDate] = foundRows;
+          console.log(`[refreshAutoTab] 使用最新日期: ${latestDate}, 数据条数: ${memberData[latestDate].length}`);
+        } else {
+          // 如果都没找到，使用日期列表中的最后一个（即使为空）
+          latestDate = allDates[allDates.length - 1];
+          memberData[latestDate] = histMemberData[latestDate] || [];
+          console.warn(`[refreshAutoTab] 未找到有数据的日期，使用最后一个日期: ${latestDate}`);
+        }
+        // 处理从 history 接口返回的 memberRaw（用于小时级数据）
+        // 注意：优先使用通过 date 参数查询获取的 memberRaw（已在 rawMap 中）
+        // 只有当 rawMap 中没有该日期的数据时，才尝试从 history 接口的 memberRaw 中获取
+        if(latestDate && (!rawMap[latestDate] || !rawMap[latestDate].trim() || rawMap[latestDate].length < 100)){
+          // rawMap 中没有有效数据，尝试从 history 接口获取
+          const histMemberRaw = historyPayload.memberRaw || {};
+          // 优先尝试从对象中获取指定日期的数据
+          if (typeof histMemberRaw === 'object' && histMemberRaw[latestDate]) {
+            const dateRaw = CacheManager.normalizeMemberRaw(histMemberRaw[latestDate]);
+            if (dateRaw && dateRaw.length > 100) {
+              rawMap[latestDate] = dateRaw;
+              console.log(`[refreshAutoTab] ✅ 从 history 接口获取到 ${latestDate} 的 memberRaw (对象)，长度:`, dateRaw.length);
+            } else {
+              console.warn(`[refreshAutoTab] ⚠️ history 接口返回的 memberRaw 无效或太短，长度:`, dateRaw ? dateRaw.length : 0);
+            }
+          } else {
+            // 尝试直接转换整个 memberRaw 对象
+            const normalizedRaw = CacheManager.normalizeMemberRaw(histMemberRaw);
+            if (normalizedRaw && normalizedRaw.length > 100) {
+              rawMap[latestDate] = normalizedRaw;
+              console.log(`[refreshAutoTab] ✅ 从 history 接口获取到 ${latestDate} 的 memberRaw，长度:`, normalizedRaw.length);
+            } else {
+              console.warn(`[refreshAutoTab] ⚠️ history 接口未返回 ${latestDate} 的有效 memberRaw，histMemberRaw类型:`, typeof histMemberRaw, '长度:', normalizedRaw ? normalizedRaw.length : 0);
+            }
+          }
+        } else if(latestDate) {
+          console.log(`[refreshAutoTab] ✅ rawMap 中已有 ${latestDate} 的 memberRaw（来自 date 参数查询），长度:`, rawMap[latestDate]?.length || 0);
+        }
+          // 使用 CacheManager 保存到缓存
+          CacheManager.saveToCache(memberData, rawMap);
+          // 同时同步到本地（保持兼容性）
+          syncPayloadToLocal({ memberData, memberRaw: rawMap });
+        }
+        }
+      }
+    }catch(err){
+      console.warn('[refreshAutoTab] history API 处理失败:', err);
+    }
+    
+    // 如果 history 接口没有返回数据，回退到 latest 接口
+    if(!latestDate || !memberData[latestDate] || !memberData[latestDate].length){
+      try{
+        const timestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
+        const resp = await fetchWithTimeout(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
+          ...cacheOptions,
+          method: 'GET'
+        }, 5000); // 优化：添加超时控制：5秒，快速失败
+        if(resp.ok){
+          const payload = await resp.json();
+          syncPayloadToLocal(payload);
+          // 使用 CacheManager 修复类型问题，确保 rawMap 中的数据有效
+          const latestRawMap = payload.memberRaw || {};
+          rawMap = {};
+          for (const [date, raw] of Object.entries(latestRawMap)) {
+            const normalized = CacheManager.normalizeMemberRaw(raw);
+            if (normalized && normalized.length > 100) {
+              rawMap[date] = normalized;
+            }
+          }
+          const latestMemberData = payload.memberData || {};
+          const dates = Object.keys(latestMemberData).sort();
+          // 从后往前找第一个有数据的日期
+          let foundLatestDate = null;
+          for(let i = dates.length - 1; i >= 0; i--){
+            const checkDate = dates[i];
+            const checkRows = latestMemberData[checkDate] || [];
+            if(checkRows && checkRows.length > 0){
+              foundLatestDate = checkDate;
+              break;
+            }
+          }
+          if(foundLatestDate){
+            latestDate = foundLatestDate;
+            memberData = { [foundLatestDate]: latestMemberData[foundLatestDate] };
+          } else if(dates.length){
+            // 如果所有日期都没有数据，使用最后一个日期
+            latestDate = dates[dates.length - 1];
+            memberData = latestMemberData;
+          }
+        }
+      }catch(err2){
+        console.warn('从 latest 接口获取最新数据也失败', err2);
+      }
+    }
+    
+    autoTabState.lastFetched = Date.now();
+    
+    if(!latestDate){
+      renderAutoTable([], {});
+      updateAutoStatus('error', '服务器未返回有效日期数据');
+      return;
+    }
+    // 优化：只确保必要日期的数据覆盖（最新日期、前一日）
+    // 基准日期（本周涨幅、本月涨幅）改为按需查询，不在这里查询
+    const neededDates = new Set([latestDate]);
+    let prevDate = getPrevDateStr(latestDate);
+    if(prevDate) neededDates.add(prevDate);
+    
+    // 优化：不再在这里查询基准日期，改为在 getBaselineRowsForMode 中按需查询
+    // 这样可以减少初始加载的API请求数量
+    // 基准日期会在计算涨幅时自动查询（如果缓存中没有）
+    
+    // 复用之前获取的 allHistoryDates，避免重复请求
+    // allHistoryDates 已在第一次 history API 调用时获取
+    if(!allHistoryDates || allHistoryDates.length === 0){
+      // 如果第一次调用失败，才尝试获取（添加超时控制）
+      try{
+        const allHistoryResp = await fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${force ? `&_t=${Date.now()}&_r=${Math.random()}` : ''}`, { 
+          ...cacheOptions,
+          method: 'GET'
+        }, 3000); // 优化：缩短超时：5秒→3秒，快速失败
+        if(allHistoryResp.ok){
+          const allHistoryPayload = await allHistoryResp.json();
+          allHistoryDates = (allHistoryPayload.dates || Object.keys(allHistoryPayload.memberData || {})).sort();
+          console.log(`[refreshAutoTab] 从 history API 获取到所有历史日期: ${allHistoryDates.length} 个日期`);
+        }
+      }catch(e){
+        console.warn('[refreshAutoTab] 获取所有历史日期失败:', e);
+      }
+    } else {
+      console.log(`[refreshAutoTab] 复用已获取的历史日期: ${allHistoryDates.length} 个日期`);
+    }
+    
+    // 优化：只确保必要日期的数据覆盖，避免请求所有历史日期
+    // 合并必要日期（最新日期、前一日、基准日期）和已获取的历史日期
+    const essentialDates = Array.from(neededDates);
+    // 只添加本地没有的日期，避免重复请求
+    const cachedDates = CacheManager.getCachedDates();
+    const cachedSet = new Set(cachedDates);
+    const datesToCover = essentialDates.filter(date => !cachedSet.has(date) || force);
+    
+    if(datesToCover.length > 0){
+      console.log(`[refreshAutoTab] 确保 ${datesToCover.length} 个必要日期的数据覆盖（${essentialDates.length - datesToCover.length} 个已从缓存跳过）`);
+      await ensureDateCoverage({
+        clientId,
+        dates: datesToCover,
+        memberDataMap: memberData,
+        rawMap: rawMap,
+        force: force
+      });
+    } else {
+      console.log(`[refreshAutoTab] 所有必要日期已有缓存，跳过 ensureDateCoverage`);
+    }
+    // 优化：并行查询前一日和前前一日数据，减少串行等待时间
+    try{
+      // 先检查本地缓存，避免不必要的请求
+      const cachedPrevRows = getStoredRowsForDate(prevDate);
+      if(cachedPrevRows && cachedPrevRows.length > 0 && !force){
+        console.log(`[refreshAutoTab] 前一日数据已缓存，跳过请求: ${prevDate}`);
+      } else {
+        const prevPrevDate = getPrevDateStr(prevDate);
+        const cachedPrevPrevRows = getStoredRowsForDate(prevPrevDate);
+        
+        // 并行查询前一日和前前一日（如果前前一日也需要查询）
+        const timestamp = force ? `&_t=${Date.now()}` : '';
+        const timestamp2 = force ? `&_t=${Date.now()}` : '';
+        
+        const prevPromise = fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevDate)}${timestamp}`, { 
+          ...cacheOptions,
+          method: 'GET'
+        }, 3000).catch(err => {
+          console.warn(`[refreshAutoTab] 前一日查询失败:`, err);
+          return null;
+        });
+        
+        const prevPrevPromise = (!cachedPrevPrevRows || cachedPrevPrevRows.length === 0 || force) 
+          ? fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevPrevDate)}${timestamp2}`, { 
+              ...cacheOptions,
+              method: 'GET'
+            }, 3000).catch(err => {
+              console.warn(`[refreshAutoTab] 前前一日查询失败:`, err);
+              return null;
+            })
+          : Promise.resolve(null);
+        
+        // 等待两个请求完成
+        const [prevHistoryResp, prevPrevHistoryResp] = await Promise.allSettled([prevPromise, prevPrevPromise]);
+        
+        // 处理前一日响应
+        if(prevHistoryResp.status === 'fulfilled' && prevHistoryResp.value && prevHistoryResp.value.ok){
+          const prevHistoryPayload = await prevHistoryResp.value.json();
+          const prevHistRows = Array.isArray(prevHistoryPayload.rows) ? prevHistoryPayload.rows : [];
+          if(prevHistRows.length){
+            // 前一日有数据，使用它
+            try{ localStorage.setItem(storageKey(prevDate), JSON.stringify(prevHistRows)); }catch(_){}
+          } else {
+            // 前一日没有数据，尝试使用前前一日
+            if(prevPrevHistoryResp.status === 'fulfilled' && prevPrevHistoryResp.value && prevPrevHistoryResp.value.ok){
+              const prevPrevHistoryPayload = await prevPrevHistoryResp.value.json();
+              const prevPrevHistRows = Array.isArray(prevPrevHistoryPayload.rows) ? prevPrevHistoryPayload.rows : [];
+              if(prevPrevHistRows.length){
+                prevDate = prevPrevDate;
+                try{ localStorage.setItem(storageKey(prevDate), JSON.stringify(prevPrevHistRows)); }catch(_){}
+              }
+            } else if(cachedPrevPrevRows && cachedPrevPrevRows.length > 0){
+              // 使用缓存的前前一日数据
+              prevDate = prevPrevDate;
+              try{ localStorage.setItem(storageKey(prevDate), JSON.stringify(cachedPrevPrevRows)); }catch(_){}
+            }
+          }
+        } else if(cachedPrevPrevRows && cachedPrevPrevRows.length > 0 && !prevHistoryResp.value){
+          // 如果前一日查询失败，但有前前一日缓存，使用前前一日
+          prevDate = prevPrevDate;
+          try{ localStorage.setItem(storageKey(prevDate), JSON.stringify(cachedPrevPrevRows)); }catch(_){}
+        }
+      }
+    }catch(_){ /* 忽略错误 */ }
+    
+    // 始终优先使用服务器数据，确保显示最新数据
+    // 只有在服务器数据完全不存在时，才回退到本地存储（作为最后的后备方案）
+    let todayRows = null;
+    let yesterdayRows = null;
+    
+    // 优先使用服务器数据（这是主要数据源）
+    if (memberData[latestDate] && memberData[latestDate].length) {
+      todayRows = dedupeLatestRows(memberData[latestDate]);
+      console.log(`[refreshAutoTab] ✅ 使用服务器数据，日期: ${latestDate}, 数据条数: ${todayRows.length}`);
+    } else {
+      console.warn(`[refreshAutoTab] ⚠️ 服务器未返回 ${latestDate} 的数据`);
+    }
+    // 对于前一日数据，即使 memberData 中存在也要强制从服务器获取最新数据（确保涨幅对比准确）
+    if (prevDate && memberData[prevDate] && memberData[prevDate].length) {
+      // 即使本地有缓存，也先尝试从服务器获取最新数据
+      yesterdayRows = dedupeLatestRows(memberData[prevDate]);
+      console.log(`[refreshAutoTab] ✅ 使用服务器数据，前一日: ${prevDate}, 数据条数: ${yesterdayRows.length}`);
+    } else if (prevDate) {
+      console.warn(`[refreshAutoTab] ⚠️ 服务器未返回 ${prevDate} 的数据`);
+    }
+    
+    // 如果服务器数据不存在，才回退到本地存储（仅作为最后的后备方案）
+    // 注意：即使本地存储有数据，也优先使用服务器数据，确保显示最新
+    if ((!todayRows || !todayRows.length) && latestDate) {
+      const fallbackRows = getStoredRowsForDate(latestDate);
+      if (fallbackRows && fallbackRows.length) {
+        todayRows = dedupeLatestRows(fallbackRows);
+        console.log(`[refreshAutoTab] ⚠️ 服务器数据不存在，回退到本地存储，日期: ${latestDate}`);
+      }
+    }
+    if ((!yesterdayRows || !yesterdayRows.length) && prevDate) {
+      const fallbackRows = getStoredRowsForDate(prevDate);
+      if (fallbackRows && fallbackRows.length) {
+        yesterdayRows = dedupeLatestRows(fallbackRows);
+        console.log(`[refreshAutoTab] ⚠️ 服务器数据不存在，回退到本地存储，前一日: ${prevDate}`);
+      }
+    }
+    
+    // 如果前一日服务器数据不存在或数据空，對应一开始强制一次从服务器获取最新数据（确保涨幅对比正确）
+    // 应为开始的 refreshAutoTab 调用，这种情况下限必需要从服务器获取最新的前一日数据
+    if((todayRows && todayRows.length) && (!yesterdayRows || !yesterdayRows.length) && prevDate){
+      try{
+        const timestamp = force ? `&_t=${Date.now()}` : '';
+        const historyResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevDate)}${timestamp}`, { 
+          ...cacheOptions,
+          method: 'GET'
+        });
+        if(historyResp.ok){
+          const historyPayload = await historyResp.json();
+          const histRows = Array.isArray(historyPayload.rows) ? dedupeLatestRows(historyPayload.rows) : [];
+          if(histRows.length){
+            yesterdayRows = histRows;
+            try{ localStorage.setItem(storageKey(prevDate), JSON.stringify(histRows)); }catch(_){}
+            console.log(`[refreshAutoTab] ✅ 强制从服务器获取应为新的前一日数据（碩涨幅对比）。日期: ${prevDate}, 数据条数: ${histRows.length}`);
+          }
+        }
+      }catch(error){
+        console.warn('[refreshAutoTab] 冶制从服务器获取前一日数据失败', error);
+      }
+    }
+    // 记录服务器端该日的最大时间戳（即使只有 HAR 日志也能识别）
+    try{
+      const rawTextLatest = rawMap[latestDate] || '';
+      const srvMaxIso = detectMaxTsForDateFromText(rawTextLatest, latestDate);
+      window.__latestServerMaxIso = window.__latestServerMaxIso || {};
+      if(srvMaxIso){ window.__latestServerMaxIso[latestDate] = srvMaxIso; }
+    }catch(_){ /* 忽略解析错误 */ }
+
+    // 如果从 history 获取的数据，需要获取该日期的原始数据（HAR）用于时间戳识别
+    // 非强制刷新时，如果已有数据则延迟获取 HAR 数据
+    if(!rawMap[latestDate] || !rawMap[latestDate].trim() || rawMap[latestDate].length < 100){
+      try{
+        const timestamp = force ? `&_t=${Date.now()}` : '';
+        const latestResp = await fetch(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
+          ...cacheOptions,
+          method: 'GET'
+        });
+        if(latestResp.ok){
+          const latestPayload = await latestResp.json();
+          const latestRawMap = latestPayload.memberRaw || {};
+          // 使用 CacheManager 修复类型问题，确保 rawMap 中的数据有效
+          for (const [date, raw] of Object.entries(latestRawMap)) {
+            const normalized = CacheManager.normalizeMemberRaw(raw);
+            if (normalized && normalized.length > 100) {
+              rawMap[date] = normalized;
+            }
+          }
+          // 更新本地存储（仅用于后备，不作为主要数据源）
+          for(const [date, raw] of Object.entries(rawMap)){
+            try{ localStorage.setItem(storageRawKey(date), raw); }catch(_){}
+          }
+          console.log(`[refreshAutoTab] ✅ 从 latest 接口获取到 HAR 数据，日期: ${latestDate}`);
+        }
+      }catch(e){ 
+        console.warn('[refreshAutoTab] 从 latest 获取 HAR 数据失败', e);
+      }
+    }
+
+    // 若最新日期没有有效明细，只在既没有memberData也没有任何数据时才回退
+    // 如果有memberData（即使没有memberRaw），也应该显示该日期的数据而不是回退
+    const hasLatestDateData = memberData[latestDate] && memberData[latestDate].length > 0;
+    if(!todayRows || !todayRows.length){
+      // 检查是否真的没有任何数据（即使是fallback也没有）
+      if(!hasLatestDateData){
+        updateAutoStatus('warning', `最新日期 ${latestDate} 数据不完整（无有效明细），已回退展示昨日数据`);
+        const displayDate = prevDate;
+        const displayPrevDate = displayDate ? getPrevDateStr(displayDate) : null;
+        const baselineWeekFallback = getBaselineRowsForMode('week', displayDate);
+        const baselineMonthFallback = getBaselineRowsForMode('month', displayDate);
+      const enrichedFallback = sortAndEnrich(yesterdayRows || [], [], baselineWeekFallback, baselineMonthFallback);
+        
+        // 优先从 yesterdayRows 中提取 latestIsoFallback
+        const latestIsoFallback = getMaxIsoFromRows(yesterdayRows) || (displayDate ? getMaxIsoFromStoredRows(displayDate) : null);
+        // 优先从存储中提取 prevIsoFallback（如果有前一日数据）
+        const prevIsoFallback = displayPrevDate ? getMaxIsoFromStoredRows(displayPrevDate) : null;
+      renderAutoTable(enrichedFallback, {
+        latestDate: displayDate,
+        prevDate: displayPrevDate,
+          latestIso: latestIsoFallback,
+          prevIso: prevIsoFallback
+      });
+      if(latestDateEl) latestDateEl.textContent = displayDate || '—';
+      if(prevDateEl) prevDateEl.textContent = displayPrevDate || '—';
+      if(lastSyncEl) lastSyncEl.textContent = new Date(autoTabState.lastFetched).toLocaleString('zh-CN',{ hour12:false });
+      return;
+      } else {
+        // 有memberData但todayRows为空，说明可能是dedupeLatestRows导致的，重新从memberData提取
+        todayRows = dedupeLatestRows(memberData[latestDate] || []);
+        console.log(`[refreshAutoTab] ✅ 从 memberData 重新提取，日期: ${latestDate}, 数据条数: ${todayRows.length}`);
+      }
+    }
+
+    // 正常路径：最新日期有数据，按标准流程渲染
+    // 优化：使用 requestAnimationFrame 立即渲染，避免阻塞
+    requestAnimationFrame(() => {
+      const baselineWeek = getBaselineRowsForMode('week', latestDate);
+      const baselineMonth = getBaselineRowsForMode('month', latestDate);
+      const enriched = sortAndEnrich(todayRows, yesterdayRows, baselineWeek, baselineMonth);
+      
+      // 优先从 todayRows 中提取 latestIso（实际显示的数据，包含最新时间）
+      const latestIso = getMaxIsoFromRows(todayRows) || (window.__latestServerMaxIso || {})[latestDate] || getMaxIsoFromStoredRows(latestDate);
+      // 优先从 yesterdayRows 中提取 prevIso
+      const prevIso = prevDate ? (getMaxIsoFromRows(yesterdayRows) || getMaxIsoFromStoredRows(prevDate)) : null;
+      renderAutoTable(enriched, {
+        latestDate,
+        prevDate,
+        latestIso,
+        prevIso
+      });
+      if(latestDateEl) latestDateEl.textContent = latestDate || '—';
+      if(prevDateEl) prevDateEl.textContent = prevDate || '—';
+      if(lastSyncEl) lastSyncEl.textContent = new Date(autoTabState.lastFetched).toLocaleString('zh-CN',{ hour12:false });
+      updateAutoStatus('success', '已获取最新服务器数据');
+    });
+  }catch(err){
+    console.error('refreshAutoTab error', err);
+    updateAutoStatus('error', `拉取失败：${err.message || err}`);
+  }finally{
+    autoTabState.loading = false;
+    btn?.removeAttribute('disabled');
+  }
+}
+function showError(msg){ const el = document.getElementById('msgError'); el.textContent = msg; el.style.display='block'; setTimeout(()=>el.style.display='none', 4000); }
+function showSuccess(msg){ const el = document.getElementById('msgSuccess'); el.textContent = msg; el.style.display='block'; setTimeout(()=>el.style.display='none', 2500); }
+function showInfo(msg){ const el = document.getElementById('msgInfo'); el.textContent = msg; el.style.display='block'; setTimeout(()=>el.style.display='none', 2000); }
+
+// 内联提示：显示在指定元素旁
+function showInlineStatus(targetId, type, text, ms=2200){
+  try{
+    const el = document.getElementById(targetId);
+    if(!el) return;
+    el.textContent = text || '';
+    el.classList.remove('success','error','info','show');
+    if(type) el.classList.add(type);
+    
+    // 成功时添加高亮效果
+    if(type === 'success') {
+      el.style.backgroundColor = '#e8f5e8';
+      el.style.padding = '4px 8px';
+      el.style.borderRadius = '4px';
+      el.style.fontWeight = '500';
+      el.style.color = '#137333';
+    } else if(type === 'error') {
+      el.style.backgroundColor = '#fce8e6';
+      el.style.padding = '4px 8px';
+      el.style.borderRadius = '4px';
+      el.style.fontWeight = '500';
+      el.style.color = '#d93025';
+    }
+    
+    void el.offsetWidth; // force reflow
+    el.classList.add('show');
+    clearTimeout(el._hideT);
+    el._hideT = setTimeout(()=>{ 
+      el.classList.remove('show');
+      // 恢复正常样式
+      setTimeout(() => {
+        el.style.backgroundColor = '';
+        el.style.padding = '';
+        el.style.borderRadius = '';
+        el.style.fontWeight = '';
+        el.style.color = '';
+      }, 300);
+    }, ms);
+  }catch(e){}
+}
+
+// API状态检查和显示
+function updateApiStatus(status, message) {
+  const statusEl = document.getElementById('apiStatus');
+  const iconEl = document.getElementById('apiStatusIcon');
+  const textEl = document.getElementById('apiStatusText');
+  
+  if (!statusEl || !iconEl || !textEl) return;
+  
+  statusEl.style.display = 'block';
+  textEl.textContent = message;
+  
+  // 清除之前的样式
+  statusEl.style.backgroundColor = '';
+  statusEl.style.color = '';
+  statusEl.style.border = '';
+  
+  switch(status) {
+    case 'checking':
+      iconEl.textContent = '🔄';
+      statusEl.style.backgroundColor = '#f0f0f0';
+      statusEl.style.color = '#666';
+      break;
+    case 'online':
+      iconEl.textContent = '🟢';
+      statusEl.style.backgroundColor = '#e8f5e8';
+      statusEl.style.color = '#137333';
+      break;
+    case 'offline':
+      iconEl.textContent = '🔴';
+      statusEl.style.backgroundColor = '#fce8e6';
+      statusEl.style.color = '#d93025';
+      break;
+    case 'partial':
+      iconEl.textContent = '🟡';
+      statusEl.style.backgroundColor = '#fff3cd';
+      statusEl.style.color = '#856404';
+      break;
+  }
+}
+
+async function checkApiStatus() {
+  updateApiStatus('checking', '检查API连接状态...');
+  
+  const clientId = resolveClientId();
+  
+  try {
+    // 使用更短的超时时间（3秒），快速失败，不阻塞页面
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const timestamp = `&_t=${Date.now()}`;
+    const response = await fetch(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}${timestamp}`, {
+      method: 'GET',
+      signal: controller.signal,
+      cache: 'no-store',
+      mode: 'cors',
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      updateApiStatus('online', 'API服务正常，支持数据同步');
+      return 'online';
+    } else {
+      // 即使返回非200，只要连接成功，也认为API可用（可能是数据问题，不是连接问题）
+      if (response.status < 500) {
+        updateApiStatus('online', 'API服务正常，支持数据同步');
+        return 'online';
+      }
+      throw new Error(`API返回错误: ${response.status}`);
+    }
+  } catch (error) {
+    // 如果是 AbortError（超时），不立即判定为离线，可能是网络慢
+    if (error.name === 'AbortError') {
+      console.log('API检查超时，但可能只是网络慢，继续尝试使用API');
+      // 超时情况下，仍然标记为在线，让用户尝试使用
+      updateApiStatus('online', 'API服务正常（网络可能较慢）');
+      return 'online';
+    }
+    
+    console.log('主API检查失败:', error);
+    
+    // 所有API都失败，但只在明确错误时才显示离线
+    // 如果是网络错误（如 CORS、DNS 等），可能是配置问题，不是真正的离线
+    if (error.message && !error.message.includes('Failed to fetch') && !error.message.includes('NetworkError')) {
+    updateApiStatus('offline', '离线模式：数据仅保存在本地，建议导出备份');
+    return 'offline';
+    }
+    
+    // 网络错误时，仍然尝试标记为在线（可能是配置问题）
+        updateApiStatus('online', 'API服务正常，支持数据同步');
+        return 'online';
+  }
+}
+
+// 最后同步时间显示与持久化
+function initLastSync(){ try{ const v = Number(localStorage.getItem('last_sync_time')); const el = document.getElementById('lastSyncTime'); if(el){ el.textContent = v ? `最后同步时间：${new Date(v).toLocaleString('zh-CN',{hour12:false})}` : '最后同步时间：—'; } }catch(e){} }
+function setLastSync(ts){ try{ const v = (ts instanceof Date) ? ts.getTime() : Number(ts)||Date.now(); localStorage.setItem('last_sync_time', String(v)); const el = document.getElementById('lastSyncTime'); if(el){ el.textContent = `最后同步时间：${new Date(v).toLocaleString('zh-CN',{hour12:false})}`; } }catch(e){} }
+
+function ensureNonDuplicateDates(){
+  try{
+    const tdEl = document.getElementById('todayDate');
+    const ydEl = document.getElementById('yesterdayDate');
+    const td = tdEl?.value || '';
+    const yd = ydEl?.value || '';
+    if(td && yd && td === yd){
+      const prev = getPrevDateStr(td);
+      if(ydEl){ ydEl.value = prev; }
+      fillRawTextForDate(prev, 'yesterdayText');
+      if(typeof showInfo === 'function') showInfo(`已切换至 ${td}，昨日自动修正为 ${prev}`);
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+function selectAllText(id){
+  const el = document.getElementById(id);
+  if(!el){ showError('未找到文本框'); return; }
+  el.focus();
+  el.select();
+  showSuccess('已全选：可按 ⌘/Ctrl+C 复制');
+}
+
+function getPrevDateStr(dateStr){ const d = new Date(dateStr); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; }
+function getNextDateStr(dateStr){ const d = new Date(dateStr); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; }
+function storageKey(dateStr){ return `memberData:${dateStr}`; }
+function storageRawKey(dateStr){ return `memberRaw:${dateStr}`; }
+// 昵称回退映射：用于当源数据缺失 nickName 时的显示与持久化
+const nicknameFallbacks = Object.freeze({
+  '官俊臣': '害羞游泳圈'
+});
+// 用户ID回退映射：当源数据缺失 userId 时用于持久化与展示
+const userIdFallbacks = Object.freeze({
+  '官俊臣': 16823098
+});
+// 出生日期回退映射：用于源数据缺失时的显示与持久化（ISO，UTC）
+const birthFallbacks = Object.freeze({
+  '官俊臣': '2007-07-04T00:00:00Z',
+  '汪浚熙': '2008-09-11T00:00:00Z',
+  '王浩':   '2008-11-05T00:00:00Z',
+  '张桂源': '2009-05-11T00:00:00Z',
+  '张函瑞': '2009-10-18T00:00:00Z',
+  '王橹杰': '2010-01-08T00:00:00Z',
+  '李嘉森': '2010-01-19T00:00:00Z',
+  '王烁然': '2010-03-15T00:00:00Z',
+  '左奇函': '2010-03-19T00:00:00Z',
+  '陈奕恒': '2010-05-09T00:00:00Z',
+  '杨博文': '2010-06-01T00:00:00Z',
+  '杨涵博': '2010-06-08T00:00:00Z',
+  '张奕然': '2010-09-15T00:00:00Z',
+  '聂玮辰': '2011-02-18T00:00:00Z',
+  '陈思罕': '2011-11-08T00:00:00Z',
+  '魏子宸': '2011-12-19T00:00:00Z',
+  '李煜东': '2012-03-15T00:00:00Z',
+  '陈浚铭': '2012-05-17T00:00:00Z'
+});
+function clearLocalArchives(){
+  try{
+    if(!confirm('确认清空本地存档文本？该操作不可恢复。')) return;
+    const toRemove = [];
+    for(let i=0;i<localStorage.length;i++){
+      const key = localStorage.key(i);
+      if(key && (key.startsWith('memberRaw:') || key.startsWith('memberData:'))){
+        toRemove.push(key);
+      }
+    }
+    toRemove.forEach(k=>localStorage.removeItem(k));
+    if(typeof refreshDateOptions === 'function') refreshDateOptions();
+    if(typeof showSuccess === 'function') showSuccess(`已清空本地存档文本，共移除 ${toRemove.length} 项`);
+  }catch(e){ if(typeof showError === 'function') showError(`清空失败：${e.message || e}`); }
+}
+function clearDateStorageByDate(which){
+  try{
+    const id = which === 'yesterday' ? 'yesterdayDate' : 'todayDate';
+    const d = document.getElementById(id)?.value || '';
+    if(!d){ showError('请先选择日期'); return; }
+    if(!confirm(`确认清空 ${d} 的存档（原始文本与解析数据）？`)) return;
+    localStorage.removeItem(storageRawKey(d));
+    localStorage.removeItem(storageKey(d));
+    // 清空对应文本框
+    const targetId = which === 'yesterday' ? 'yesterdayText' : 'todayText';
+    const el = document.getElementById(targetId); if(el) el.value = '';
+    refreshDateOptions();
+    showSuccess(`已清空 ${d} 的本地存档`);
+  }catch(e){ showError('清空失败'); }
+}
+function fillRawTextForDate(dateStr, targetId){
+  try{
+    const raw = dateStr ? localStorage.getItem(storageRawKey(dateStr)) : null;
+    const el = document.getElementById(targetId);
+    if(!el) return;
+    if(raw){
+      el.value = raw;
+      if(typeof showSuccess === 'function') showSuccess(`已填充 ${dateStr} 的原始文本`);
+    } else {
+      el.value = '';
+      if(typeof showError === 'function') showError('无本地文档');
+    }
+  }catch(e){}
+}
+function extractDateFromJsonObj(obj){
+  try{
+    // HAR: 优先取 entries 中“数值最大”的 startedDateTime 对应的日期；若不可解析则回退到“出现次数最多的日期”
+    const entries = obj?.log?.entries;
+    if(Array.isArray(entries) && entries.length){
+      // 1) 先找最大 startedDateTime
+      let maxTs = -Infinity;
+      let maxDate = null;
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ts = Date.parse(String(t));
+        const ds = String(t).split('T')[0];
+        if(!Number.isFinite(ts) || !/\d{4}-\d{2}-\d{2}/.test(ds)) continue;
+        if(ts > maxTs){ maxTs = ts; maxDate = ds; }
+      }
+      if(maxDate) return maxDate;
+      // 2) 回退：按日期出现次数最多
+      const counts = {};
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ds = String(t).split('T')[0];
+        if(/\d{4}-\d{2}-\d{2}/.test(ds)){ counts[ds] = (counts[ds]||0)+1; }
+      }
+      const best = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+      if(best) return best;
+    }
+    // 常见 payload: 尝试 obj.date / obj.data.date / obj.info.date / obj.data.info.date
+    const candidates = [];
+    const maybeDates = [obj?.date, obj?.data?.date, obj?.info?.date, obj?.data?.info?.date];
+    for(const v of maybeDates){ if(typeof v === 'string'){ const m = v.match(/\d{4}-\d{2}-\d{2}/); if(m){ candidates.push(m[0]); } } }
+    if(candidates.length) return candidates[0];
+    // 兜底：在字符串化内容中扫描日期
+    const text = JSON.stringify(obj);
+    const matches = text.match(/\b\d{4}-\d{2}-\d{2}\b/g);
+    if(matches && matches.length){ const cnt = {}; for(const d of matches){ cnt[d]=(cnt[d]||0)+1; } return Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]; }
+  }catch(e){}
+  return null;
+}
+function detectDateFromText(rawText){
+  if(!rawText || !rawText.trim()) return null;
+  try{ const obj = JSON.parse(rawText); const d = extractDateFromJsonObj(obj); if(d) return d; }
+  catch(e){ const matches = String(rawText).match(/\b\d{4}-\d{2}-\d{2}\b/g); if(matches && matches.length){ const cnt={}; for(const x of matches){ cnt[x]=(cnt[x]||0)+1; } return Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]; } }
+  return null;
+}
+
+// 提取 HAR 中最大 startedDateTime 的原始字符串
+function extractMaxStartedTsFromJsonObj(obj){
+  try{
+    const entries = obj?.log?.entries;
+    if(Array.isArray(entries) && entries.length){
+      let maxTs = -Infinity;
+      let maxStr = null;
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ts = Date.parse(String(t));
+        if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxStr = String(t); }
+      }
+      return maxStr;
+    }
+  }catch(e){}
+  return null;
+}
+
+// 新增：提取最早的 startedDateTime 所属日期（当天校准使用）
+function extractEarliestDateFromJsonObj(obj){
+  try{
+    const entries = obj?.log?.entries;
+    if(Array.isArray(entries) && entries.length){
+      let minTs = Infinity;
+      let minDate = null;
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ts = Date.parse(String(t));
+        const ds = String(t).split('T')[0];
+        if(!Number.isFinite(ts) || !/\d{4}-\d{2}-\d{2}/.test(ds)) continue;
+        if(ts < minTs){ minTs = ts; minDate = ds; }
+      }
+      if(minDate) return minDate;
+      const dates = [];
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ds = String(t).split('T')[0];
+        if(/\d{4}-\d{2}-\d{2}/.test(ds)) dates.push(ds);
+      }
+      if(dates.length){ return dates.sort()[0]; }
+    }
+  }catch(e){}
+  return null;
+}
+function detectEarliestDateFromText(rawText){
+  if(!rawText || !rawText.trim()) return null;
+  try{ const obj = JSON.parse(rawText); const d = extractEarliestDateFromJsonObj(obj); if(d) return d; }
+  catch(e){
+    const matches = String(rawText).match(/\b\d{4}-\d{2}-\d{2}\b/g);
+    if(matches && matches.length){ return matches.sort()[0]; }
+  }
+  return null;
+}
+
+// 新增：提取 HAR 中最新 startedDateTime 所属日期
+function extractLatestDateFromJsonObj(obj){
+  try{
+    const entries = obj?.log?.entries;
+    if(Array.isArray(entries) && entries.length){
+      let maxTs = -Infinity;
+      let maxDate = null;
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ts = Date.parse(String(t));
+        const ds = String(t).split('T')[0];
+        if(!Number.isFinite(ts) || !/\d{4}-\d{2}-\d{2}/.test(ds)) continue;
+        if(ts > maxTs){ maxTs = ts; maxDate = ds; }
+      }
+      if(maxDate) return maxDate;
+      const dates = [];
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ds = String(t).split('T')[0];
+        if(/\d{4}-\d{2}-\d{2}/.test(ds)) dates.push(ds);
+      }
+      if(dates.length){ return dates.sort().slice(-1)[0]; }
+    }
+  }catch(e){}
+  return null;
+}
+
+// 从原始文本中检测最新日期（基于 HAR entries 或纯文本 YYYY-MM-DD）
+function detectLatestDateFromText(rawText){
+  if(!rawText || !rawText.trim()) return null;
+  try{ const obj = JSON.parse(rawText); const d = extractLatestDateFromJsonObj(obj); if(d) return d; }
+  catch(e){
+    const matches = String(rawText).match(/\b\d{4}-\d{2}-\d{2}\b/g);
+    if(matches && matches.length){ return matches.sort().slice(-1)[0]; }
+  }
+  return null;
+}
+
+// 从原始文本中检测最大 startedDateTime（返回原始 ISO 字符串）
+function detectMaxTsFromText(rawText){
+  if(!rawText || !rawText.trim()) return null;
+  try{ const obj = JSON.parse(rawText); const s = extractMaxStartedTsFromJsonObj(obj); if(s) return s; }catch(e){}
+  return null;
+}
+
+// 将 ISO 时间字符串格式化为 "YYYY-MM-DD HH:mm:ss"（不做时区换算，仅截取主体部分）
+function formatDateTimeForDisplay(tsStr){
+  if(!tsStr) return null;
+  let s = String(tsStr).replace('T',' ');
+  const idxZ = s.indexOf('Z');
+  const idxPlus = s.lastIndexOf('+');
+  const idxMinus = s.lastIndexOf('-');
+  let cutIndex = -1;
+  if(idxZ >= 0) cutIndex = idxZ; else if(idxPlus > 10) cutIndex = idxPlus; else if(idxMinus > 10) cutIndex = idxMinus;
+  if(cutIndex > 0) s = s.slice(0, cutIndex);
+  if(s.includes('.')) s = s.split('.')[0];
+  // 仅保留到分钟（YYYY-MM-DD HH:mm）
+  const parts = s.split(' ');
+  if(parts.length === 2){
+    const hhmm = parts[1].split(':').slice(0,2).join(':');
+    return `${parts[0]} ${hhmm}`;
+  }
+  // 回退：截取到前16位（YYYY-MM-DD HH:mm）
+  return s.slice(0,16);
+}
+
+// 格式化日期为 xxxx年/x/x 格式（用于日期区间显示）
+function formatDateForRange(dateStr){
+  if(!dateStr) return null;
+  const s = String(dateStr);
+  // 如果是 ISO 格式（YYYY-MM-DD 或 YYYY-MM-DD HH:mm），提取日期和时间部分
+  let datePart = s.split(' ')[0].split('T')[0];
+  let timePart = '';
+  
+  // 提取时间部分（HH:mm）
+  if(s.includes('T')){
+    const tPart = s.split('T')[1];
+    if(tPart){
+      const timeMatch = tPart.match(/(\d{2}):(\d{2})/);
+      if(timeMatch){
+        timePart = ` ${timeMatch[1]}:${timeMatch[2]}`;
+      }
+    }
+  } else if(s.includes(' ')){
+    const spaceParts = s.split(' ');
+    if(spaceParts.length >= 2){
+      const timeMatch = spaceParts[1].match(/(\d{2}):(\d{2})/);
+      if(timeMatch){
+        timePart = ` ${timeMatch[1]}:${timeMatch[2]}`;
+      }
+    }
+  }
+  
+  // 格式化为 YYYY-MM-DD HH:mm（去掉"年"字，使用"-"分隔）
+  const parts = datePart.split('-');
+  if(parts.length === 3){
+    const year = parts[0];
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    return `${year}-${month}-${day}${timePart}`;
+  }
+  
+  // 如果已经是 xxxx年-x-x 格式，转换为 xxxx-x-x
+  if(s.includes('年')){
+    return s.replace(/年/g, '').replace(/\//g, '-');
+  }
+  
+  return s;
+}
+
+// 提取 HAR 中最早 startedDateTime 的原始字符串
+function extractEarliestStartedTsFromJsonObj(obj){
+  try{
+    const entries = obj?.log?.entries;
+    if(Array.isArray(entries) && entries.length){
+      let minTs = Infinity;
+      let minStr = null;
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ts = Date.parse(String(t));
+        if(Number.isFinite(ts) && ts < minTs){ minTs = ts; minStr = String(t); }
+      }
+      return minStr;
+    }
+  }catch(e){}
+  return null;
+}
+
+// 从原始文本中检测最早 startedDateTime（返回原始 ISO 字符串）
+function detectEarliestTsFromText(rawText){
+  if(!rawText || !rawText.trim()) return null;
+  try{ const obj = JSON.parse(rawText); const s = extractEarliestStartedTsFromJsonObj(obj); if(s) return s; }catch(e){}
+  return null;
+}
+
+// 在指定日期内提取最大的 startedDateTime（返回原始 ISO 字符串）
+function extractMaxTsForDateFromJsonObj(obj, targetDate){
+  try{
+    const entries = obj?.log?.entries;
+    if(Array.isArray(entries) && entries.length){
+      let maxTs = -Infinity;
+      let maxStr = null;
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const tStr = String(t);
+        // 提取日期部分：支持 ISO 8601 格式（可能包含时区信息）
+        // 例如：2025-11-12T23:59:04Z 或 2025-11-12T23:59:04+08:00
+        const ds = tStr.split('T')[0];
+        // 确保日期格式正确（YYYY-MM-DD）
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(ds)) continue;
+        if(ds !== targetDate) continue;
+        const ts = Date.parse(tStr);
+        if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxStr = tStr; }
+      }
+      return maxStr;
+    }
+  }catch(e){}
+  return null;
+}
+
+function detectMaxTsForDateFromText(rawText, targetDate){
+  if(!rawText || !rawText.trim() || !targetDate) return null;
+  // 优先解析 JSON/HAR
+  try{ const obj = JSON.parse(rawText); const s = extractMaxTsForDateFromJsonObj(obj, targetDate); if(s) return s; }catch(e){}
+  // 兜底：从纯文本中匹配指定日期的时间戳并取最大
+  try{
+    const re = new RegExp(`${targetDate}[T\s][0-9:.-]+(?:Z|[+-][0-9:]+)?`, 'g');
+    const matches = String(rawText).match(re);
+    if(matches && matches.length){
+      let maxTs = -Infinity; let maxStr = null;
+      for(const s of matches){
+        const iso = s.replace(' ', 'T');
+        const ts = Date.parse(iso);
+        if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxStr = iso; }
+      }
+      return maxStr;
+    }
+  }catch(e){}
+  return null;
+}
+
+// 在指定日期内提取最小的 startedDateTime（返回原始 ISO 字符串）
+function extractMinTsForDateFromJsonObj(obj, targetDate){
+  try{
+    const entries = obj?.log?.entries;
+    if(Array.isArray(entries) && entries.length){
+      let minTs = Infinity;
+      let minStr = null;
+      for(const e of entries){
+        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+        if(!t) continue;
+        const ds = String(t).split('T')[0];
+        if(ds !== targetDate) continue;
+        const ts = Date.parse(String(t));
+        if(Number.isFinite(ts) && ts < minTs){ minTs = ts; minStr = String(t); }
+      }
+      return minStr;
+    }
+  }catch(e){}
+  return null;
+}
+
+function detectMinTsForDateFromText(rawText, targetDate){
+  if(!rawText || !rawText.trim() || !targetDate) return null;
+  // 优先解析 JSON/HAR
+  try{ const obj = JSON.parse(rawText); const s = extractMinTsForDateFromJsonObj(obj, targetDate); if(s) return s; }catch(e){}
+  // 兜底：从纯文本中匹配指定日期的时间戳并取最小
+  try{
+    const re = new RegExp(`${targetDate}[T\s][0-9:.-]+(?:Z|[+-][0-9:]+)?`, 'g');
+    const matches = String(rawText).match(re);
+    if(matches && matches.length){
+      let minTs = Infinity; let minStr = null;
+      for(const s of matches){
+        const iso = s.replace(' ', 'T');
+        const ts = Date.parse(iso);
+        if(Number.isFinite(ts) && ts < minTs){ minTs = ts; minStr = iso; }
+      }
+      return minStr;
+    }
+  }catch(e){}
+  return null;
+}
+
+// 如果指定日期没有时间戳，则按天倒序查找前N天的最小时间戳
+function findPrevDayMinTs(rawText, startDate, maxDays){
+  const limit = Number.isFinite(Number(maxDays)) ? Number(maxDays) : 14;
+  if(!rawText || !rawText.trim() || !startDate) return null;
+  let cur = startDate;
+  for(let i=1; i<=limit; i++){
+    cur = getPrevDateStr(cur);
+    const minTs = detectMinTsForDateFromText(rawText, cur);
+    if(minTs) return minTs;
+  }
+  return null;
+}
+
+// 更新页面中“最新 startedDateTime”显示（当日/昨日）
+function updateDetectedTsLabels(){
+  try{
+    const todayEl = document.getElementById('todayText');
+    const yesterdayEl = document.getElementById('yesterdayText');
+    const tSpan = document.getElementById('todayMaxTs');
+    const ySpan = document.getElementById('yesterdayMaxTs');
+    const tDate = document.getElementById('todayDate')?.value || new Date().toISOString().split('T')[0];
+    // 文本框为空时，直接尝试从 localStorage 读取对应日期的原始文本作为回退
+    let tRaw = todayEl?.value || '';
+    if(!tRaw || !tRaw.trim()){
+      try{ tRaw = localStorage.getItem(storageRawKey(tDate)) || ''; }catch(e){ tRaw = ''; }
+    }
+    let tTs = detectMaxTsForDateFromText(tRaw, tDate);
+    if(!tTs){
+      tTs = getMaxIsoFromStoredRows(tDate);
+    }
+    let yDate = document.getElementById('yesterdayDate')?.value || getPrevDateStr(document.getElementById('todayDate')?.value || new Date().toISOString().split('T')[0]);
+    // 若两端日期重复，自动修正昨日为前一天
+    if(yDate === tDate){
+      yDate = getPrevDateStr(tDate);
+      const ydEl = document.getElementById('yesterdayDate');
+      if(ydEl){ ydEl.value = yDate; }
+    }
+    let yRaw = yesterdayEl?.value || '';
+    if(!yRaw || !yRaw.trim()){
+      try{ yRaw = localStorage.getItem(storageRawKey(yDate)) || ''; }catch(e){ yRaw = ''; }
+    }
+    let yTs = detectMaxTsForDateFromText(yRaw, yDate);
+    if(!yTs){
+      yTs = getMaxIsoFromStoredRows(yDate);
+    }
+    tSpan && (tSpan.textContent = tTs ? formatDateTimeForDisplay(tTs) : '—');
+    ySpan && (ySpan.textContent = yTs ? formatDateTimeForDisplay(yTs) : '—');
+  }catch(e){}
+}
+
+// 根据 HAR entries.startedDateTime 校验存档日期（优先使用 entries 最大 startedDateTime 对应日期，无法解析时回退到“出现次数最多的日期”）
+function validateDateAgainstStartedDateTime(chosenDate, rawText, options){
+  const opts = options || {};
+  const follow = document.getElementById('followTextDate')?.checked;
+  if(!rawText || !rawText.trim()) return { date: chosenDate, changed: false, reason: '' };
+  const strategy = opts.strategy || 'max';
+  if(strategy === 'latest_for_day'){
+    // 仅用于当日校准：不跨天，若文本最大日期不等于所选日期，则保留所选日期
+    const latest = detectLatestDateFromText(rawText);
+    if(!latest) return { date: chosenDate, changed: false, reason: 'no_detected' };
+    if(chosenDate && latest !== chosenDate){
+      return { date: chosenDate, changed: false, reason: 'keep_today' };
+    }
+    return { date: chosenDate || latest, changed: !chosenDate, reason: chosenDate ? '' : 'empty_chosen' };
+  }
+  const detected = strategy === 'earliest' ? detectEarliestDateFromText(rawText)
+                   : strategy === 'latest' ? detectLatestDateFromText(rawText)
+                   : detectDateFromText(rawText);
+  if(!detected) return { date: chosenDate, changed: false, reason: 'no_detected' };
+  if(!chosenDate){
+    return { date: detected, changed: true, reason: 'empty_chosen' };
+  }
+  if(chosenDate !== detected){
+    if(follow || opts.enforce){
+      return { date: detected, changed: true, reason: 'mismatch_follow' };
+    } else {
+      showError(`所选日期(${chosenDate})与文本中的 startedDateTime(${detected})不一致，请确认或开启“跟随文本日期”`);
+      return { date: chosenDate, changed: false, reason: 'mismatch' };
+    }
+  }
+  return { date: chosenDate, changed: false, reason: '' };
+}
+
+// 新增：出生时间解析工具函数（兼容常见字段与嵌套）
+function parseBirthTs(val){
+  if(val == null) return null;
+  if(typeof val === 'number'){
+    const n = Number(val);
+    if(!Number.isFinite(n)) return null;
+    const ts = n > 1e10 ? n : n * 1000; // 兼容秒/毫秒
+    return Number.isFinite(ts) ? ts : null;
+  }
+  const s = String(val);
+  const m = s.match(/\b(\d{4})[-\/.](\d{2})[-\/.](\d{2})\b/);
+  if(m){
+    const iso = `${m[1]}-${m[2]}-${m[3]}T00:00:00Z`;
+    const ts = Date.parse(iso);
+    return Number.isFinite(ts) ? ts : null;
+  }
+  return null;
+}
+function findFirstBirthValDeep(obj){
+  const keys = ['birthday','birthDay','birth_date','dateOfBirth','birth','出生时间','出生日期','birthdayDesc'];
+  try{
+    const stack = [obj];
+    while(stack.length){
+      const cur = stack.pop();
+      if(cur && typeof cur === 'object'){
+        for(const [k,v] of Object.entries(cur)){
+          const kl = String(k).toLowerCase();
+          if(keys.some(x => kl === String(x).toLowerCase())){
+            return v;
+          }
+          if(v && typeof v === 'object') stack.push(v);
+        }
+      }
+    }
+  }catch(e){}
+  return null;
+}
+function extractBirthTsFromPayload(payload){
+  const d = payload?.data || {};
+  const i = d?.info || payload?.info || {};
+  const candidates = [
+    d.birthday, d.birthDay, d.birth_date, d.dateOfBirth, d.birth, d['出生时间'], d['出生日期'], d.birthdayDesc,
+    i.birthday, i.birthDay, i.birth_date, i.dateOfBirth, i.birth, i['出生时间'], i['出生日期'], i.birthdayDesc
+  ];
+  for(const v of candidates){
+    const ts = parseBirthTs(v);
+    if(Number.isFinite(ts)) return ts;
+  }
+  const deepVal = findFirstBirthValDeep(payload);
+  const ts2 = parseBirthTs(deepVal);
+  return Number.isFinite(ts2) ? ts2 : null;
+}
+
+function parseTextToRows(rawText){
+  if(!rawText || !rawText.trim()) return [];
+  let obj = null;
+  try{ obj = JSON.parse(rawText); }catch(e){
+    // 尝试提取第一个大括号段落再解析
+    const m = rawText.match(/\{[\s\S]*\}/);
+    if(m){ try{ obj = JSON.parse(m[0]); }catch(e2){ obj = null; } }
+  }
+  if(!obj || typeof obj !== 'object') return [];
+  // 支持：完整HAR 或 直接接口JSON
+  const rows = [];
+  const entries = obj?.log?.entries;
+  if(Array.isArray(entries)){
+    for(const entry of entries){
+      const textVal = entry?.response?.content?.text;
+      if(!textVal) continue;
+      let payload = null;
+      try{ payload = JSON.parse(textVal); }catch(e){
+        const mm = String(textVal).match(/\{[\s\S]*\}/);
+        if(mm){ try{ payload = JSON.parse(mm[0]); }catch(e2){ payload=null; } }
+      }
+      if(!payload || typeof payload!=='object') continue;
+      const data = payload.data || {};
+      const info = data.info || {};
+      const birthTs = extractBirthTsFromPayload(payload);
+      rows.push({
+        realName: data.realName || '',
+        nickName: data.nickName || data.nick || (nicknameFallbacks[data.realName] || ''),
+        collectNum: Number(info.collectNum||0),
+        likeNum: Number(info.likeNum||0),
+        fansNum: Number(info.fansNum||0),
+        avatarUrl: data.headPortrait || data.starHeadPortrait || '',
+        birthTs: (birthTs != null ? birthTs : (birthFallbacks[data.realName] ? Date.parse(birthFallbacks[data.realName]) : null)),
+        userId: (data.userId != null ? data.userId : (userIdFallbacks[data.realName] || null))
+      });
+    }
+  } else {
+    // 直接接口JSON，结构与 payload 相同
+    const data = obj.data || {};
+    const info = data.info || {};
+    const birthTs = extractBirthTsFromPayload(obj);
+    if(data.realName || info.fansNum!=null){
+      rows.push({
+        realName: data.realName || '',
+        nickName: data.nickName || data.nick || (nicknameFallbacks[data.realName] || ''),
+        collectNum: Number(info.collectNum||0),
+        likeNum: Number(info.likeNum||0),
+        fansNum: Number(info.fansNum||0),
+        avatarUrl: data.headPortrait || data.starHeadPortrait || '',
+        birthTs: (birthTs != null ? birthTs : (birthFallbacks[data.realName] ? Date.parse(birthFallbacks[data.realName]) : null)),
+        userId: (data.userId != null ? data.userId : (userIdFallbacks[data.realName] || null))
+      });
+    }
+  }
+  return rows;
+}
+
+function sortAndEnrich(todayRows, yesterdayRows, baselineWeekRows, baselineMonthRows){
+  // 先对昨日数据进行去重，确保每个成员只有一条记录（取时间戳最大的一条）
+  const dedupedYesterdayRows = dedupeLatestRows(yesterdayRows || []);
+  // 过滤掉张三和李四的数据
+  const filteredYesterdayRows = dedupedYesterdayRows.filter(r => {
+    const name = String(r.realName || '').trim();
+    return name !== '张三' && name !== '李四';
+  });
+  // 基于去重后的昨日数据构建粉丝数映射（用于涨幅计算）
+  const mapYesterdayFans = new Map();
+  for(const r of filteredYesterdayRows){
+    if(r.realName) mapYesterdayFans.set(String(r.realName), Number(r.fansNum||0));
+  }
+  const mapBaselineWeek = new Map();
+  for(const r of (baselineWeekRows||[])){
+    const name = String(r.realName || '').trim();
+    if(r.realName && name !== '张三' && name !== '李四') {
+      mapBaselineWeek.set(String(r.realName), Number(r.fansNum||0));
+    }
+  }
+  const mapBaselineMonth = new Map();
+  for(const r of (baselineMonthRows||[])){
+    const name = String(r.realName || '').trim();
+    if(r.realName && name !== '张三' && name !== '李四') {
+      mapBaselineMonth.set(String(r.realName), Number(r.fansNum||0));
+    }
+  }
+  // 计算指定日期的排名映射（按粉丝数降序）
+  const prevSorted = filteredYesterdayRows.slice().sort((a,b)=>Number(b.fansNum||0)-Number(a.fansNum||0));
+  const prevRankMap = new Map();
+  let prevRankCounter = 0;
+  for (const pr of prevSorted) {
+    prevRankCounter += 1;
+    // 使用 realName 作为 key，如果没有则使用 userId
+    const key = String(pr.realName || '').trim() || (pr.userId != null ? String(pr.userId) : '');
+    if (key) prevRankMap.set(key, prevRankCounter);
+  }
+
+  // 先对今日数据进行去重，确保每个成员只有一条记录（取最新的一条）
+  const dedupedTodayRows = dedupeLatestRows(todayRows || []);
+  // 过滤掉张三和李四的数据
+  const filteredRows = dedupedTodayRows.filter(r => {
+    const name = String(r.realName || '').trim();
+    return name !== '张三' && name !== '李四';
+  });
+  const sorted = filteredRows.slice().sort((a,b)=>Number(b.fansNum||0)-Number(a.fansNum||0));
+  let prevFans = null;
+  const enriched = [];
+  let rank = 0;
+  for(const r of sorted){
+    rank += 1;
+    const fans = Number(r.fansNum||0);
+    const diffPrev = prevFans==null? '' : (prevFans - fans);
+    prevFans = fans;
+    const yesFans = mapYesterdayFans.has(String(r.realName)) ? mapYesterdayFans.get(String(r.realName)) : null;
+    const growth = (yesFans==null ? '' : (fans - Number(yesFans))); // 日涨幅（昨日为基准）
+    const weekBase = mapBaselineWeek.has(String(r.realName)) ? mapBaselineWeek.get(String(r.realName)) : null;
+    // 本月涨幅：如果本月1日有数据则使用，否则使用 0 作为基准（表示从0开始累计）
+    const monthBase = mapBaselineMonth.has(String(r.realName)) ? mapBaselineMonth.get(String(r.realName)) : null;
+    const weekGrowth = (weekBase==null ? '' : (fans - Number(weekBase))); // 不回退
+    
+    // 调试信息：输出前3个成员的涨幅计算详情（避免输出过多）
+    if(rank <= 3 && weekGrowth !== '' && weekGrowth !== null){
+      console.log(`[本周涨幅计算] ${r.realName}: 今日粉丝数=${fans}, 基准粉丝数=${weekBase}, 本周涨幅=${weekGrowth}`);
+    }
+    // 本月涨幅：如果本月1日有基准数据，计算差值；如果没有基准数据，显示为空字符串
+    // 注意：如果 baselineMonthRows 为空（本月1日无数据），monthBase 为 null，此时应显示为空字符串，而不是粉丝数
+    const monthGrowth = (monthBase==null ? '' : (fans - Number(monthBase)));
+    // 排名变化：使用 realName 或 userId 作为 key 查找昨日排名
+    const key = String(r.realName || '').trim() || (r.userId != null ? String(r.userId) : '');
+    const prevRank = key && prevRankMap.has(key) ? prevRankMap.get(key) : null;
+    let rankChange = '';
+    if (prevRank != null) {
+      const diff = prevRank - rank; // 正数表示排名提升（数值变小）
+      if (diff > 0) rankChange = `上升${diff}名`;
+      else if (diff < 0) rankChange = `下降${Math.abs(diff)}名`;
+      else rankChange = '持平';
+    }
+
+    enriched.push({
+      排名: rank,
+      姓名: r.realName || '',
+      收藏数: Number(r.collectNum||0),
+      点赞数: Number(r.likeNum||0),
+      粉丝数: fans,
+      涨幅: growth,
+      本周涨幅: weekGrowth,
+      本月涨幅: monthGrowth,
+      与前一名差值: diffPrev,
+      排名变化: rankChange,
+      avatarUrl: r.avatarUrl || r.headPortrait || '',
+      birthTs: (r.birthTs!=null && Number.isFinite(Number(r.birthTs))) ? Number(r.birthTs) : null,
+      nickName: r.nickName || (nicknameFallbacks[r.realName] || ''),
+      userId: (r.userId != null ? r.userId : (userIdFallbacks[r.realName] || null))
+    });
+  }
+  return enriched;
+}
+
+function renderPreviewTable(rows){
+  const container = document.getElementById('preview');
+  const todayDate = document.getElementById('todayDate')?.value || new Date().toISOString().split('T')[0];
+  const yDateEl = document.getElementById('yesterdayDate');
+  const yDateRaw = yDateEl && yDateEl.value ? yDateEl.value : '';
+  const yesterdayDate = yDateRaw && yDateRaw.trim() ? yDateRaw : getPrevDateStr(todayDate);
+  // 读取原始文本，尝试展示完整日期时间（优先最大 startedDateTime）
+  const todayRawText = (()=>{ try{ return localStorage.getItem(storageRawKey(todayDate)) || ''; }catch(e){ return ''; } })();
+  const yesterdayRawText = (()=>{ try{ return localStorage.getItem(storageRawKey(yesterdayDate)) || ''; }catch(e){ return ''; } })();
+  const tMaxTs = detectMaxTsForDateFromText(todayRawText, todayDate) || detectMaxTsFromText(todayRawText);
+  const yMaxTs = detectMaxTsForDateFromText(yesterdayRawText, yesterdayDate);
+  const todayDisplay = tMaxTs ? formatDateTimeForDisplay(tMaxTs) : todayDate;
+  const yesterdayDisplay = yMaxTs ? formatDateTimeForDisplay(yMaxTs) : yesterdayDate;
+  const rangeHtml = `<div class="range-bar">日期区间：${yesterdayDisplay} ~ ${todayDisplay}</div>`;
+  const dateDiffDays = (() => { const td = new Date(todayDate); const yd = new Date(yesterdayDate); return Math.abs(Math.round((td - yd)/86400000)); })();
+  const flameThreshold = 3000;
+  // 同步渲染头像网格（两排14个，右下角姓名）
+  try{ renderAvatarGrid(rows); }catch(e){}
+  if(!rows || !rows.length){ container.innerHTML = rangeHtml + '<div class="muted">暂无数据预览</div>'; return; }
+  // 计算粉丝数最大值用于数据条宽度
+  const maxFans = Math.max(...rows.map(r=>Number(r.粉丝数||0)));
+  // 动态构建表头，顺序：排名 姓名 收藏数 点赞数 粉丝数 距上一名 今日涨幅 本周涨幅 本月涨幅 排名变化
+  const headerCols = ['排名','姓名'];
+  if (showCollect) headerCols.push('收藏数');
+  if (showLike) headerCols.push('点赞数');
+  headerCols.push('粉丝数','距上一名','今日涨幅');
+  if (showWeekGrowth) headerCols.push('本周涨幅');
+  if (showMonthGrowth) headerCols.push('本月涨幅');
+  headerCols.push('排名变化');
+  let html = '<table><thead><tr>' + headerCols.map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  for(const r of rows){
+    const isEven = (Number(r.排名||0) % 2 === 0);
+    const fans = Number(r.粉丝数||0);
+    const pct = maxFans > 0 ? Math.round(fans / maxFans * 100) : 0;
+    const growthRaw = (r.涨幅 === '' || r.涨幅 == null) ? null : Number(r.涨幅);
+    const growthText = (growthRaw == null) ? '' : (growthRaw === 0 ? '-' : (growthRaw > 0 ? `+${growthRaw}` : `${growthRaw}`));
+    const growthCls = (growthRaw == null || growthRaw === 0) ? '' : (growthRaw > 0 ? 'num-pos' : 'num-neg');
+    // 是否展示火焰图标（仅当今日涨幅超过阈值）
+    const showFlame = (growthRaw != null && growthRaw > flameThreshold);
+    const rankChangeText = r.排名变化 === '持平' ? '-' : (r.排名变化 || '');
+    const rankChangeCls = rankChangeText.startsWith('上升') ? 'num-pos' : (rankChangeText.startsWith('下降') ? 'num-neg' : '');
+    const upIcon = '<svg viewBox="0 0 12 12" class="icon" aria-hidden="true"><path d="M6 2l-3.5 3.5h2.5v4h2v-4h2.5L6 2z" fill="currentColor"/></svg>';
+    const downIcon = '<svg viewBox="0 0 12 12" class="icon" aria-hidden="true"><path d="M6 10l3.5-3.5H7v-4H5v4H2.5L6 10z" fill="currentColor"/></svg>';
+    const flameIcon = '<span class="flame-icon flame-left" aria-hidden="true">🔥</span>';
+    const growthIcon = (growthRaw == null || growthRaw === 0) ? '' : (growthRaw > 0 ? upIcon : downIcon);
+    const rankIcon = rankChangeText.startsWith('上升') ? upIcon : (rankChangeText.startsWith('下降') ? downIcon : '');
+    const diffPrevRaw = (r['与前一名差值'] === '' || r['与前一名差值'] == null) ? null : Number(r['与前一名差值']);
+    const diffPrevText = (diffPrevRaw == null) ? '' : (diffPrevRaw === 0 ? '-' : `${diffPrevRaw}`);
+    
+    const cells = [];
+    cells.push(`<td>${r.排名}</td>`);
+    cells.push(`<td>${r.姓名}</td>`);
+    if (showCollect) cells.push(`<td>${r.收藏数}</td>`);
+    if (showLike) cells.push(`<td>${r.点赞数}</td>`);
+    const fansCellStyleBase = `background-image: linear-gradient(to right, #fb8c00, #ffe082); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
+    const fansCellStyle = isEven ? fansCellStyleBase + ' background-color: #efefef; background-blend-mode: multiply;' : fansCellStyleBase;
+    cells.push(`<td style="${fansCellStyle}">${fans}</td>`);
+    cells.push(`<td>${diffPrevText}</td>`);
+    // 今日涨幅（带火焰）
+    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${growthText}${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}</span></td>`);
+    // 本周涨幅（不回退，无火焰）
+    if (showWeekGrowth) {
+      const wgRaw = (r['本周涨幅'] === '' || r['本周涨幅'] == null) ? null : Number(r['本周涨幅']);
+      const wgText = (wgRaw == null) ? '' : (wgRaw === 0 ? '-' : (wgRaw > 0 ? `+${wgRaw}` : `${wgRaw}`));
+      const wgCls = (wgRaw == null || wgRaw === 0) ? '' : (wgRaw > 0 ? 'num-pos' : 'num-neg');
+      cells.push(`<td><span class="growth-cell ${wgCls}">${wgText}</span></td>`);
+    }
+    // 本月涨幅（不回退，无火焰）
+    if (showMonthGrowth) {
+      const mgRaw = (r['本月涨幅'] === '' || r['本月涨幅'] == null) ? null : Number(r['本月涨幅']);
+      const mgText = (mgRaw == null) ? '' : (mgRaw === 0 ? '-' : (mgRaw > 0 ? `+${mgRaw}` : `${mgRaw}`));
+      const mgCls = (mgRaw == null || mgRaw === 0) ? '' : (mgRaw > 0 ? 'num-pos' : 'num-neg');
+      cells.push(`<td><span class="growth-cell ${mgCls}">${mgText}</span></td>`);
+    }
+    cells.push(`<td><span class=\"${rankChangeCls}\">${rankChangeText}</span></td>`);
+    html += `<tr${isEven ? ' class="zebra-even"' : ''}>${cells.join('')}</tr>`;
+  }
+  html += '</tbody></table>';
+  // 底部说明（导出PNG时一并包含）
+  const noteHtml = `
+    <div class="preview-notes" style="margin:12px 0 18px; padding-left:1ch; color:#606c76; font-size:12px; line-height:1.7;">
+      <div><strong>说明：</strong></div>
+      <div>1、今日涨幅：今日粉丝数 - 昨日粉丝数</div>
+      <div>2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）</div>
+      <div>3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数</div>
+      <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
+      <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
+    </div>`;
+  container.innerHTML = rangeHtml + html + noteHtml;
+}
+
+function renderAvatarGrid(rows){
+  const grid = document.getElementById('avatarGrid');
+  if(!grid){ return; }
+  // 统一清洗头像 URL，修复可能的混合内容（http -> https）和协议相对地址（//），并支持 Worker 代理
+  const normalizeAvatarUrl = (u) => {
+    try{
+      let s = String(u||'').trim();
+      if(!s) return '';
+      if(s.startsWith('//')) s = 'https:' + s;
+      if(s.startsWith('http://')) return '/img?u=' + encodeURIComponent(s);
+      if(s.startsWith('https://')) return s;
+      // 其他情况（可能是裸域名或奇怪格式），尝试通过代理升级为 https
+      return '/img?u=' + encodeURIComponent('https://' + s.replace(/^\+/, ''));
+    }catch(e){ return ''; }
+  };
+
+  const seen = new Set();
+  const itemsRaw = [];
+  let idx = 0;
+  for(const r of (rows || [])){
+    const name = String(r.姓名 || r.realName || '').trim();
+    // 过滤掉张三和李四的数据
+    if(name === '张三' || name === '李四') continue;
+    const origUrl = r.avatarUrl || r.headPortrait || r.starHeadPortrait || '';
+    const url = normalizeAvatarUrl(origUrl);
+    const birthTs = (r.birthTs!=null && Number.isFinite(Number(r.birthTs))) ? Number(r.birthTs) : null;
+    const nickName = r.nickName || (nicknameFallbacks[r.realName] || '');
+    if(!name) continue;
+    if(seen.has(name)) continue;
+    seen.add(name);
+    itemsRaw.push({ name, url, origUrl, birthTs, nickName, _idx: idx++ });
+  }
+  const safeTs = (x) => (Number.isFinite(Number(x)) ? Number(x) : Infinity);
+  itemsRaw.sort((a,b)=>{
+    const ta = safeTs(a.birthTs);
+    const tb = safeTs(b.birthTs);
+    if(ta === tb){ return a._idx - b._idx; }
+    return ta - tb; // 出生时间升序（更早出生排前）
+  });
+  // 指定顺序优先（14位）：官俊臣 张桂源 张函瑞 王橹杰 左奇函 陈奕恒 杨博文 杨涵博 张奕然 聂玮辰 陈思罕 魏子宸 李煜东 陈浚铭
+  const preferredOrder = ['官俊臣','张桂源','张函瑞','王橹杰','左奇函','陈奕恒','杨博文','杨涵博','张奕然','聂玮辰','陈思罕','魏子宸','李煜东','陈浚铭'];
+  const norm = (s) => String(s||'').trim().replace(/\s+/g,'');
+  const byName = new Map(itemsRaw.map(it => [norm(it.name), it]));
+  const chosen = [];
+  for(const n of preferredOrder){ const it = byName.get(norm(n)); if(it){ chosen.push(it); } }
+  // 若不足14位，用剩余按出生时间升序填充
+  if(chosen.length < 14){
+    for(const it of itemsRaw){ if(chosen.find(x => norm(x.name)===norm(it.name))) continue; chosen.push(it); if(chosen.length>=14) break; }
+  }
+  const items = chosen.slice(0,14);
+  const fmt = (ts) => (Number.isFinite(Number(ts)) ? new Date(Number(ts)).toISOString().slice(0,10) : 'N/A');
+  try{ console.log('[avatar-order:preferred]', items.map(it => ({ name: it.name, birth: fmt(it.birthTs), ts: it.birthTs }))); }catch(e){}
+  grid.innerHTML = items.map(it => {
+    const hasImg = !!String(it.url||'').trim();
+    const imgHtml = `<img src="${hasImg ? it.url : ''}" alt="${it.name}" style="display:${hasImg?'block':'none'};" loading="lazy" data-orig-url="${encodeURIComponent(it.origUrl||'')}" data-fallback-tried="0" />`;
+    const fallbackHtml = `<span class="avatar-fallback" aria-label="${it.name}" style="width:36px;height:36px;border-radius:50%;background:#e9ecef;display:${hasImg?'none':'inline-flex'};align-items:center;justify-content:center;color:#495057;font-size:14px;">${String(it.name).slice(0,1)}</span>`;
+    return `<a class="avatar-item" href="person.html?name=${encodeURIComponent(it.name)}">${imgHtml}${fallbackHtml}<span class="avatar-name">${it.name}</span></a>`;
+  }).join('');
+
+  // 若图片加载失败，自动切换为首字母占位
+  try{
+    const imgs = grid.querySelectorAll('.avatar-item img');
+    imgs.forEach(img => {
+      img.addEventListener('error', () => {
+        try{
+          const tried = img.getAttribute('data-fallback-tried') || '0';
+          const origEnc = img.getAttribute('data-orig-url') || '';
+          const orig = decodeURIComponent(origEnc);
+          // 若通过代理加载失败，尝试直接升级为 https 原始地址一次
+          if((tried === '0') && img.src.startsWith(location.origin + '/img')){
+            const upgraded = (orig || '').replace(/^http:\/\//, 'https://');
+            if(upgraded && upgraded !== orig){
+              img.setAttribute('data-fallback-tried','1');
+              img.src = upgraded;
+              return;
+            }
+          }
+          img.style.display = 'none';
+          const fallback = img.parentElement?.querySelector('.avatar-fallback');
+          if(fallback) fallback.style.display = 'inline-flex';
+        }catch(_){ /* noop */ }
+      });
+    });
+  }catch(_){ /* noop */ }
+}
+
+let lastPreview = [];
+let lastTodayRows = [];
+let showCollect = false;
+let showLike = false;
+let showWeekGrowth = false;
+let showMonthGrowth = false;
+
+// 页面初始化：设置默认日期并尝试自动填充本地数据
+document.addEventListener('DOMContentLoaded', () => {
+  // 立即初始化 UI 元素，让页面快速可交互
+  const todayInput = document.getElementById('todayDate');
+  const yesterdayInput = document.getElementById('yesterdayDate');
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (todayInput && !todayInput.value) todayInput.value = todayStr;
+  if (yesterdayInput && !yesterdayInput.value) yesterdayInput.value = getPrevDateStr(todayStr);
+
+  // 筛选开关监听
+  const tc = document.getElementById('toggleCollect');
+  const tl = document.getElementById('toggleLike');
+  const tw = document.getElementById('toggleWeekGrowth');
+  const tm = document.getElementById('toggleMonthGrowth');
+  tc?.addEventListener('change', (e)=>{ showCollect = !!e.target.checked; renderPreviewTable(lastPreview); });
+  tl?.addEventListener('change', (e)=>{ showLike = !!e.target.checked; renderPreviewTable(lastPreview); });
+  tw?.addEventListener('change', (e)=>{ showWeekGrowth = !!e.target.checked; renderPreviewTable(lastPreview); });
+  tm?.addEventListener('change', (e)=>{ showMonthGrowth = !!e.target.checked; renderPreviewTable(lastPreview); });
+
+  // 初次尝试从本地自动填充
+  autoFillFromLocal();
+  initLastSync();
+  
+  // 延迟初始化标签页切换器，进一步延迟数据加载
+  // 使用 requestIdleCallback 或 setTimeout 让页面先完全渲染
+  const initTabs = () => {
+    initTabSwitcher();
+  };
+  
+  // 优先使用 requestIdleCallback，否则使用 setTimeout
+  if (window.requestIdleCallback) {
+    requestIdleCallback(initTabs, { timeout: 500 });
+  } else {
+    setTimeout(initTabs, 300);
+  }
+  
+  // 延迟检查API状态，不阻塞页面渲染
+  const checkApiLater = () => {
+    try { checkApiStatus(); } catch (_) {}
+  };
+  setTimeout(checkApiLater, 500);
+
+  // 定时自动刷新（自动模式）：每5分钟尝试一次
+  try {
+    if (!window.__autoPullTimer) {
+      const isOffline = () => {
+        const apiStatusEl = document.getElementById('apiStatus');
+        return apiStatusEl && apiStatusEl.style.display !== 'none' &&
+               document.getElementById('apiStatusIcon')?.textContent === '🔴';
+      };
+      window.__autoPullTimer = setInterval(() => {
+        try {
+          if (currentTab !== 'auto') return;
+          if (autoTabState?.loading) return;
+          if (isOffline()) return;
+          refreshAutoTab(true); // 定时刷新时也强制从服务器获取最新数据
+        } catch (_) { /* noop */ }
+      }, 300000);
+    }
+  } catch (_) { /* noop */ }
+
+  const handler = () => {
+    const td = todayInput?.value;
+    if(td) fillRawTextForDate(td, 'todayText');
+    const yd = yesterdayInput?.value;
+    if(yd) fillRawTextForDate(yd, 'yesterdayText');
+    ensureNonDuplicateDates();
+    autoFillFromLocal();
+    updateDetectedTsLabels();
+    initLastSync();
+  };
+  todayInput?.addEventListener('change', handler);
+  yesterdayInput?.addEventListener('change', handler);
+  
+  // 新增：文本框内容自动保存到本地（localStorage），便于下次选中日期后自动调取
+  const todayTextEl = document.getElementById('todayText');
+  const yesterdayTextEl = document.getElementById('yesterdayText');
+  todayTextEl?.addEventListener('input', ()=>{
+    const d = todayInput?.value;
+    const val = todayTextEl.value;
+    if(d && val && val.trim()){
+      try{ localStorage.setItem(storageRawKey(d), val); refreshDateOptions(); }catch(e){}
+    }
+    updateDetectedTsLabels();
+  });
+  yesterdayTextEl?.addEventListener('input', ()=>{
+    const d = yesterdayInput?.value || getPrevDateStr(todayInput?.value || new Date().toISOString().split('T')[0]);
+    const val = yesterdayTextEl.value;
+    if(d && val && val.trim()){
+      try{ localStorage.setItem(storageRawKey(d), val); refreshDateOptions(); }catch(e){}
+    }
+    updateDetectedTsLabels();
+  });
+  
+  // 新增：初始化下拉选择并绑定事件
+  refreshDateOptions();
+  const todayDateSelect = document.getElementById('todayDateSelect');
+  const yesterdayDateSelect = document.getElementById('yesterdayDateSelect');
+  todayDateSelect?.addEventListener('change', (e)=>{
+    const v = e.target.value;
+    if(v){ document.getElementById('todayDate').value = v; fillRawTextForDate(v, 'todayText'); ensureNonDuplicateDates(); autoFillFromLocal(); updateDetectedTsLabels(); showInfo(`已切换至 ${v}`); }
+  });
+  yesterdayDateSelect?.addEventListener('change', (e)=>{
+    const v = e.target.value;
+    if(v){ const yd = document.getElementById('yesterdayDate'); if(yd){ yd.value = v; fillRawTextForDate(v, 'yesterdayText'); } ensureNonDuplicateDates(); autoFillFromLocal(); updateDetectedTsLabels(); }
+  });
+  
+  // 导入文件事件绑定
+  const importEl = document.getElementById('importFile');
+  importEl?.addEventListener('change', async (e)=>{
+    const file = e.target.files?.[0];
+    if(!file){ return; }
+    try{
+      const text = await file.text();
+      const obj = JSON.parse(text);
+      const rawMap = obj.memberRaw || {};
+      const dataMap = obj.memberData || {};
+      for(const d in rawMap){ try{ localStorage.setItem(storageRawKey(d), rawMap[d]); }catch(e){} }
+      for(const d in dataMap){ try{ localStorage.setItem(storageKey(d), JSON.stringify(dataMap[d])); }catch(e){} }
+      showSuccess('导入成功，已恢复本地存档');
+      refreshDateOptions();
+      autoFillFromLocal();
+    }catch(err){ showError('导入失败：请检查文件格式'); }
+    e.target.value='';
+  });
+});
+ 
+
+function getStoredRowsForDate(dateStr){
+  if(!dateStr) return [];
+  try{ const v = localStorage.getItem(storageKey(dateStr)); return v ? JSON.parse(v) : []; }catch(e){ return []; }
+}
+
+function getWeekStart(dateStr){
+  const d = new Date(dateStr);
+  const day = d.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  // 周一作为一周的开始：如果 day=0（周日），回到上周一（-6天）；否则回到本周一（-(day-1)天）
+  const delta = day === 0 ? -6 : -(day - 1);
+  const start = new Date(d);
+  start.setDate(d.getDate() + delta);
+  return start.toISOString().split('T')[0];
+}
+function getLastWeekEnd(dateStr){
+  // 获取上周日（上周最晚的日期）
+  const d = new Date(dateStr);
+  const day = d.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  // 如果今天是周日，上周日是7天前；否则是 day 天前
+  const delta = day === 0 ? -7 : -day;
+  const lastSunday = new Date(d);
+  lastSunday.setDate(d.getDate() + delta);
+  return lastSunday.toISOString().split('T')[0];
+}
+function getMonthStart(dateStr){
+  const d = new Date(dateStr);
+  const y = d.getFullYear(); const m = d.getMonth()+1;
+  const mm = String(m).padStart(2,'0');
+  return `${y}-${mm}-01`;
+}
+function getLastMonthEnd(dateStr){
+  // 获取上个月的最后一天
+  const d = new Date(dateStr);
+  // 本月0日 = 上个月最后一天（例如：1月0日 = 12月31日）
+  const lastMonth = new Date(d.getFullYear(), d.getMonth(), 0);
+  return lastMonth.toISOString().split('T')[0];
+}
+function inRange(dateStr, startStr, endStr){
+  const t = new Date(dateStr).getTime();
+  return t >= new Date(startStr).getTime() && t <= new Date(endStr).getTime();
+}
+function getBaselineRowsForMode(mode, todayDate){
+  if(mode !== 'week' && mode !== 'month') return [];
+  
+  let baselineDate = null;
+  
+  if(mode === 'week'){
+    // 本周涨幅：使用上周最晚有数据的日期，或上周日作为基准
+    const lastSunday = getLastWeekEnd(todayDate); // 上周日
+    const dates = listStoredDates();
+    // 查找上周日之前（包含上周日）的所有日期，取最晚的一个
+    const candidates = dates.filter(d => d <= lastSunday).sort();
+    baselineDate = candidates.length > 0 ? candidates[candidates.length - 1] : lastSunday; // 取上周最晚有数据的日期，如果没有则使用上周日
+    
+    // 调试信息：输出本周涨幅的基准日期
+    console.log(`[本周涨幅调试] 今日: ${todayDate}, 上周日: ${lastSunday}, 上周及之前有数据的日期: [${candidates.slice(-5).join(', ')}...], 使用的基准日期: ${baselineDate}`);
+  } else {
+    // 本月涨幅：使用上个月最晚有数据的日期作为基准
+    const lastMonthEnd = getLastMonthEnd(todayDate); // 上个月最后一天
+    const dates = listStoredDates();
+    // 查找上个月最后一天之前（包含）的所有日期，取最晚的一个
+    const candidates = dates.filter(d => d <= lastMonthEnd).sort();
+    baselineDate = candidates.length > 0 ? candidates[candidates.length - 1] : lastMonthEnd; // 取上个月最晚有数据的日期
+    
+    // 调试信息：输出本月涨幅的基准日期
+    console.log(`[本月涨幅调试] 今日: ${todayDate}, 上个月最后一天: ${lastMonthEnd}, 上个月及之前有数据的日期: [${candidates.slice(-5).join(', ')}...], 使用的基准日期: ${baselineDate}`);
+  }
+  
+  if(!baselineDate) return [];
+  
+  // 优化：先从本地存储获取基准日期的数据
+  let storedRows = getStoredRowsForDate(baselineDate);
+  if(storedRows && storedRows.length > 0){
+    console.log(`[基准数据调试] 基准日期: ${baselineDate}, 数据条数: ${storedRows.length}（来自缓存）`);
+    return storedRows;
+  }
+  
+  // 如果本地存储没有，尝试异步查询（不阻塞主流程）
+  // 优化：按需查询基准日期，避免初始加载时查询所有历史日期
+  console.log(`[基准数据调试] ⚠️ 基准日期 ${baselineDate} 没有缓存数据，尝试异步查询...`);
+  
+  // 异步查询基准日期数据（不等待结果，返回空数组，后续会更新）
+  // 使用全局变量避免重复查询
+  if(!window.__baselineFetching){
+    window.__baselineFetching = new Set();
+  }
+  
+  if(!window.__baselineFetching.has(baselineDate)){
+    window.__baselineFetching.add(baselineDate);
+    const clientId = resolveClientId();
+    fetchHistoryRows(clientId, baselineDate).then(payload => {
+      const histRows = Array.isArray(payload?.rows) ? dedupeLatestRows(payload.rows) : [];
+      if(histRows.length){
+        try{ 
+          localStorage.setItem(storageKey(baselineDate), JSON.stringify(histRows));
+          console.log(`[基准数据调试] ✅ 异步查询获取到基准日期 ${baselineDate} 的数据，条数: ${histRows.length}`);
+          window.__baselineFetching.delete(baselineDate);
+          // 如果页面已加载，触发重新计算涨幅
+          if(typeof refreshAutoTableDisplay === 'function'){
+            refreshAutoTableDisplay();
+          }
+        }catch(e){
+          console.warn(`[基准数据调试] 保存基准日期数据失败:`, e);
+          window.__baselineFetching.delete(baselineDate);
+        }
+      } else {
+        window.__baselineFetching.delete(baselineDate);
+      }
+    }).catch(err => {
+      console.warn(`[基准数据调试] 查询基准日期 ${baselineDate} 失败:`, err);
+      window.__baselineFetching.delete(baselineDate);
+    });
+  }
+  
+  // 返回空数组，表示暂时无法计算涨幅（等待异步查询完成）
+  return [];
+}
+
+function autoFillFromLocal(){
+  const tdEl = document.getElementById('todayDate');
+  const yDateEl = document.getElementById('yesterdayDate');
+  const todayEl = document.getElementById('todayText');
+  const yesterdayEl = document.getElementById('yesterdayText');
+  const follow = document.getElementById('followTextDate')?.checked;
+  // 若当日日期为空或开启“跟随文本日期”，尝试从文本识别并填充
+  const detectedToday = detectLatestDateFromText(todayEl?.value || '');
+  if(follow){
+    if(detectedToday){ tdEl.value = detectedToday; showSuccess(`已识别并跟随文本日期（当日）：${detectedToday}`); }
+  }else{
+    if(!tdEl.value && detectedToday){ tdEl.value = detectedToday; showSuccess(`已识别当日日期：${detectedToday}`); }
+    else if(tdEl.value && detectedToday && tdEl.value !== detectedToday){ showError(`文本日期(${detectedToday})与选择日期(${tdEl.value})不一致，已使用选择日期`); }
+  }
+  const todayDate = tdEl.value;
+  // 读取当日原始文本并按 startedDateTime 校验/对齐
+  const todayRaw = document.getElementById('todayText')?.value || '';
+  const vToday = validateDateAgainstStartedDateTime(todayDate, todayRaw, { strategy: 'latest_for_day' });
+  if(vToday.changed){ tdEl.value = vToday.date; todayDate = vToday.date; showSuccess(`已根据 startedDateTime 对齐为：${vToday.date}`); }
+  if(vToday.reason === 'mismatch'){ return; }
+  if(!todayDate){ showError('请先选择“当日日期”'); return; }
+  // 昨日期
+  const detectedYesterday = detectLatestDateFromText(yesterdayEl?.value || '');
+  const computedYesterday = detectedYesterday || getPrevDateStr(todayDate);
+  if(follow){ if(yDateEl) yDateEl.value = computedYesterday; }
+  const yesterdayDate = (yDateEl && yDateEl.value && yDateEl.value.trim()) ? yDateEl.value : computedYesterday;
+  const todayText = todayEl.value;
+  const yesterdayText = yesterdayEl?.value || '';
+  // 按最大 startedDateTime 优先规则校验/对齐昨日日期
+  const vYesterday = validateDateAgainstStartedDateTime(yesterdayDate, yesterdayText, { strategy: 'latest' });
+  const finalYesterdayDate = vYesterday.changed ? vYesterday.date : yesterdayDate;
+  if(vYesterday.changed){ if(yDateEl) yDateEl.value = finalYesterdayDate; showSuccess(`已根据 startedDateTime 对齐为：${finalYesterdayDate}（昨日）`); }
+  if(vYesterday.reason === 'mismatch'){ return; }
+  // 若文本框为空，尝试根据日期从本地填充原始文本
+  if (!todayText || !todayText.trim()) {
+    try{
+      const rawToday = localStorage.getItem(storageRawKey(todayDate));
+      if (rawToday) {
+        todayEl.value = rawToday;
+        showSuccess('已自动填充当日原始文本');
+      } else {
+        // 当“当日”无本地文档时，自动选取最新的本地存档日期进行填充
+        const dates = listStoredDates();
+        const latest = dates.length ? dates[dates.length - 1] : null;
+        if(latest){
+          const rawLatest = localStorage.getItem(storageRawKey(latest));
+          if(rawLatest){
+            tdEl.value = latest;
+            todayDate = latest;
+            todayEl.value = rawLatest;
+            showSuccess(`已自动选取最新存档：${latest}`);
+            // 若昨日未选择，则跟随最新存档的前一天
+            const latestPrev = getPrevDateStr(latest);
+            if(yDateEl && (!yDateEl.value || !yDateEl.value.trim())){
+              yDateEl.value = latestPrev;
+            }
+          } else {
+            showError('无本地文档');
+          }
+        } else {
+          showError('无本地文档');
+        }
+      }
+    }catch(e){}
+  }
+  if (!yesterdayText || !yesterdayText.trim()) {
+    try{
+      const targetY = (yDateEl && yDateEl.value && yDateEl.value.trim()) ? yDateEl.value : finalYesterdayDate;
+      const rawY = localStorage.getItem(storageRawKey(targetY));
+      if (rawY) { yesterdayEl && (yesterdayEl.value = rawY); showSuccess('已自动填充指定日期原始文本'); } else { showError('无本地文档'); }
+    }catch(e){}
+  }
+  let tRows = [];
+  let yRows = [];
+  let usedTodayLocal = false;
+  let usedYesterdayLocal = false;
+  const curTodayText = todayEl.value;
+  const curYesterdayText = yesterdayEl?.value || '';
+  if (curTodayText && curTodayText.trim()) {
+    tRows = parseTextToRows(curTodayText);
+    if(!tRows.length){
+      try{
+        const cachedToday = localStorage.getItem(storageKey(todayDate));
+        if(cachedToday){
+          tRows = JSON.parse(cachedToday);
+          usedTodayLocal = true;
+        }
+      }catch(e){}
+    }
+  } else {
+    try{
+      const cachedToday = localStorage.getItem(storageKey(todayDate));
+      if(cachedToday){
+        tRows = JSON.parse(cachedToday);
+        usedTodayLocal = true;
+      }
+    }catch(e){}
+  }
+  if (curYesterdayText && curYesterdayText.trim()) {
+    yRows = parseTextToRows(curYesterdayText);
+    if(!yRows.length){
+      try{
+        const cachedY = localStorage.getItem(storageKey(finalYesterdayDate));
+        if(cachedY){
+          yRows = JSON.parse(cachedY);
+          usedYesterdayLocal = true;
+        }
+      }catch(e){}
+    }
+  } else {
+    try{
+      const cachedY = localStorage.getItem(storageKey(finalYesterdayDate));
+      if(cachedY){
+        yRows = JSON.parse(cachedY);
+        usedYesterdayLocal = true;
+      }
+    }catch(e){}
+  }
+  if (tRows.length){
+    lastTodayRows = tRows;
+    const baselineWeek = getBaselineRowsForMode('week', todayDate);
+    const baselineMonth = getBaselineRowsForMode('month', todayDate);
+    lastPreview = sortAndEnrich(tRows, yRows, baselineWeek, baselineMonth);
+    renderPreviewTable(lastPreview);
+    let msg = '已根据所选日期更新预览';
+    const parts = [];
+    if (usedTodayLocal) parts.push('当日数据来自本地');
+    if (usedYesterdayLocal) parts.push('昨日数据来自本地');
+    if (parts.length) msg = parts.join('；');
+    showSuccess(msg);
+  }
+  // 更新“最新 startedDateTime”显示
+  updateDetectedTsLabels();
+}
+
+function parseAndPreview(){
+  const tdEl = document.getElementById('todayDate');
+  const todayTextEl = document.getElementById('todayText');
+  let todayDate = tdEl.value;
+  const detectedToday = detectLatestDateFromText(todayTextEl?.value || '');
+  if(!todayDate && detectedToday){ tdEl.value = detectedToday; todayDate = detectedToday; showSuccess(`已识别当日日期：${detectedToday}`); }
+  if(!todayDate){ showError('请先选择“当日日期”或粘贴文本以识别日期'); return; }
+  const yDateEl2 = document.getElementById('yesterdayDate');
+  const yesterdayTextEl2 = document.getElementById('yesterdayText');
+  const detectedYesterday = detectLatestDateFromText(yesterdayTextEl2?.value || '');
+  const yesterdayDate = (yDateEl2 && yDateEl2.value && yDateEl2.value.trim()) ? yDateEl2.value : (detectedYesterday || getPrevDateStr(todayDate));
+  const todayText = todayTextEl.value;
+  const yesterdayText = yesterdayTextEl2?.value || '';
+  // 按最大 startedDateTime 优先规则校验/对齐昨日日期
+  const vY2 = validateDateAgainstStartedDateTime(yesterdayDate, yesterdayText, { strategy: 'latest' });
+  const finalYDate2 = vY2.changed ? vY2.date : yesterdayDate;
+  if(vY2.changed){ yDateEl2 && (yDateEl2.value = finalYDate2); showSuccess(`已根据 startedDateTime 对齐为：${finalYDate2}（昨日）`); }
+  if(vY2.reason === 'mismatch'){ return; }
+  // 同步保存原始文本到本地
+  if (todayText && todayText.trim()) { try{ localStorage.setItem(storageRawKey(todayDate), todayText); }catch(e){} }
+  if (yesterdayText && yesterdayText.trim()) { try{ localStorage.setItem(storageRawKey(finalYDate2), yesterdayText); }catch(e){} }
+  let tRows = [];
+  if (todayText && todayText.trim()) { tRows = parseTextToRows(todayText); }
+  else { try{ const cachedToday = localStorage.getItem(storageKey(todayDate)); if(cachedToday){ tRows = JSON.parse(cachedToday); } }catch(e){ tRows = []; } }
+  let yRows = [];
+  if(yesterdayText && yesterdayText.trim()){ yRows = parseTextToRows(yesterdayText); }
+  else { try{ const cached = localStorage.getItem(storageKey(finalYDate2)); if(cached){ yRows = JSON.parse(cached); } }catch(e){ yRows = []; } }
+  // 更新“最新 startedDateTime”显示
+  updateDetectedTsLabels();
+  try{ if (tRows && tRows.length) { localStorage.setItem(storageKey(todayDate), JSON.stringify(tRows)); refreshDateOptions(); } }catch(e){}
+  try{ if (yRows && yRows.length) { localStorage.setItem(storageKey(finalYDate2), JSON.stringify(yRows)); refreshDateOptions(); } }catch(e){}
+  lastTodayRows = tRows;
+  const baselineWeek2 = getBaselineRowsForMode('week', todayDate);
+  const baselineMonth2 = getBaselineRowsForMode('month', todayDate);
+  lastPreview = sortAndEnrich(tRows, yRows, baselineWeek2, baselineMonth2);
+  renderPreviewTable(lastPreview);
+  showSuccess('解析完成，已生成预览');
+}
+
+async function exportExcel(){
+  // 按需加载 xlsx.js
+  if (typeof XLSX === 'undefined') {
+    showSuccess('正在加载导出工具，请稍候...');
+    try {
+      await loadXLSX();
+    } catch (err) {
+      showError('导出工具加载失败：' + (err.message || '未知错误'));
+      return;
+    }
+  }
+  
+  if(!lastPreview || !lastPreview.length){ showError('请先"解析并预览"'); return; }
+  const todayDate = document.getElementById('todayDate').value || new Date().toISOString().split('T')[0];
+  // 读取当日原始文本并提取最大 startedDateTime，用于分钟级显示
+  let todayDisplay = todayDate;
+  try{
+    const rawToday = localStorage.getItem(storageRawKey(todayDate)) || '';
+    const tMaxTs = detectMaxTsForDateFromText(rawToday, todayDate) || detectMaxTsFromText(rawToday);
+    if(tMaxTs){ const fmt = formatDateTimeForDisplay(tMaxTs); if(fmt) todayDisplay = fmt; }
+  }catch(e){}
+  const rows = lastPreview.map(r => {
+    const o = { 日期: todayDisplay, ...r };
+    if (Object.prototype.hasOwnProperty.call(o, '排名')) {
+      o['排序'] = o['排名'];
+      delete o['排名'];
+    }
+    if (Object.prototype.hasOwnProperty.call(o, '排名变化')) {
+      o['排序变化'] = o['排名变化'];
+      delete o['排名变化'];
+    }
+    return o;
+  });
+  // 与网页表头顺序保持一致
+  const headers = ['日期','排序','姓名'];
+  if (showCollect) headers.push('收藏数');
+  if (showLike) headers.push('点赞数');
+  headers.push('粉丝数','距上一名','今日涨幅');
+  if (showWeekGrowth) headers.push('本周涨幅');
+  if (showMonthGrowth) headers.push('本月涨幅');
+  headers.push('排序变化');
+  const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+
+  // 样式优化：更适合手机端查看
+  const widthMap = { '日期':12, '排序':8, '姓名':14, '收藏数':10, '点赞数':10, '粉丝数':10, '距上一名':12, '与前一名差值':12, '本周涨幅':10, '本月涨幅':10, '今日涨幅':10, '排序变化':12 };
+  ws['!cols'] = headers.map(k => ({ wch: widthMap[k] || 12 }));
+  // 表头行高（仅第一行）
+  ws['!rows'] = [{ hpt: 20 }];
+  // 自动筛选（首行表头）
+  const lastColLetter = String.fromCharCode('A'.charCodeAt(0) + Math.max(1, headers.length) - 1);
+  ws['!autofilter'] = { ref: `A1:${lastColLetter}${rows.length + 1}` };
+
+  // 在数据最后追加说明注释（不纳入自动筛选范围）
+  const notes = [
+    [''],
+    [' 说明：'],
+    [' 1、今日涨幅：今日粉丝数 - 昨日粉丝数'],
+    [' 2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）'],
+    [' 3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数'],
+    [' 4、排名变化：与昨日排名对比，正数表示排名上升'],
+    [' 5、所有数据从 2025/10/10开始统计，在此之前的不支持查看'],
+  ];
+  XLSX.utils.sheet_add_aoa(ws, notes, { origin: -1 });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '每日数据');
+  // 文件名采用分钟级日期显示，避免冒号不兼容（替换为短横线）
+  const safeName = String(todayDisplay).replace(/:/g, '-');
+  const fileName = `高会数据_${safeName}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  showSuccess(`已导出：${fileName}`);
+}
+
+// 已删除：通过后端导出高保真Excel
+
+function saveTodayToLocal(){
+  const todayDate = document.getElementById('todayDate').value;
+  if(!todayDate){ showError('请先选择“当日日期”'); return; }
+  // 在保存前按 startedDateTime 校验/对齐（遵循“跟随文本日期”开关）
+  const tdEl = document.getElementById('todayDate');
+  const todayRaw = document.getElementById('todayText')?.value || '';
+  const v = validateDateAgainstStartedDateTime(todayDate, todayRaw, { strategy: 'latest_for_day' });
+  let finalDate = todayDate;
+  if(v.changed){ tdEl.value = v.date; finalDate = v.date; showSuccess(`已根据 startedDateTime 对齐为：${v.date}`); }
+  if(v.reason === 'mismatch'){ return; }
+  // 使用最终对齐后的日期进行存档
+  const todayEl = document.getElementById('todayText');
+  const todayRawText = todayEl?.value || '';
+  
+  console.log('🔄 开始保存数据到localStorage...');
+  console.log('保存日期:', finalDate);
+  console.log('Raw键名:', storageRawKey(finalDate));
+  console.log('Data键名:', storageKey(finalDate));
+  console.log('Raw数据长度:', todayRawText ? todayRawText.length : 0);
+  console.log('Data数据行数:', lastTodayRows ? lastTodayRows.length : 0);
+  
+  if (todayRawText && todayRawText.trim()) { 
+    localStorage.setItem(storageRawKey(finalDate), todayRawText);
+    console.log('✅ Raw数据已保存');
+  }
+  localStorage.setItem(storageKey(finalDate), JSON.stringify(lastTodayRows));
+  console.log('✅ Data数据已保存');
+  
+  // 验证保存结果
+  const savedRaw = localStorage.getItem(storageRawKey(finalDate));
+  const savedData = localStorage.getItem(storageKey(finalDate));
+  console.log('验证保存结果:');
+  console.log('  Raw数据存在:', !!savedRaw, savedRaw ? `(长度: ${savedRaw.length})` : '');
+  console.log('  Data数据存在:', !!savedData, savedData ? `(长度: ${savedData.length})` : '');
+  
+  refreshDateOptions();
+  showSuccess(`已保存 ${finalDate} 的本地存档`);
+}
+
+// 存档日期与备份相关函数（放入主脚本中）
+function listStoredDates(){
+  const dates = new Set();
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(!k) continue;
+      if(k.startsWith('memberRaw:') || k.startsWith('memberData:')){
+        const d = k.split(':')[1];
+        if(d) dates.add(d);
+      }
+    }
+  }catch(e){}
+  return Array.from(dates).sort();
+}
+
+function refreshDateOptions(){
+  const dates = listStoredDates();
+  const descDates = dates.slice().reverse();
+  const build = (selId) => {
+    const sel = document.getElementById(selId);
+    if(!sel) return;
+    sel.innerHTML = '<option value="">— 选择存档日期 —</option>' + descDates.map(d=>`<option value="${d}">${d}</option>`).join('');
+  };
+  build('todayDateSelect');
+  build('yesterdayDateSelect');
+}
+
+function exportLocalBackup(){
+  try{
+    const rawMap = {};
+    const dataMap = {};
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(!k) continue;
+      if(k.startsWith('memberRaw:')){
+        const d = k.split(':')[1];
+        rawMap[d] = localStorage.getItem(k) || '';
+      } else if(k.startsWith('memberData:')){
+        const d = k.split(':')[1];
+        const v = localStorage.getItem(k);
+        dataMap[d] = v ? JSON.parse(v) : [];
+      }
+    }
+    const payload = { memberRaw: rawMap, memberData: dataMap, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().replace(/[:.]/g,'-');
+    a.href = url; a.download = `每日高会_本地存档_${ts}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showSuccess('已导出本地存档');
+  }catch(e){ showError('导出失败'); }
+}
+
+function uploadLocalBackup(){
+  try{
+    const rawMap = {};
+    const dataMap = {};
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(!k) continue;
+      if(k.startsWith('memberRaw:')){
+        const d = k.split(':')[1];
+        const value = localStorage.getItem(k);
+        if(value && value.trim()) {
+          rawMap[d] = value;
+        }
+      } else if(k.startsWith('memberData:')){
+        const d = k.split(':')[1];
+        const v = localStorage.getItem(k);
+        try{ 
+          const parsed = v ? JSON.parse(v) : [];
+          if(Array.isArray(parsed) && parsed.length > 0) {
+            dataMap[d] = parsed;
+          }
+        }catch(e){ 
+          console.warn(`Invalid memberData for ${d}:`, e);
+        }
+      }
+    }
+    
+    // 验证数据
+    const rawCount = Object.keys(rawMap).length;
+    const dataCount = Object.keys(dataMap).length;
+    
+    if(rawCount === 0 && dataCount === 0) {
+      showInlineStatus('uploadStatus','error','❌ 没有可上传的数据，请先导入HAR文件或创建数据');
+      return;
+    }
+    
+    // 检查数据完整性
+    if(rawCount === 0) {
+      showInlineStatus('uploadStatus','warning','⚠️ 警告：没有原始文本数据，仅上传处理后的数据');
+    } else if(dataCount === 0) {
+      showInlineStatus('uploadStatus','warning','⚠️ 警告：没有处理后的数据，仅上传原始文本');
+    }
+    
+    console.log(`准备上传数据: 原始文本=${rawCount}个日期, 处理数据=${dataCount}个日期`);
+    
+    const payload = { memberRaw: rawMap, memberData: dataMap, exportedAt: new Date().toISOString() };
+    const dateCount = Array.from(new Set([ ...Object.keys(rawMap), ...Object.keys(dataMap) ])).length;
+    const clientId = location.hostname || 'default';
+    
+    showInlineStatus('uploadStatus','info','正在上传数据...');
+    
+    // 优先同源 /api 代理（由 Pages Functions/_worker.js 转发到稳定 API 域名）
+    fetch(`${API_BASE}/api/archives/upload?client_id=${encodeURIComponent(clientId)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), mode: 'cors', cache: 'no-store'
+    }).then(async (resp)=>{
+      if(!resp.ok){ const t = await resp.text(); throw new Error(t || '上传失败'); }
+      showInlineStatus('uploadStatus','success',`✅ 上传成功！共提交 ${dateCount} 个日期`);
+      setLastSync(Date.now());
+    }).catch(async (err)=>{
+      console.warn('主API上传失败，尝试备用API:', err.message);
+      // 回退：直接访问稳定 API 域名
+      try{
+        const resp2 = await fetch(`${API_BASE}/api/archives/upload?client_id=${encodeURIComponent(clientId)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), mode: 'cors', cache: 'no-store' });
+        if(!resp2.ok){ 
+          const t2 = await resp2.text(); 
+          let errorMsg = t2 || '上传失败';
+          try {
+            const errorObj = JSON.parse(t2);
+            if(errorObj.detail) errorMsg = errorObj.detail;
+          } catch(e) {}
+          throw new Error(errorMsg);
+        }
+        showInlineStatus('uploadStatus','success',`✅ 上传成功！共提交 ${dateCount} 个日期`);
+        setLastSync(Date.now());
+      }catch(err2){
+        console.error('Upload error (fallback failed):', err2);
+        let finalError = '上传失败';
+        if(err2 && err2.message) {
+          if(err2.message.includes('缺少')) {
+            finalError = '数据格式错误：' + err2.message;
+          } else if(err2.message.includes('NetworkError') || err2.message.includes('fetch') || err2.message.includes('Failed to fetch')) {
+            finalError = '无法连接到服务器。数据已保存在本地，可使用"导出Excel"功能备份数据。';
+          } else {
+            finalError = err2.message;
+          }
+        } else if(err && err.message) {
+          if(err.message.includes('NetworkError') || err.message.includes('fetch') || err.message.includes('Failed to fetch')) {
+            finalError = '无法连接到服务器。数据已保存在本地，可使用"导出Excel"功能备份数据。';
+          } else {
+            finalError = err.message;
+          }
+        }
+        showInlineStatus('uploadStatus','error',`❌ ${finalError}`);
+      }
+    });
+  }catch(e){ 
+    console.error('Upload exception:', e);
+    showInlineStatus('uploadStatus','error',`上传异常：${e.message || e}`); 
+  }
+}
+
+function rowsHaveMeaningfulDiff(serverRows, localRows){
+  try{
+    const toMap = (rows) => {
+      const map = new Map();
+      if(!Array.isArray(rows)) return map;
+      for(const r of rows){
+        const key = String(r?.realName || r?.nickName || r?.userId || '');
+        if(!key) continue;
+        map.set(key, {
+          fans: Number(r?.fansNum || 0),
+          collect: Number(r?.collectNum || 0),
+          like: Number(r?.likeNum || 0)
+        });
+      }
+      return map;
+    };
+    const serverMap = toMap(serverRows);
+    const localMap = toMap(localRows);
+    if(serverMap.size !== localMap.size) return true;
+    for(const [key, sval] of serverMap.entries()){
+      const lval = localMap.get(key);
+      if(!lval) return true;
+      if(sval.fans !== lval.fans || sval.collect !== lval.collect || sval.like !== lval.like){
+        return true;
+      }
+    }
+    return false;
+  }catch(e){
+    return true;
+  }
+}
+
+// 从 rows 数组中提取最新的 startedDateTime（优先使用，因为这是实际显示的数据）
+function getMaxIsoFromRows(rows){
+  if(!Array.isArray(rows) || !rows.length) return null;
+  let maxTs = -Infinity;
+  let maxIso = null;
+  for(const r of rows){
+    if(!r) continue;
+    const iso = r.startedDateTime ? String(r.startedDateTime) : '';
+    if(!iso || iso.startsWith('1970-01-01')) continue;
+    const ts = Date.parse(iso);
+    if(Number.isFinite(ts) && ts > maxTs){
+      maxTs = ts;
+      maxIso = iso;
+    }
+  }
+  return maxIso;
+}
+
+function getMaxIsoFromStoredRows(dateStr){
+  if(!dateStr) return null;
+  try{
+    const stored = localStorage.getItem(storageKey(dateStr));
+    if(!stored) return null;
+    const rows = JSON.parse(stored);
+    if(!Array.isArray(rows) || !rows.length) return null;
+    let maxTs = -Infinity;
+    let maxIso = null;
+    for(const r of rows){
+      if(!r) continue;
+      const iso = r.startedDateTime ? String(r.startedDateTime) : '';
+      if(!iso || iso.startsWith('1970-01-01')) continue;
+      // 按日期过滤：只考虑指定日期的数据
+      const ds = iso.split('T')[0];
+      if(ds !== dateStr) continue;
+      const ts = Date.parse(iso);
+      if(Number.isFinite(ts) && ts > maxTs){
+        maxTs = ts;
+        maxIso = iso;
+      }
+    }
+    return maxIso;
+  }catch(e){
+    return null;
+  }
+}
+
+function formatIsoForLabel(iso){
+  if(!iso) return null;
+  return formatDateTimeForDisplay(iso);
+}
+
+function dedupeLatestRows(rows){
+  if(!Array.isArray(rows) || !rows.length) return [];
+  const map = new Map();
+  for(const r of rows){
+    if(!r) continue;
+    // 优先使用 realName，其次 userId，确保唯一性
+    const realName = String(r.realName || '').trim();
+    const userId = r.userId != null ? String(r.userId) : '';
+    const key = realName || userId || String(r.nickName || '');
+    if(!key) continue;
+    
+    const iso = r.startedDateTime ? String(r.startedDateTime) : '';
+    let ts = 0;
+    try{
+      ts = iso ? Date.parse(iso) : 0;
+    }catch(e){ ts = 0; }
+    const prev = map.get(key);
+    if(!prev || ts > prev.ts){
+      map.set(key, { ts, row: r });
+    }
+  }
+  return Array.from(map.values()).map(entry => entry.row);
+}
+
+function listDatesBetween(start, end){
+  if(!start || !end) return [];
+  const out = [];
+  try{
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if(!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) return out;
+    let cur = new Date(startDate);
+    while(cur.getTime() <= endDate.getTime()){
+      out.push(cur.toISOString().split('T')[0]);
+      cur.setDate(cur.getDate() + 1);
+    }
+  }catch(e){}
+  return out;
+}
+
+const pendingHistoryFetch = new Map();
+
+async function ensureDateCoverage(options){
+  const { clientId, dates, memberDataMap, rawMap, force } = options || {};
+  if(!clientId || !Array.isArray(dates) || !dates.length) return;
+  const unique = Array.from(new Set(dates.filter(Boolean))).sort();
+  
+  // 优化：先检查本地存储，减少不必要的 API 请求
+  const needFetch = [];
+  for(const date of unique){
+    try{
+      // 强制刷新时，即使本地有缓存也要重新获取
+      if(force){
+        needFetch.push(date);
+        continue;
+      }
+      
+      let storedRows = getStoredRowsForDate(date);
+      if(!storedRows.length && memberDataMap && Array.isArray(memberDataMap[date])){
+        const deduped = dedupeLatestRows(memberDataMap[date]);
+        if(deduped.length){
+          try{ localStorage.setItem(storageKey(date), JSON.stringify(deduped)); }catch(e){}
+          storedRows = deduped;
+        }
+      }
+      if(rawMap && rawMap[date]){
+          try{ localStorage.setItem(storageRawKey(date), rawMap[date]); }catch(e){}
+        }
+      // 如果本地已有数据，跳过请求
+      if(!storedRows.length && !pendingHistoryFetch.get(date)){
+        needFetch.push(date);
+      } else if(pendingHistoryFetch.get(date)){
+        await pendingHistoryFetch.get(date);
+      } else {
+        console.log(`[ensureDateCoverage] 跳过 ${date}（本地已有缓存）`);
+      }
+    }catch(e){
+      console.warn('ensureDateCoverage error:', date, e);
+      }
+      }
+  
+  // 优化：限制并行请求数量，避免过多请求
+  if(needFetch.length > 0){
+    const maxConcurrent = 5; // 提高并发数：3→5
+    const toFetchNow = needFetch.slice(0, maxConcurrent);
+    const toFetchLater = needFetch.slice(maxConcurrent);
+    
+    if(toFetchLater.length > 0){
+      console.log(`[ensureDateCoverage] 分批获取：先获取 ${toFetchNow.length} 个，剩余 ${toFetchLater.length} 个稍后获取`);
+    }
+    const fetchPromises = toFetchNow.map(date => {
+      if(pendingHistoryFetch.get(date)){
+        return pendingHistoryFetch.get(date);
+      }
+      const promise = (async ()=>{
+        try{
+          const payload = await fetchHistoryRows(clientId, date);
+          const histRows = Array.isArray(payload?.rows) ? dedupeLatestRows(payload.rows) : [];
+          if(histRows.length){
+            try{ localStorage.setItem(storageKey(date), JSON.stringify(histRows)); }catch(e){}
+          }
+          if(payload?.memberRaw && payload.memberRaw[date]){
+            try{ localStorage.setItem(storageRawKey(date), payload.memberRaw[date]); }catch(e){}
+          }
+        }catch(err){
+          console.warn('ensureDateCoverage history fetch failed:', date, err);
+        }finally{
+          pendingHistoryFetch.delete(date);
+        }
+      })();
+      pendingHistoryFetch.set(date, promise);
+      return promise;
+    });
+    
+    // 等待当前批次请求完成（但允许部分失败）
+    await Promise.allSettled(fetchPromises);
+    
+    // 如果有剩余日期，在后台异步获取（不阻塞主流程）
+    if(toFetchLater.length > 0 && !force){
+      console.log(`[ensureDateCoverage] 后台异步获取剩余 ${toFetchLater.length} 个日期...`);
+      Promise.allSettled(toFetchLater.map(date => {
+        if(pendingHistoryFetch.get(date)) return pendingHistoryFetch.get(date);
+        const promise = (async ()=>{
+          try{
+            const payload = await fetchHistoryRows(clientId, date);
+            const histRows = Array.isArray(payload?.rows) ? dedupeLatestRows(payload.rows) : [];
+            if(histRows.length){
+              try{ localStorage.setItem(storageKey(date), JSON.stringify(histRows)); }catch(e){}
+            }
+            if(payload?.memberRaw && payload.memberRaw[date]){
+              try{ localStorage.setItem(storageRawKey(date), payload.memberRaw[date]); }catch(e){}
+            }
+          }catch(err){
+            console.warn('ensureDateCoverage 后台获取失败:', date, err);
+          }finally{
+            pendingHistoryFetch.delete(date);
+          }
+        })();
+        pendingHistoryFetch.set(date, promise);
+        return promise;
+      })).catch(err => {
+        console.warn('[ensureDateCoverage] 后台获取失败:', err);
+      });
+    }
+  } else {
+    console.log(`[ensureDateCoverage] 所有日期已有缓存，无需请求`);
+  }
+}
+
+async function fetchHistoryRows(clientId, date){
+  const attempt = async (base) => {
+    const timestamp = `&_t=${Date.now()}`;
+    const url = `${base}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(date)}${timestamp}`;
+    const resp = await fetch(url, { mode: 'cors', cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
+    if(!resp.ok){
+      const text = await resp.text();
+      throw new Error(text || `历史接口失败(${resp.status})`);
+    }
+    return resp.json();
+  };
+  try{
+    return await attempt('');
+  }catch(e1){
+    try{
+      return await attempt(API_BASE || '');
+    }catch(e2){
+      return await attempt('https://api.dailygh4.com');
+    }
+  }
+}
+
+async function ensurePreviousDateData(latestDate, clientId){
+  if(!latestDate) return;
+  const prevDate = getPrevDateStr(latestDate);
+  if(!prevDate) return;
+  try{
+    const cached = localStorage.getItem(storageKey(prevDate));
+    if(cached){
+      try{
+        const arr = JSON.parse(cached);
+        if(Array.isArray(arr) && arr.length) return;
+      }catch(e){}
+    }
+  }catch(e){}
+  try{
+    const payload = await fetchHistoryRows(clientId, prevDate);
+    const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+    if(!rows.length) return;
+    const deduped = dedupeLatestRows(rows);
+    if(!deduped.length) return;
+    localStorage.setItem(storageKey(prevDate), JSON.stringify(deduped));
+  }catch(err){
+    console.warn('ensurePreviousDateData error:', err);
+  }
+}
+
+function pullLatestBackup(){
+  try{
+    const clientId = location.hostname || 'default';
+    
+    // 检查当前API状态
+    const apiStatusEl = document.getElementById('apiStatus');
+    const isOffline = apiStatusEl && apiStatusEl.style.display !== 'none' && 
+                     document.getElementById('apiStatusIcon')?.textContent === '🔴';
+    
+    if (isOffline) {
+      showInlineStatus('pullStatus','info','离线模式：使用本地数据...');
+      // 直接使用本地数据，不尝试网络请求
+      showInlineStatus('pullStatus','success','离线模式：已使用本地存档');
+      refreshDateOptions();
+      return;
+    }
+    
+    showInlineStatus('pullStatus','info','正在拉取最新存档...');
+    
+    // 优先同源 /api 代理
+    const timestamp = `&_t=${Date.now()}`;
+    fetch(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}${timestamp}`, { mode: 'cors', cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
+      .then(async (resp)=>{
+        if(!resp.ok){ const t = await resp.text(); throw new Error(t || '拉取失败'); }
+        return resp.json();
+      }).catch(async (err)=>{
+        console.log('主API失败，尝试备用API:', err.message);
+        try{
+          const timestamp2 = `&_t=${Date.now()}`;
+          const resp2 = await fetch(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}${timestamp2}`, { mode: 'cors', cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
+          if(!resp2.ok){ const t2 = await resp2.text(); throw new Error(t2 || '拉取失败'); }
+          return resp2.json();
+        }catch(err2){
+          console.log('备用API失败，尝试本地存档:', err2.message);
+          try{
+            const resp3 = await fetch('archives/latest_localhost.json');
+            if(!resp3.ok){ const t3 = await resp3.text(); throw new Error(t3 || '本地最新存档缺失'); }
+            return resp3.json();
+          }catch(err3){
+            console.log('本地存档也失败:', err3.message);
+            // 如果所有方式都失败，提供友好的错误信息
+            throw new Error('无法连接到服务器，且本地存档不可用。请检查网络连接或稍后重试。');
+          }
+        }
+      }).then(async (payload)=>{
+        const rawMap = payload.memberRaw || {};
+        const dataMap = payload.memberData || {};
+        // 合并策略：仅补齐缺失或覆盖较旧版本，保留本地较新版本
+        const serverMaxIsoMap = {};
+        const unionDates = Array.from(new Set([ ...Object.keys(rawMap), ...Object.keys(dataMap) ])).sort();
+        let updatedCount = 0, keptCount = 0;
+        function getMaxIsoFromRowsForDate(rows, date){
+          try{
+            if(!Array.isArray(rows) || !rows.length || !date) return null;
+            let maxTs = -Infinity; let maxIso = null;
+            for(const r of rows){
+              const iso = r && r.startedDateTime ? String(r.startedDateTime) : null;
+              if(!iso) continue;
+              const ds = iso.split('T')[0];
+              if(ds !== date) continue;
+              const ts = Date.parse(iso);
+              if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxIso = iso; }
+            }
+            return maxIso;
+          }catch(e){ return null; }
+        }
+        for(const d of unionDates){
+          try{
+            const srvRaw = rawMap[d] || '';
+            const srvRowsRaw = Array.isArray(dataMap[d]) ? dataMap[d] : [];
+            const srvRows = dedupeLatestRows(srvRowsRaw);
+            let srvMaxIso = srvRaw ? detectMaxTsForDateFromText(srvRaw, d) : null;
+            if(!srvMaxIso && srvRows.length){ srvMaxIso = getMaxIsoFromRowsForDate(srvRows, d); }
+            const srvMax = srvMaxIso ? Date.parse(srvMaxIso) : null;
+            if(srvMaxIso){
+              serverMaxIsoMap[d] = srvMaxIso;
+            }
+
+            const locRaw = localStorage.getItem(storageRawKey(d)) || '';
+            const locRowsStr = localStorage.getItem(storageKey(d));
+            const locRows = locRowsStr ? (function(){ try{ return JSON.parse(locRowsStr); }catch(e){ return []; } })() : [];
+            let locMaxIso = locRaw ? detectMaxTsForDateFromText(locRaw, d) : null;
+            if(!locMaxIso && Array.isArray(locRows) && locRows.length){ locMaxIso = getMaxIsoFromRowsForDate(locRows, d); }
+            const locMax = locMaxIso ? Date.parse(locMaxIso) : null;
+
+            // 决策：若本地较新或同新，则保留本地；否则更新为服务器版本；若本地为空且服务器有，则写入
+            const hasLocal = (!!locRaw && locRaw.trim()) || (Array.isArray(locRows) && locRows.length);
+            const hasServer = (!!srvRaw && srvRaw.trim()) || (Array.isArray(srvRows) && srvRows.length);
+
+            if(hasLocal && hasServer && locMax!=null && srvMax!=null){
+              if(locMax > srvMax){ keptCount++; continue; }
+              const sameTimestamp = Math.abs(locMax - srvMax) < 1;
+              const rowsDifferent = rowsHaveMeaningfulDiff(srvRows, locRows);
+              if(!rowsDifferent && sameTimestamp){ keptCount++; continue; }
+              // 服务器较新或内容不同，覆盖
+              try{ if(srvRaw && srvRaw.trim()) localStorage.setItem(storageRawKey(d), srvRaw); }catch(e){}
+              try{ localStorage.setItem(storageKey(d), JSON.stringify(srvRows)); }catch(e){}
+              updatedCount++; continue;
+            }
+            if(hasLocal && !hasServer){ keptCount++; continue; }
+            if(!hasLocal && hasServer){
+              try{ if(srvRaw && srvRaw.trim()) localStorage.setItem(storageRawKey(d), srvRaw); }catch(e){}
+              try{ localStorage.setItem(storageKey(d), JSON.stringify(srvRows)); }catch(e){}
+              updatedCount++; continue;
+            }
+            // 两边都没有有效数据，不做处理
+          }catch(e){ /* 单个日期合并失败忽略 */ }
+        }
+        if(typeof showInfo==='function'){
+          showInfo(`已合并服务器存档：保留本地 ${keptCount} 项，更新 ${updatedCount} 项`);
+        }
+        try{
+          window.__latestServerMaxIso = serverMaxIsoMap;
+        }catch(e){}
+        // 刷新下拉并尝试切换到最新日期
+        refreshDateOptions();
+        let latestDate = null;
+        let latestIsoFromServer = null;
+        try{
+          const dates = listStoredDates();
+          latestDate = dates.length ? dates[dates.length - 1] : null;
+          if(latestDate){
+            const tdEl = document.getElementById('todayDate');
+            const ydEl = document.getElementById('yesterdayDate');
+            if(tdEl){ tdEl.value = latestDate; }
+            if(ydEl){ ydEl.value = getPrevDateStr(latestDate); }
+            fillRawTextForDate(latestDate, 'todayText');
+            fillRawTextForDate(getPrevDateStr(latestDate), 'yesterdayText');
+            showInfo(`已切换至 ${latestDate}`);
+            latestIsoFromServer = getMaxIsoFromStoredRows(latestDate);
+            const monthDates = listDatesBetween(getMonthStart(latestDate), latestDate);
+            await ensureDateCoverage({
+              clientId,
+              dates: monthDates,
+              memberDataMap: dataMap,
+              rawMap
+            });
+          }
+        }catch(e){}
+
+        const finalizeView = () => {
+        ensureNonDuplicateDates();
+        autoFillFromLocal();
+        updateDetectedTsLabels();
+        try{
+          const tdMaxEl = document.getElementById('todayMaxTs');
+          const tdMaxTxt = (tdMaxEl && tdMaxEl.textContent || '').trim();
+          const tdValEl = document.getElementById('todayDate');
+          const tdVal = tdValEl ? tdValEl.value : '';
+            const derivedMaxLocal = getMaxIsoFromStoredRows(tdVal);
+            const derivedMaxServer = (window.__latestServerMaxIso || {})[tdVal];
+            const displayMax = formatIsoForLabel(derivedMaxLocal || derivedMaxServer);
+            if(tdMaxEl && displayMax){
+              tdMaxEl.textContent = displayMax;
+            }
+            const finalText = (tdMaxEl && tdMaxEl.textContent || '').trim();
+            if(!finalText || finalText === '—' || finalText === '-' || finalText === 'NaN'){
+            showInlineStatus('pullStatus','error',`最新日期${tdVal ? ' '+tdVal : ''}内容为空或无有效 HAR 时间戳`);
+          }else{
+            showInlineStatus('pullStatus','success','拉取完成：已恢复最新存档');
+            setLastSync(Date.now());
+          }
+        }catch(e){
+          showInlineStatus('pullStatus','success','拉取完成：已恢复最新存档');
+          setLastSync(Date.now());
+        }
+        };
+
+        Promise.resolve()
+          .then(()=> latestDate ? ensurePreviousDateData(latestDate, clientId) : null)
+          .catch(err => console.warn('补充上一日数据失败:', err))
+          .finally(finalizeView);
+      }).catch(err=>{ showInlineStatus('pullStatus','error',`拉取失败：${err.message || err}`); });
+  }catch(e){ showError('拉取异常'); }
+}
+// 新增：导出图片
+async function exportImage(){
+  if(!lastPreview || !lastPreview.length){ showError('请先"解析并预览"'); return; }
+  const todayDate = document.getElementById('todayDate').value || new Date().toISOString().split('T')[0];
+  const node = document.getElementById('preview');
+  if(!node){ showError('未找到预览区域'); return; }
+  
+  // 防止重复点击
+  const btn = document.querySelector('button[onclick="exportImage()"]');
+  if(btn && btn.disabled) return;
+  if(btn) btn.disabled = true;
+  
+  // 显示加载提示
+  showSuccess('正在加载导出工具，请稍候...');
+  
+  try {
+    // 按需加载 html2canvas
+    await loadHtml2Canvas();
+  } catch (err) {
+    if(btn) btn.disabled = false;
+    showError('导出工具加载失败：' + (err.message || '未知错误'));
+    return;
+  }
+  
+  // 确保导出时从预览顶部开始，包含表头
+  node.scrollTop = 0;
+  const origBG = node.style.backgroundColor;
+  // 为导出PNG添加专用样式类，确保日期区间居中且上下留白一致
+  node.classList.add('export-png');
+  // 参照整个已显示列居中对齐：将日期区间宽度设置为表格的实际宽度，并使用左右 margin: auto 居中
+  const rangeBar = node.querySelector('.range-bar');
+  const tableEl = node.querySelector('table');
+  const prevRangeStyle = {
+    width: rangeBar ? rangeBar.style.width : '',
+    display: rangeBar ? rangeBar.style.display : '',
+    marginLeft: rangeBar ? rangeBar.style.marginLeft : '',
+    marginRight: rangeBar ? rangeBar.style.marginRight : '',
+    marginTop: rangeBar ? rangeBar.style.marginTop : '',
+    marginBottom: rangeBar ? rangeBar.style.marginBottom : ''
+  };
+  try{
+    const tw = tableEl ? Math.max(tableEl.scrollWidth, tableEl.offsetWidth, tableEl.clientWidth) : 0;
+    if(rangeBar && tw > 0){
+      rangeBar.style.width = tw + 'px';
+      rangeBar.style.display = 'block';
+      rangeBar.style.marginLeft = 'auto';
+      rangeBar.style.marginRight = 'auto';
+    }
+  }catch(e){}
+  node.style.backgroundColor = '#ffffff';
+  
+  // 使用元素的完整滚动宽高，避免截断内容
+  const exportWidth = node.scrollWidth;
+  const exportHeight = node.scrollHeight;
+  
+  // 移动端和微信浏览器兼容性处理
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  
+  // 更新加载提示
+  showSuccess('正在生成图片，请稍候...');
+  
+  // 优化 scale：根据设备像素比和屏幕大小动态调整
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const optimalScale = isMobile 
+    ? Math.min(devicePixelRatio, 1.2)  // 移动端进一步降低
+    : Math.min(devicePixelRatio, 1.5);  // 桌面端也降低
+  
+  html2canvas(node, { 
+    scale: optimalScale,  // 优化后的 scale
+    useCORS: true, 
+    backgroundColor: '#ffffff', 
+    width: exportWidth, 
+    height: exportHeight,
+    allowTaint: false,
+    foreignObjectRendering: false, // 禁用 foreignObject 以提高性能
+    removeContainer: false, // 保留容器
+    imageTimeout: 0, // 图片超时设为 0（不等待外部图片）
+    ignoreElements: function(element) {
+      // 忽略不可见元素以提高性能
+      return element.style.display === 'none' || element.style.visibility === 'hidden';
+    },
+    onclone: function(clonedDoc) {
+      // 确保克隆的文档中所有样式都正确应用
+      const clonedNode = clonedDoc.getElementById('preview');
+      if(clonedNode) {
+        clonedNode.style.transform = 'none';
+        clonedNode.style.position = 'relative';
+      }
+    }
+  })
+    .catch(err => {
+      if(btn) btn.disabled = false;
+      node.classList.remove('export-png');
+      node.style.backgroundColor = origBG;
+      if(rangeBar) {
+        rangeBar.style.width = prevRangeStyle.width;
+        rangeBar.style.display = prevRangeStyle.display;
+        rangeBar.style.marginLeft = prevRangeStyle.marginLeft;
+        rangeBar.style.marginRight = prevRangeStyle.marginRight;
+        rangeBar.style.marginTop = prevRangeStyle.marginTop;
+        rangeBar.style.marginBottom = prevRangeStyle.marginBottom;
+      }
+      console.error('html2canvas 错误:', err);
+      if(isWeChat) {
+        showError('图片生成失败，请重试。错误：' + (err.message || '未知错误'));
+      } else {
+        showError('导出图片失败：' + (err.message || '未知错误'));
+      }
+    })
+    .then(canvas => {
+      if(!canvas) return;
+      const fileName = `高会数据_${todayDate}.png`;
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      // 微信浏览器：直接在页面显示图片，让用户长按保存
+      if(isWeChat) {
+        try {
+          // 恢复原始样式
+          node.classList.remove('export-png');
+          node.style.backgroundColor = origBG;
+          if(rangeBar) {
+            rangeBar.style.width = prevRangeStyle.width;
+            rangeBar.style.display = prevRangeStyle.display;
+            rangeBar.style.marginLeft = prevRangeStyle.marginLeft;
+            rangeBar.style.marginRight = prevRangeStyle.marginRight;
+            rangeBar.style.marginTop = prevRangeStyle.marginTop;
+            rangeBar.style.marginBottom = prevRangeStyle.marginBottom;
+          }
+          
+          // 移除之前可能存在的导出图片容器
+          const existingExport = document.getElementById('wechat-export-image');
+          if(existingExport) {
+            existingExport.remove();
+          }
+          
+          // 创建图片显示容器
+          const exportContainer = document.createElement('div');
+          exportContainer.id = 'wechat-export-image';
+          exportContainer.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
+          
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          img.style.cssText = 'max-width:100%; max-height:85vh; height:auto; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5); display:block;';
+          img.alt = fileName;
+          img.setAttribute('crossorigin', 'anonymous');
+          
+          // 确保图片加载完成
+          img.onload = function() {
+            console.log('微信导出：图片加载成功');
+          };
+          img.onerror = function(e) {
+            console.error('微信导出：图片加载失败', e);
+            showError('图片生成失败，请重试');
+            exportContainer.remove();
+          };
+          
+          const tip = document.createElement('div');
+          tip.textContent = '长按图片保存到相册';
+          tip.style.cssText = 'color:#fff; font-size:16px; margin-top:20px; padding:12px 24px; background:rgba(76,110,245,0.8); border-radius:24px; font-weight:500;';
+          
+          const closeBtn = document.createElement('div');
+          closeBtn.textContent = '✕ 关闭';
+          closeBtn.style.cssText = 'position:absolute; top:20px; right:20px; color:#fff; font-size:18px; padding:10px 20px; background:rgba(255,255,255,0.3); border-radius:20px; cursor:pointer; user-select:none;';
+          closeBtn.onclick = function() {
+            exportContainer.remove();
+            document.body.style.overflow = '';
+          };
+          closeBtn.ontouchstart = function() {
+            exportContainer.remove();
+            document.body.style.overflow = '';
+          };
+          
+          exportContainer.appendChild(img);
+          exportContainer.appendChild(tip);
+          exportContainer.appendChild(closeBtn);
+          document.body.appendChild(exportContainer);
+          
+          // 点击背景关闭
+          exportContainer.onclick = function(e) {
+            if(e.target === exportContainer) {
+              exportContainer.remove();
+              document.body.style.overflow = '';
+            }
+          };
+          
+          // 防止滚动
+          document.body.style.overflow = 'hidden';
+          
+          console.log('微信导出：图片容器已创建，dataUrl长度:', dataUrl.length);
+          return;
+        } catch(e) {
+          console.error('微信导出异常:', e);
+          showError('导出失败：' + (e.message || '未知错误'));
+          node.classList.remove('export-png');
+          node.style.backgroundColor = origBG;
+          return;
+        }
+      }
+      
+      // 移动端使用不同的下载方式
+      if(isMobile) {
+        // 移动端：优先尝试下载，如果失败则打开新窗口显示图片
+        canvas.toBlob(function(blob) {
+          if(!blob) {
+            showError('导出图片失败，请重试');
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          
+          // 尝试创建下载链接
+          try {
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = url;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            
+            // 触发点击（在用户手势事件中调用，应该可以工作）
+            const clickEvent = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              view: window
+            });
+            link.dispatchEvent(clickEvent);
+            
+            // 延迟清理
+            setTimeout(() => {
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }, 100);
+            
+            // 如果下载失败，打开新窗口显示图片（用户可长按保存）
+            setTimeout(() => {
+              const imgWindow = window.open();
+              if(imgWindow) {
+                imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+                imgWindow.document.close();
+                showSuccess('图片已打开，请长按图片保存');
+              } else {
+                // 如果弹窗被阻止，直接显示图片URL
+                showSuccess('请长按下方链接保存图片：<br><a href="' + url + '" download="' + fileName + '" style="color:#4c6ef5; text-decoration:underline;">点击下载图片</a>');
+              }
+            }, 500);
+          } catch(e) {
+            // 如果下载失败，打开新窗口显示图片
+            const imgWindow = window.open();
+            if(imgWindow) {
+              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+              imgWindow.document.close();
+              showSuccess('图片已打开，请长按图片保存');
+            } else {
+              // 如果弹窗被阻止，使用 data URL
+              const dataUrl = canvas.toDataURL('image/png');
+              const imgWindow = window.open();
+              if(imgWindow) {
+                imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${dataUrl}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+                imgWindow.document.close();
+                showSuccess('图片已打开，请长按图片保存');
+              } else {
+                showError('无法打开图片，请检查浏览器弹窗设置');
+              }
+            }
+          }
+        }, 'image/png');
+      } else {
+        // 桌面端：使用 toDataURL
+        const link = document.createElement('a');
+      link.download = fileName;
+      link.href = canvas.toDataURL('image/png');
+        link.style.display = 'none';
+        document.body.appendChild(link);
+      link.click();
+        document.body.removeChild(link);
+      showSuccess(`已导出图片：${fileName}`);
+      }
+    })
+    .catch(e => { showError('导出图片失败：' + (e && e.message ? e.message : e)); })
+    .finally(() => {
+      node.style.backgroundColor = origBG;
+      node.classList.remove('export-png');
+      // 还原日期区间样式
+      if(rangeBar){
+        rangeBar.style.width = prevRangeStyle.width || '';
+        rangeBar.style.display = prevRangeStyle.display || '';
+        rangeBar.style.marginLeft = prevRangeStyle.marginLeft || '';
+        rangeBar.style.marginRight = prevRangeStyle.marginRight || '';
+        rangeBar.style.marginTop = prevRangeStyle.marginTop || '';
+        rangeBar.style.marginBottom = prevRangeStyle.marginBottom || '';
+      }
+    });
+}
+function triggerImport(){ document.getElementById('importFile')?.click(); }
+
+</script>
+<!-- xlsx.js 和 html2canvas 已改为按需加载，不再在页面加载时加载 -->
+</body>
+</html><!-- Force deploy -->
+<!-- Force deploy: 2025年10月21日 星期二 19时33分59秒 CST -->
