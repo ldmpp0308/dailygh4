@@ -27,8 +27,8 @@
   <!-- xlsx.js 和 html2canvas 改为按需加载，避免阻塞页面渲染 -->
   <style>
     body { font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background:#f6f7fb; margin:0; }
-    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); padding: 50px 12px 36px; position: relative; }
-    h1 { font-size: 24px; margin: 0; color:#111; letter-spacing: 0.3px; line-height: 1.25; position: relative; }
+    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 8px rgba(0,0,0,0.06); padding: 50px 12px 36px; position: relative; }
+    h1 { font-size: 24px; margin: 0; color:#111; letter-spacing: 1px; line-height: 1.4; position: relative; }
     .desc { color:#616a76; font-size: 14px; margin-top: 6px; margin-bottom: 0; line-height: 1.8; }
     .container::before { content:""; position:absolute; top:0; left:0; right:0; height: 30px; border-top-left-radius:12px; border-top-right-radius:12px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
     /* Page header cosmetics */
@@ -59,7 +59,7 @@
     /* 导出 PNG 时：日期区间整体居中，上下留白间距一致 */
     #preview.export-png .range-bar { margin: 8px 0 !important; text-align: center !important; }
     /* 统一保留的样式，去除重复的 table/th,td 定义 */
-    .tab-switcher { display:flex; gap:8px; margin: 10px 0 20px; background:#f3f5fb; padding:6px; border-radius:10px; }
+    .tab-switcher { display:flex; gap:8px; margin: 10px 0 20px; background:#f3f5fb; padding:4px; border-radius:10px; }
     .tab-switcher button { flex:1; border:none; background:transparent; padding:10px 14px; border-radius:8px; font-size:15.5px; font-weight:600; color:#475569; cursor:pointer; transition:background .2s ease, color .2s ease; }
     .tab-switcher button.active { background:#ffffff; color:#1e293b; box-shadow:0 6px 18px rgba(76,110,245,0.12); }
     .tab-panel { display:none; margin-top: -4px; }
@@ -89,9 +89,9 @@
     .muted { color:#868e96; font-size:12px; }
     .icon { width: 16px; height: 16px; margin-right: 4px; vertical-align: -1px; font-size: 16px; }
 
-    /* 手机端统一：左右12px、底部36px、顶部50px */
+    /* 手机端统一：左右12px、底部24px、顶部50px */
     @media (max-width: 640px){
-      .container { padding: 50px 12px 36px; }
+      .container { padding: 50px 12px 24px; }
     }
     .flame-icon { display: inline-block; margin-left: 4px; font-size: 14px; line-height: 1; vertical-align: middle; }
     /* 涨幅单元格：文本居中，火焰固定在最左侧，不遮挡文字 */
@@ -175,7 +175,7 @@
         <div class="auto-card-header">
           <div>
             <div class="auto-card-title">自动刷新视图</div>
-            <div class="auto-card-desc">页面加载或切换到本标签时，将直接从服务器拉取最新榜单并展示结果</div>
+            <div class="auto-card-desc">该模式下直接从服务器拉取最新榜单并展示结果</div>
           </div>
           <div class="auto-actions">
             <button type="button" class="auto-refresh-btn" id="autoRefreshBtn" onclick="refreshAutoTab(true)">立即刷新</button>
