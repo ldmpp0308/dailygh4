@@ -28,9 +28,9 @@
   <style>
     body { font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background:#f6f7fb; margin:0; }
     .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); padding: 50px 12px 36px; position: relative; }
-    h1 { font-size: 28px; margin: 0; color:#111; letter-spacing: 0.3px; line-height: 1.25; position: relative; }
+    h1 { font-size: 24px; margin: 0; color:#111; letter-spacing: 0.3px; line-height: 1.25; position: relative; }
     .desc { color:#616a76; font-size: 14px; margin-top: 6px; margin-bottom: 0; line-height: 1.8; }
-    .container::before { content:""; position:absolute; top:0; left:0; right:0; height: 18px; border-top-left-radius:12px; border-top-right-radius:12px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
+    .container::before { content:""; position:absolute; top:0; left:0; right:0; height: 30px; border-top-left-radius:12px; border-top-right-radius:12px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
     /* Page header cosmetics */
     .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 14px; border-bottom: 1px solid #eef2f7; margin-bottom: 2px; }
     .header-icon { width:44px; height:44px; border-radius:10px; background: linear-gradient(135deg, #7c4dff, #4c6ef5); box-shadow: 0 8px 20px rgba(76,110,245,0.25); display:flex; align-items:center; justify-content:center; color:#fff; }
@@ -47,17 +47,17 @@
     /* 表格样式与美化 */
     table { width: 100%; border-collapse: collapse; }
     thead th { background: #b28cff; color: #fff; font-weight: 600; white-space: nowrap; }
-    th, td { padding: 6px 10px; border-bottom: 1px solid #eee; font-size: 13px; line-height: 1.35; border-right: 1px solid #e0e0e0; text-align: center; white-space: nowrap; width: auto; }
+    th, td { padding: 6px 10px; border-bottom: 1px solid #eee; font-size: 13px; line-height: 1.35; border-right: 1px solid #e0e0e0; text-align: justify; white-space: nowrap; width: auto; }
     thead th:last-child, tbody td:last-child { border-right: none; }
     /* 偶数行浅灰底色（以行序号/排名为准） */
     .zebra-even td { background-color: #efefef; }
     /* 增长用红色，下降用绿色 */
     .num-pos { color: #c62828; font-weight: 600; }
     .num-neg { color: #2e7d32; font-weight: 600; }
-    .range-bar { text-align:center; color:#555; font-size:13px; margin:12px 0; display:block; width:100%; }
+    .range-bar { text-align:center; color:#555; font-size:13px; margin: 8px 0 !important; display:block; width:100%; }
     #preview .range-bar { text-align: center !important; }
     /* 导出 PNG 时：日期区间整体居中，上下留白间距一致 */
-    #preview.export-png .range-bar { margin: 12px 0 !important; text-align: center !important; }
+    #preview.export-png .range-bar { margin: 8px 0 !important; text-align: center !important; }
     /* 统一保留的样式，去除重复的 table/th,td 定义 */
     .tab-switcher { display:flex; gap:8px; margin: 10px 0 20px; background:#f3f5fb; padding:6px; border-radius:10px; }
     .tab-switcher button { flex:1; border:none; background:transparent; padding:10px 14px; border-radius:8px; font-size:15.5px; font-weight:600; color:#475569; cursor:pointer; transition:background .2s ease, color .2s ease; }
@@ -78,7 +78,7 @@
     .auto-actions { display:flex; gap:10px; flex-wrap:wrap; }
     .auto-refresh-btn { background:#4c6ef5; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; }
     .auto-refresh-btn:disabled { opacity:0.6; cursor:not-allowed; }
-    .actions { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; }
+    .actions { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
     button { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 600; cursor:pointer; }
     .btn-primary { background: #4c6ef5; color:#fff; }
     .btn-secondary { background:#20c997; color:#fff; }
