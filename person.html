@@ -52,28 +52,28 @@
     .container::before { content:""; position: absolute; left:0; top:0; width:100%; height:30px; background: linear-gradient(90deg, var(--purple-1), var(--purple-2), var(--purple-3)); border-top-left-radius: 14px; border-top-right-radius: 14px; }
     .page-header { padding: 0 0 14px; border-bottom: 1px solid var(--border); }
     .title-wrap { position: relative; }
-    .title-wrap h1 { margin: 0; font-size: 22px; line-height: 1.4; font-weight: 800; letter-spacing: 0.5px; }
+    .title-wrap h1 { margin: 0; font-size: 24px; line-height: 1.4; font-weight: 700; letter-spacing: 1px; }
     .title-wrap h1::after { content:""; display:block; width: 100%; height: 2px; margin-top: 8px; background: linear-gradient(90deg, var(--purple-1), var(--purple-2), var(--purple-3)); opacity: 0.82; border-radius: 2px; }
     .back-link { position:absolute; right:0; top:0; font-size: 13px; color: #4c6ef5; text-decoration: none; padding: 4px 8px; border-radius: 6px; background: rgba(76,110,245,0.1); }
 
     .profile { display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: center; margin-top: 16px; }
     .avatar { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; background: #eee; border: 1px solid var(--border); }
-    .info .name { font-size: 20px; font-weight: 700; }
+    .info .name { font-size: 20px; font-weight: 600; }
     .info .nick { font-size: 14px; color: var(--text-muted); margin-left: 8px; }
     .info .meta { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
 
     .stats { display:none; }
-    .metrics-inline { margin-top: 16px; display: flex; justify-content: center; gap: 10px; }
+    .metrics-inline { margin-top: 16px; display: flex; justify-content: center; gap: 12px; }
     .metrics-inline .metric { display: flex; align-items: baseline; justify-content: center; text-align: center; font-size: 14px; color: var(--text-strong); gap: 6px; }
-    .metrics-inline .value { font-weight: 700; }
+    .metrics-inline .value { font-weight: 500; }
 
-    .controls { display:flex; align-items:center; gap:10px; margin-top: 18px; }
+    .controls { display:flex; align-items:center; gap:10px; margin-top: 8px; }
     .seg { display:flex; border:1px solid var(--border); border-radius: 8px; overflow:hidden; }
     .seg button { padding: 8px 12px; background:#fff; border:none; border-right:1px solid var(--border); font-size: 13px; cursor:pointer; }
     .seg button:last-child { border-right:none; }
     .seg button.active { background: rgba(142,115,255,0.14); color:#4c3bb3; }
 
-    .chart-wrap { margin-top: 10px; background: var(--card-bg); border:1px solid var(--border); border-radius: 12px; padding: 12px; }
+    .chart-wrap { margin-top: 10px; background: var(--card-bg); border:1px solid var(--border); border-radius: 12px; padding: 12px 4px; }
     .empty { margin-top: 12px; color: var(--text-muted); font-size: 13px; }
     /* 更多成员标签点击态样式 */
     .more-members .chk { cursor: pointer; user-select: none; }
@@ -92,7 +92,7 @@
       .metrics-inline .metric { font-size: 13px; }
     }
     /* 页脚 LOGO：居中显示，响应式宽度与回退文本 */
-    .footer-logo { margin-top: 16px; margin-bottom: 8px; text-align: center; }
+    .footer-logo { margin-top: 24px; margin-bottom: 8px; text-align: center; }
     .footer-logo img { display: block; margin: 0 auto; width: min(420px, 86vw); height: auto; max-width: 100%; }
     .footer-logo .logo-fallback { display: none; font-size: 13px; color: #444; opacity: 0.75; }
     @media (max-width: 640px){
@@ -138,7 +138,7 @@
       <div class="metric"><span class="label">点赞数</span>：<span id="statLike" class="value">—</span></div>
     </div>
 
-    <div class="controls" id="dateNavigation" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <div class="controls" id="dateNavigation" style="margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
       <div class="label" style="font-size:13px; color:var(--text-muted);">选择日期：</div>
       <select id="dateSelector" style="padding:4px 8px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
         <option value="">请选择日期</option>
@@ -152,8 +152,8 @@
         <button data-mode="month">月</button>
       </div>
     </div>
-    <div class="controls" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-      <div class="label" style="font-size:13px; color:var(--text-muted);">存档：</div>
+    <div class="controls" style="margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div class="label" style="font-size:13px; color:var(--text-muted);">刷新存档：</div>
       <button id="restoreLatestBtn" class="btn-light" title="从服务器拉取最新归档并合并到本地">从服务器恢复最新存档</button>
       <button id="localRefreshBtn" class="btn-light" title="从本地原始存档扫描缺失并重渲染">从本地刷新并重渲染</button>
       <span id="restoreStatus" class="status-badge"></span>
@@ -161,7 +161,7 @@
       <span id="lastSyncTimePerson" class="status-badge status-muted">最后同步时间：—</span>
     </div>
     <!-- 显示内容勾选：默认仅显示粉丝数，勾选显示点赞/收藏 -->
-    <div class="controls" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <div class="controls" style="margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
       <div class="label" style="font-size:13px; color:var(--text-muted);">数据维度：</div>
       <div id="metricToggles" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
         <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
@@ -176,7 +176,7 @@
       </div>
     </div>
     <!-- 趋势类型：增长/总数切换 -->
-    <div class="controls" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <div class="controls" style="margin-top:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
       <div class="label" style="font-size:13px; color:var(--text-muted);">趋势类型：</div>
       <div class="seg" id="trendType">
         <button data-type="growth" class="active">增长趋势</button>
