@@ -2,8 +2,39 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- 微信浏览器兼容性配置 -->
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="x5-orientation" content="portrait" />
+  <meta name="x5-fullscreen" content="true" />
+  <meta name="x5-page-mode" content="app" />
+  <!-- 防止微信浏览器自动调整字体大小 -->
+  <style>
+    body { -webkit-text-size-adjust: 100% !important; text-size-adjust: 100% !important; }
+  </style>
+  <meta name="build-version" content="v2025.11.14.1737" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>🎀 个人主页</title>
+  <script>
+    // 微信浏览器检测和兼容性处理
+    (function(){
+      const ua = navigator.userAgent || '';
+      const isWeChat = /MicroMessenger/i.test(ua);
+      if(isWeChat){
+        // 微信浏览器特殊处理
+        document.documentElement.setAttribute('data-wechat', 'true');
+        // 防止微信浏览器自动调整字体
+        if(typeof WeixinJSBridge !== 'undefined'){
+          WeixinJSBridge.invoke('setFontSizeCallback', { fontSize: 0 });
+          WeixinJSBridge.on('menu:share:timeline', function(){});
+        }
+      }
+    })();
+  </script>
   <style>
     /* 基础配色与容器样式，沿用主页面紫色渐变视觉 */
     :root {
@@ -75,7 +106,7 @@
     .status-muted { color: var(--text-muted); background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
   </style>
   <!-- 引入 Chart.js 用于趋势可视化（离线） -->
-  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/chart.umd.min.js?v=20251112"></script>
 </head>
 <body>
   <div class="container">
@@ -83,6 +114,8 @@
       <div class="title-wrap">
         <h1>🎀 个人主页</h1>
         <a class="back-link" href="index.html">返回榜单</a>
+        <!-- 已隐藏版本信息 -->
+        <span id="versionBadge" class="status-badge status-info" style="display:none !important; visibility:hidden;"></span>
       </div>
     </div>
 
@@ -119,7 +152,7 @@
         <button data-mode="month">月</button>
       </div>
     </div>
-    <div class="controls hide-controls" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <div class="controls" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
       <div class="label" style="font-size:13px; color:var(--text-muted);">存档：</div>
       <button id="restoreLatestBtn" class="btn-light" title="从服务器拉取最新归档并合并到本地">从服务器恢复最新存档</button>
       <button id="localRefreshBtn" class="btn-light" title="从本地原始存档扫描缺失并重渲染">从本地刷新并重渲染</button>
@@ -156,6 +189,7 @@
     <div class="chart-wrap">
       <canvas id="trendChart" height="220"></canvas>
       <div id="emptyMsg" class="empty" style="display:none;">暂无该成员历史数据，请先在榜单页保存当日数据。</div>
+      <div id="dataUpdateStatus" style="display:none; margin-top:8px; padding:6px 12px; background:#f5f5f5; border-radius:4px; font-size:12px; color:#666; text-align:center;"></div>
     </div>
     <!-- 成员选择模块：移至折线图下方（每行 6 个，移除“更多成员”文本） -->
     <div class="filters" style="display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-top:8px;">
@@ -171,32 +205,411 @@
 
   <script>
     // 复用主页面的本地存储结构
-    // 统一使用稳定 API 域名；页面将优先通过同源 /api 代理转发
-    const API_BASE = 'https://api.rank.dailygh4.com';
+    // 统一使用同源 /api 代理，由 Cloudflare Worker 转发到稳定 API
+    const API_BASE = '';
     function storageKey(dateStr){ return `memberData:${dateStr}`; }
     function storageRawKey(dateStr){ return `memberRaw:${dateStr}`; }
+    
+    // ==================== 智能缓存管理系统（与榜单页共享）====================
+    const CacheManager = {
+      // 缓存元数据键
+      META_KEY: 'cache_meta',
+      // 缓存有效期（毫秒）：5分钟
+      CACHE_TTL: 5 * 60 * 1000,
+      
+      // 获取缓存元数据
+      getMeta() {
+        try {
+          const metaStr = localStorage.getItem(this.META_KEY);
+          if (!metaStr) return null;
+          return JSON.parse(metaStr);
+        } catch (e) {
+          return null;
+        }
+      },
+      
+      // 保存缓存元数据
+      setMeta(meta) {
+        try {
+          localStorage.setItem(this.META_KEY, JSON.stringify({
+            ...meta,
+            lastUpdate: Date.now()
+          }));
+        } catch (e) {
+          console.warn('[CacheManager] 保存元数据失败:', e);
+        }
+      },
+      
+      // 检查缓存是否有效
+      isCacheValid(meta) {
+        if (!meta || !meta.lastUpdate) return false;
+        const age = Date.now() - meta.lastUpdate;
+        return age < this.CACHE_TTL;
+      },
+      
+      // 获取缓存的日期列表
+      getCachedDates() {
+        try {
+          const dates = new Set();
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+            if (key.startsWith('memberData:') || key.startsWith('memberRaw:')) {
+              const date = key.split(':')[1];
+              if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                dates.add(date);
+              }
+            }
+          }
+          return Array.from(dates).sort();
+        } catch (e) {
+          return [];
+        }
+      },
+      
+      // 从缓存加载数据（立即返回，用于快速显示）
+      loadFromCache() {
+        const cachedDates = this.getCachedDates();
+        if (!cachedDates.length) return null;
+        
+        const latestDate = cachedDates[cachedDates.length - 1];
+        const memberData = {};
+        const rawMap = {};
+        
+        // 加载所有缓存的数据
+        for (const date of cachedDates) {
+          try {
+            const dataKey = `memberData:${date}`;
+            const rawKey = `memberRaw:${date}`;
+            const dataStr = localStorage.getItem(dataKey);
+            const rawStr = localStorage.getItem(rawKey);
+            
+            if (dataStr) {
+              try {
+                memberData[date] = JSON.parse(dataStr);
+              } catch (e) {
+                console.warn(`[CacheManager] 解析 ${date} 的 memberData 失败:`, e);
+              }
+            }
+            
+            if (rawStr && rawStr.trim()) {
+              rawMap[date] = rawStr;
+            }
+          } catch (e) {
+            console.warn(`[CacheManager] 加载 ${date} 的缓存失败:`, e);
+          }
+        }
+        
+        return {
+          latestDate,
+          memberData,
+          rawMap,
+          cachedDates
+        };
+      },
+      
+      // 修复 memberRaw 类型问题：兼容 Object 和 string
+      normalizeMemberRaw(memberRaw) {
+        if (!memberRaw) return null;
+        
+        // 如果是字符串，直接返回（但需要验证不是空对象字符串）
+        if (typeof memberRaw === 'string' && memberRaw.trim()) {
+          const trimmed = memberRaw.trim();
+          // 检查是否是空对象或空数组的字符串表示
+          if (trimmed === '{}' || trimmed === '[]' || trimmed.length <= 2) {
+            console.warn('[CacheManager] memberRaw 是空对象/数组字符串，返回 null');
+            return null;
+          }
+          // 验证是否是有效的 JSON（至少包含 log.entries）
+          try{
+            const parsed = JSON.parse(trimmed);
+            if(parsed && parsed.log && parsed.log.entries && Array.isArray(parsed.log.entries) && parsed.log.entries.length > 0){
+              return trimmed;
+            } else {
+              console.warn('[CacheManager] memberRaw 字符串解析后无有效 entries，返回 null');
+              return null;
+            }
+          }catch(e){
+            // 如果不是 JSON，可能是其他格式，直接返回
+            return trimmed;
+          }
+        }
+        
+        // 如果是对象，尝试转换为字符串
+        if (typeof memberRaw === 'object') {
+          try {
+            // 检查是否是空对象
+            const keys = Object.keys(memberRaw);
+            if (keys.length === 0) {
+              console.warn('[CacheManager] memberRaw 是空对象，返回 null');
+              return null;
+            }
+            
+            // 如果对象有日期键，取最新日期的值
+            if (keys.length > 0) {
+              const dates = keys.sort();
+              const latestDate = dates[dates.length - 1];
+              const value = memberRaw[latestDate];
+              
+              // 如果值本身是字符串，返回（但需要验证不是空对象字符串）
+              if (typeof value === 'string' && value.trim()) {
+                const trimmed = value.trim();
+                if (trimmed === '{}' || trimmed === '[]' || trimmed.length <= 2) {
+                  console.warn('[CacheManager] memberRaw[日期] 是空对象/数组字符串，返回 null');
+                  return null;
+                }
+                // 验证是否是有效的 JSON
+                try{
+                  const parsed = JSON.parse(trimmed);
+                  if(parsed && parsed.log && parsed.log.entries && Array.isArray(parsed.log.entries) && parsed.log.entries.length > 0){
+                    return trimmed;
+                  } else {
+                    console.warn('[CacheManager] memberRaw[日期] 字符串解析后无有效 entries，返回 null');
+                    return null;
+                  }
+                }catch(e){
+                  return trimmed;
+                }
+              }
+              
+              // 如果值是对象，检查是否是空对象或有效的 HAR 格式
+              if (typeof value === 'object') {
+                if (Array.isArray(value) && value.length === 0) {
+                  console.warn('[CacheManager] memberRaw[日期] 是空数组，返回 null');
+                  return null;
+                }
+                if (!Array.isArray(value) && Object.keys(value).length === 0) {
+                  console.warn('[CacheManager] memberRaw[日期] 是空对象，返回 null');
+                  return null;
+                }
+                // 检查是否是 HAR 格式
+                if (value.log && value.log.entries && Array.isArray(value.log.entries) && value.log.entries.length > 0) {
+                  return JSON.stringify(value);
+                }
+                // 如果对象没有 entries，返回 null
+                console.warn('[CacheManager] memberRaw[日期] 对象没有有效的 entries，返回 null');
+                return null;
+              }
+            }
+            
+            // 如果对象本身是 HAR 格式，转换为 JSON 字符串
+            if (memberRaw.log && memberRaw.log.entries && Array.isArray(memberRaw.log.entries) && memberRaw.log.entries.length > 0) {
+              return JSON.stringify(memberRaw);
+            }
+            
+            // 如果对象不是 HAR 格式或没有 entries，返回 null
+            console.warn('[CacheManager] memberRaw 对象不是有效的 HAR 格式（无 entries），返回 null');
+            return null;
+          } catch (e) {
+            console.warn('[CacheManager] 转换 memberRaw 对象失败:', e);
+            return null;
+          }
+        }
+        
+        return null;
+      },
+      
+      // 清理旧的 HAR 数据（只保留最近 7 天）
+      // 注意：memberData 保留更长时间，只清理 memberRaw（HAR 数据）
+      cleanupOldRawData(keepDays = 7) {
+        try {
+          const today = new Date();
+          const cutoffDate = new Date(today);
+          cutoffDate.setDate(cutoffDate.getDate() - keepDays);
+          const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+          
+          const datesToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key || !key.startsWith('memberRaw:')) continue;
+            const date = key.split(':')[1];
+            if (date && date < cutoffDateStr) {
+              datesToRemove.push(key);
+            }
+          }
+          
+          let removedCount = 0;
+          for (const key of datesToRemove) {
+            try {
+              localStorage.removeItem(key);
+              removedCount++;
+            } catch (e) {
+              console.warn(`[CacheManager] 清理 ${key} 失败:`, e);
+            }
+          }
+          
+          if (removedCount > 0) {
+            console.log(`[CacheManager] ✅ 已清理 ${removedCount} 个旧日期的 HAR 数据（保留最近 ${keepDays} 天，memberData 不受影响）`);
+          }
+          
+          return removedCount;
+        } catch (e) {
+          console.warn('[CacheManager] 清理旧数据失败:', e);
+          return 0;
+        }
+      },
+      
+      // 检查并清理存储空间
+      ensureStorageSpace() {
+        try {
+          // 先尝试清理旧的 HAR 数据
+          this.cleanupOldRawData(7);
+          
+          // 检查存储空间（通过尝试保存一个小的测试值）
+          const testKey = '__storage_test__';
+          const testValue = 'test';
+          try {
+            localStorage.setItem(testKey, testValue);
+            localStorage.removeItem(testKey);
+            return true;
+          } catch (e) {
+            // 如果测试失败，尝试清理更多旧数据
+            console.warn('[CacheManager] 存储空间不足，清理更多旧数据...');
+            this.cleanupOldRawData(3); // 只保留最近 3 天
+            return true;
+          }
+        } catch (e) {
+          console.warn('[CacheManager] 检查存储空间失败:', e);
+          return false;
+        }
+      },
+      
+      // 保存数据到缓存
+      saveToCache(memberData, rawMap) {
+        let savedCount = 0;
+        let rawSavedCount = 0;
+        let rawSkippedCount = 0;
+        
+        // 确保有足够的存储空间
+        this.ensureStorageSpace();
+        
+        // 保存 memberData
+        for (const [date, rows] of Object.entries(memberData || {})) {
+          if (Array.isArray(rows) && rows.length) {
+            try {
+              localStorage.setItem(`memberData:${date}`, JSON.stringify(rows));
+              savedCount++;
+            } catch (e) {
+              console.warn(`[CacheManager] 保存 ${date} 的 memberData 失败:`, e);
+            }
+          }
+        }
+        
+        // 保存 memberRaw（修复类型问题）
+        // 优化：只保存最近 7 天的 HAR 数据，避免存储空间不足
+        // 注意：memberData 会保留更长时间，历史数据的 HAR 可以从服务器重新获取
+        const today = new Date().toISOString().split('T')[0];
+        const keepDays = 7;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - keepDays);
+        const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+        
+        for (const [date, raw] of Object.entries(rawMap || {})) {
+          // 只保存最近 7 天的 HAR 数据（历史数据的 HAR 可以从服务器重新获取）
+          if (date < cutoffDateStr) {
+            rawSkippedCount++;
+            // 不输出警告，因为这是预期的行为
+            continue;
+          }
+          
+          const normalized = this.normalizeMemberRaw(raw);
+          if (normalized) {
+            // 检查数据大小，如果太大则跳过（超过 500KB）
+            if (normalized.length > 500 * 1024) {
+              console.warn(`[CacheManager] ${date} 的 memberRaw 太大 (${(normalized.length / 1024).toFixed(2)}KB)，跳过保存`);
+              rawSkippedCount++;
+              continue;
+            }
+            
+            try {
+              localStorage.setItem(`memberRaw:${date}`, normalized);
+              rawSavedCount++;
+            } catch (e) {
+              // 如果存储失败，可能是空间不足，尝试清理后重试
+              if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
+                console.warn(`[CacheManager] 存储空间不足，清理旧数据后重试...`);
+                this.cleanupOldRawData(3); // 只保留最近 3 天
+                try {
+                  localStorage.setItem(`memberRaw:${date}`, normalized);
+                  rawSavedCount++;
+                } catch (e2) {
+                  console.warn(`[CacheManager] 保存 ${date} 的 memberRaw 失败（已清理后重试）:`, e2);
+                  rawSkippedCount++;
+                }
+              } else {
+                console.warn(`[CacheManager] 保存 ${date} 的 memberRaw 失败:`, e);
+                rawSkippedCount++;
+              }
+            }
+          } else {
+            console.warn(`[CacheManager] ${date} 的 memberRaw 无效，未保存`);
+            rawSkippedCount++;
+          }
+        }
+        
+        // 更新元数据
+        const cachedDates = this.getCachedDates();
+        this.setMeta({
+          latestDate: cachedDates.length ? cachedDates[cachedDates.length - 1] : null,
+          dates: cachedDates,
+          savedCount,
+          rawSavedCount
+        });
+        
+        if (rawSkippedCount > 0) {
+          console.log(`[CacheManager] ✅ 已保存 ${savedCount} 个日期的 memberData 和 ${rawSavedCount} 个日期的 memberRaw 到缓存（跳过 ${rawSkippedCount} 个旧日期或过大的 HAR 数据）`);
+        } else {
+          console.log(`[CacheManager] ✅ 已保存 ${savedCount} 个日期的 memberData 和 ${rawSavedCount} 个日期的 memberRaw 到缓存`);
+        }
+        
+        return { savedCount, rawSavedCount, rawSkippedCount };
+      }
+    };
+    
+    // 将 CacheManager 暴露到全局
+    window.CacheManager = CacheManager;
+    
     function listStoredDates(){
       const dates = new Set();
+      const today = new Date().toISOString().split('T')[0]; // 获取今天的日期（YYYY-MM-DD）
       try{
         for(let i=0;i<localStorage.length;i++){
           const k = localStorage.key(i);
           if(!k) continue;
           if(k.startsWith('memberRaw:') || k.startsWith('memberData:')){
             const d = k.split(':')[1];
-            if(d) dates.add(d);
+            // 只添加今天及之前的日期，过滤掉未来日期
+            if(d && d <= today) dates.add(d);
           }
         }
       }catch(e){}
       return Array.from(dates).sort();
     }
+    // 强制保障日期筛选器存在（兜底注入）
+    document.addEventListener('DOMContentLoaded', ()=>{
+      try{
+        if(!document.getElementById('dateNavigation')){
+          const seg = document.getElementById('granularity');
+          if(seg){
+            const nav = document.createElement('div');
+            nav.id = 'dateNavigation';
+            nav.className = 'controls';
+            nav.style.cssText = 'margin-top:6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+            nav.innerHTML = '<div class="label" style="font-size:13px;color:#666;">选择日期：</div><select id="dateSelector" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;"><option value="">请选择日期</option></select>';
+            seg.parentNode.insertBefore(nav, seg);
+          }
+        }
+      }catch(e){}
+    });
     function getStoredRowsForDate(dateStr){
       if(!dateStr) return [];
       try{ const v = localStorage.getItem(storageKey(dateStr)); return v ? JSON.parse(v) : []; }catch(e){ return []; }
     }
     function getWeekStart(dateStr){
       const d = new Date(dateStr);
-      const day = d.getDay();
-      const delta = -day; // Sunday as start (周日起始)
+      const day = d.getDay(); // 0=Sun,1=Mon,...,6=Sat
+      // 周一作为一周的开始：如果 day=0（周日），回到上周一（-6天）；否则回到本周一（-(day-1)天）
+      const delta = day === 0 ? -6 : -(day - 1);
       const start = new Date(d);
       start.setDate(d.getDate() + delta);
       return start.toISOString().split('T')[0];
@@ -236,85 +649,631 @@
       return labels;
     }
 
+    function listDatesBetween(start, end){
+      if(!start || !end) return [];
+      const out = [];
+      try{
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        if(!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) return out;
+        let cur = new Date(startDate);
+        while(cur.getTime() <= endDate.getTime()){
+          out.push(cur.toISOString().split('T')[0]);
+          cur.setDate(cur.getDate() + 1);
+        }
+      }catch(e){}
+      return out;
+    }
+
+    const pendingHistoryFetch = new Map();
+
+    function dedupeLatestRows(rows){
+      if(!Array.isArray(rows) || !rows.length) return [];
+      const map = new Map();
+      for(const r of rows){
+        if(!r) continue;
+        // 优先使用 realName，其次 userId，确保唯一性
+        const realName = String(r.realName || '').trim();
+        const userId = r.userId != null ? String(r.userId) : '';
+        const key = realName || userId || String(r.nickName || '');
+        if(!key) continue;
+        
+        const iso = r.startedDateTime ? String(r.startedDateTime) : '';
+        let ts = 0;
+        try{
+          ts = iso ? Date.parse(iso) : 0;
+        }catch(e){ ts = 0; }
+        const prev = map.get(key);
+        if(!prev || ts > prev.ts){
+          map.set(key, { ts, row: r });
+        }
+      }
+      return Array.from(map.values()).map(entry => entry.row);
+    }
+
+    async function fetchHistoryRows(clientId, date){
+      const attempt = async (base) => {
+        const url = `${base}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(date)}`;
+        const resp = await fetch(url, { mode: 'cors', cache: 'no-store' });
+        if(!resp.ok){
+          const text = await resp.text();
+          throw new Error(text || `历史接口失败(${resp.status})`);
+        }
+        return resp.json();
+      };
+      try{
+        return await attempt('');
+      }catch(err1){
+        try{
+          return await attempt(API_BASE || '');
+        }catch(err2){
+          return await attempt('https://api.dailygh4.com');
+        }
+      }
+    }
+
+    async function ensureDateCoverage(options){
+      const { clientId, dates, memberDataMap, rawMap } = options || {};
+      if(!clientId || !Array.isArray(dates) || !dates.length) return;
+      const unique = Array.from(new Set(dates.filter(Boolean))).sort();
+      for(const date of unique){
+        try{
+          let rows = getStoredRowsForDate(date);
+          if(!rows.length && memberDataMap && Array.isArray(memberDataMap[date])){
+            const deduped = dedupeLatestRows(memberDataMap[date]);
+            if(deduped.length){
+              try{ localStorage.setItem(storageKey(date), JSON.stringify(deduped)); }catch(e){}
+              rows = deduped;
+            }
+          }
+          if(rawMap && rawMap[date]){
+            try{ localStorage.setItem(storageRawKey(date), rawMap[date]); }catch(e){}
+          }
+          if(rows.length){
+            continue;
+          }
+          if(pendingHistoryFetch.get(date)){
+            await pendingHistoryFetch.get(date);
+            continue;
+          }
+          const promise = (async ()=>{
+            try{
+              const payload = await fetchHistoryRows(clientId, date);
+              const histRows = Array.isArray(payload?.rows) ? dedupeLatestRows(payload.rows) : [];
+              if(histRows.length){
+                try{ localStorage.setItem(storageKey(date), JSON.stringify(histRows)); }catch(e){}
+              }
+              // 处理 memberRaw：使用 CacheManager 修复类型问题
+              if(payload?.memberRaw){
+                const normalizedRaw = CacheManager.normalizeMemberRaw(
+                  typeof payload.memberRaw === 'object' && payload.memberRaw[date] 
+                    ? payload.memberRaw[date] 
+                    : payload.memberRaw
+                );
+                if (normalizedRaw) {
+                  try{ localStorage.setItem(storageRawKey(date), normalizedRaw); }catch(e){}
+                }
+              }
+            }catch(error){
+              console.warn('[person] ensureDateCoverage fetch failed:', date, error);
+            }finally{
+              pendingHistoryFetch.delete(date);
+            }
+          })();
+          pendingHistoryFetch.set(date, promise);
+          await promise;
+        }catch(error){
+          console.warn('[person] ensureDateCoverage error:', date, error);
+        }
+      }
+    }
+
     // 最后同步时间显示与持久化
     function initLastSyncPerson(){ try{ const v = Number(localStorage.getItem('last_sync_time')); const el = document.getElementById('lastSyncTimePerson'); if(el){ el.textContent = v ? `最后同步时间：${new Date(v).toLocaleString('zh-CN',{hour12:false})}` : '最后同步时间：—'; } }catch(e){} }
     function setLastSync(ts){ try{ const v = (ts instanceof Date) ? ts.getTime() : Number(ts)||Date.now(); localStorage.setItem('last_sync_time', String(v)); const el1 = document.getElementById('lastSyncTimePerson'); if(el1){ el1.textContent = `最后同步时间：${new Date(v).toLocaleString('zh-CN',{hour12:false})}`; } const el2 = document.getElementById('lastSyncTime'); if(el2){ el2.textContent = `最后同步时间：${new Date(v).toLocaleString('zh-CN',{hour12:false})}`; } }catch(e){} }
     document.addEventListener('DOMContentLoaded', initLastSyncPerson);
+    function updateVersionBadge(){ 
+      // 已禁用：不再显示版本信息
+      try{ 
+        const vb=document.getElementById('versionBadge'); 
+        if(vb) {
+          vb.style.display = 'none !important';
+          vb.style.visibility = 'hidden';
+          vb.textContent = '';
+        }
+      }catch(e){} 
+    }
+    document.addEventListener('DOMContentLoaded', updateVersionBadge);
 
-    // 将 API 返回的行格式（含 info 嵌套）标准化为页面使用的平铺格式，避免展示为 0
-    function normalizeMemberRow(r){
-      if(!r || typeof r !== 'object') return null;
-      const info = r.info || {};
-      const name = String(r.realName ?? r.姓名 ?? '').trim();
-      if(!name) return null;
-      const fans = Number(r.fansNum ?? r.粉丝数 ?? info.fansNum ?? info.粉丝数 ?? 0);
-      const like = Number(r.likeNum ?? r.点赞数 ?? info.likeNum ?? info.点赞数 ?? 0);
-      const collect = Number(r.collectNum ?? r.收藏数 ?? info.collectNum ?? info.收藏数 ?? 0);
-      return {
-        realName: name,
-        姓名: name,
-        fansNum: fans,
-        粉丝数: fans,
-        likeNum: like,
-        点赞数: like,
-        collectNum: collect,
-        收藏数: collect,
-        startedDateTime: r.startedDateTime ?? null
-      };
+    // 从服务器恢复最新存档并合并到本地
+    function resolveClientId(){
+      try{
+        const host = (location && location.hostname || '').trim();
+        if(!host || host === 'localhost' || host === '127.0.0.1'){
+          return 'rank.dailygh4.com';
+        }
+        return host;
+      }catch(e){
+        return 'rank.dailygh4.com';
+      }
     }
 
-    // 从服务器恢复最新存档并合并到本地（多源拉取：同源 /api → api.rank → api.dailygh4 → 静态文件）
-    async function restoreLatestFromServer(){
+    async function restoreLatestFromServer(force){
       const statusEl = document.getElementById('restoreStatus');
       function setStatus(type, msg){ if(statusEl) { statusEl.style.color = (type==='error') ? '#d93025' : (type==='success' ? '#137333' : 'var(--text-muted)'); statusEl.textContent = msg; } }
-      const prevSelected = selectedDate;
-      try{
-        setStatus('info','正在拉取最新存档…');
-        const clientId = location.hostname || 'default';
-        const query = `client_id=${encodeURIComponent(clientId)}&raw=1`;
-        const apiCandidates = [
-          () => fetch(`/api/archives/latest?${query}`, { mode: 'cors', cache: 'no-store' }),
-          () => fetch(`${API_BASE}/api/archives/latest?${query}`, { mode: 'cors', cache: 'no-store' }),
-          () => fetch(`https://api.dailygh4.com/api/archives/latest?${query}`, { mode: 'cors', cache: 'no-store' })
-        ];
-        const staticCandidates = [
-          'archives/latest_localhost.json',
-          'archives/latest_rank.dailygh4.com.json',
-          'archives/latest.json'
-        ];
-        let payload = null;
-        let lastErr = null;
-        for(const attempt of apiCandidates){
-          try{
-            const resp = await attempt();
-            if(!resp.ok){ lastErr = new Error(await resp.text() || '拉取失败'); continue; }
-            const data = await resp.json();
-            const rawMap = data.memberRaw || {};
-            const dataMap = data.memberData || {};
-            const hasData = Object.keys(rawMap).length > 0 || Object.keys(dataMap).length > 0;
-            if(hasData){ payload = data; lastErr = null; break; }
-            lastErr = new Error('接口返回无有效数据');
-          }catch(e){ lastErr = e; }
-        }
-        if(!payload && staticCandidates.length){
-          for(const path of staticCandidates){
-            try{
-              const resp = await fetch(path, { cache: 'no-store' });
-              if(!resp.ok) continue;
-              const data = await resp.json();
-              const rawMap = data.memberRaw || {};
-              const dataMap = data.memberData || {};
-              const hasData = Object.keys(rawMap).length > 0 || Object.keys(dataMap).length > 0;
-              if(hasData){ payload = data; lastErr = null; break; }
-            }catch(e){ }
+      
+      // 智能缓存：如果不是强制刷新，先尝试从缓存加载并立即显示
+      if (!force) {
+        const cached = CacheManager.loadFromCache();
+        if (cached && cached.latestDate && cached.memberData[cached.latestDate]) {
+          console.log('[person] ✅ 从缓存加载数据，最新日期:', cached.latestDate);
+          setStatus('info', '已加载缓存数据，正在后台检查更新...');
+          
+          // 立即使用缓存数据
+          const latestDate = cached.latestDate;
+          const monthStart = getMonthStart(latestDate);
+          const monthDates = listDatesBetween(monthStart, latestDate);
+          
+          // 同步缓存数据到本地存储（确保后续逻辑能使用）
+          for (const [date, rows] of Object.entries(cached.memberData || {})) {
+            try {
+              localStorage.setItem(storageKey(date), JSON.stringify(rows));
+            } catch (e) {
+              console.warn(`[person] 同步缓存 ${date} 的 memberData 失败:`, e);
+            }
           }
-        }
-        if(!payload){
-          setStatus('error', lastErr && lastErr.message ? `拉取失败：${lastErr.message}` : '所有数据源均不可用，请稍后重试');
+          
+          for (const [date, raw] of Object.entries(cached.rawMap || {})) {
+            try {
+              localStorage.setItem(storageRawKey(date), raw);
+            } catch (e) {
+              console.warn(`[person] 同步缓存 ${date} 的 memberRaw 失败:`, e);
+            }
+          }
+          
+          // 触发本地刷新以显示数据
+          setTimeout(() => {
+            refreshFromLocal();
+          }, 50);
+          
+          // 后台异步检查更新（不阻塞界面）
+          setTimeout(() => {
+            restoreLatestFromServer(true); // 强制刷新，获取最新数据
+          }, 100);
           return;
         }
-        const rawMap = payload.memberRaw || {};
-        const dataMap = payload.memberData || {};
+      }
+      
+      try{
+        setStatus('info','正在从服务器获取最新数据...');
+        const clientId = resolveClientId();
+        
+        // 优先从 history 接口获取所有日期，找到真正的"最新"日期（与榜单页逻辑一致）
+        let latestDate = null;
+        let memberData = {};
+        let rawMap = {};
+        
+        try{
+          const historyResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}`, { cache: 'no-store' });
+          if(historyResp.ok){
+            const historyPayload = await historyResp.json();
+            const histMemberData = historyPayload.memberData || {};
+            // 使用 dates 列表而不是 memberData 的 keys，因为 dates 包含所有有数据的日期
+            const allDates = (historyPayload.dates || Object.keys(histMemberData)).sort();
+            if(allDates.length){
+              // 从后往前查找有数据的日期
+              let foundDate = null;
+              let foundRows = [];
+              for(let i = allDates.length - 1; i >= 0; i--){
+                const checkDate = allDates[i];
+                let checkRows = histMemberData[checkDate] || [];
+                // 如果 memberData 中为空，尝试通过 date 参数单独查询
+                if(!checkRows.length){
+                  try{
+                    const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(checkDate)}`, { cache: 'no-store' });
+                    if(dateHistoryResp.ok){
+                      const dateHistoryPayload = await dateHistoryResp.json();
+                      checkRows = Array.isArray(dateHistoryPayload.rows) ? dateHistoryPayload.rows : [];
+                      if(checkRows.length){
+                        // 处理从 date 查询返回的 memberRaw
+                        // 使用 CacheManager 修复类型问题
+                        const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+                        if (normalizedRaw) {
+                          rawMap[checkDate] = normalizedRaw;
+                          console.log('[person] ✅ 通过 date 参数获取到', checkDate, '的 HAR 数据，长度:', normalizedRaw.length);
+                        } else {
+                          console.warn('[person] ⚠️ 通过 date 参数未获取到', checkDate, '的 HAR 数据');
+                        }
+                        // 更新 memberData，确保后续使用
+                        histMemberData[checkDate] = checkRows;
+                        console.log('[person] 通过 date 参数找到数据:', checkDate, '数据条数:', checkRows.length);
+                      }
+                    }
+          }catch(e){
+                    console.warn('[person] 查询日期', checkDate, '失败:', e);
+                  }
+                }
+                if(checkRows.length){
+                  foundDate = checkDate;
+                  foundRows = checkRows;
+                  break;
+                }
+              }
+              if(foundDate && foundRows.length){
+                latestDate = foundDate;
+                memberData[latestDate] = foundRows;
+                console.log('[person] 使用最新日期:', latestDate, '数据条数:', foundRows.length);
+              } else {
+                // 如果都没找到，从后往前遍历所有日期，尝试通过 date 参数查询
+                console.warn('[person] 第一轮遍历未找到数据，开始第二轮遍历');
+                let fallbackDate = null;
+                let fallbackRows = [];
+                for(let i = allDates.length - 1; i >= 0; i--){
+                  const checkDate = allDates[i];
+                  let checkRows = histMemberData[checkDate] || [];
+                  // 如果为空，尝试通过 date 参数查询
+                  if(!checkRows.length){
+                    try{
+                      const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(checkDate)}`, { cache: 'no-store' });
+                      if(dateHistoryResp.ok){
+                        const dateHistoryPayload = await dateHistoryResp.json();
+                        checkRows = Array.isArray(dateHistoryPayload.rows) ? dateHistoryPayload.rows : [];
+                        if(checkRows.length){
+                          console.log('[person] 第二轮通过 date 参数找到数据:', checkDate, '数据条数:', checkRows.length);
+                          // 处理从 date 查询返回的 memberRaw
+                          // 使用 CacheManager 修复类型问题
+                          const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+                          if (normalizedRaw) {
+                            rawMap[checkDate] = normalizedRaw;
+                          }
+                          // 更新 memberData
+                          histMemberData[checkDate] = checkRows;
+                        }
+                      }
+                    }catch(e){
+                      console.warn('[person] 第二轮查询日期', checkDate, '失败:', e);
+                    }
+                  }
+                  if(checkRows && checkRows.length > 0){
+                    fallbackDate = checkDate;
+                    fallbackRows = checkRows;
+                    break;
+                  }
+                }
+                if(fallbackDate && fallbackRows.length){
+                  latestDate = fallbackDate;
+                  memberData[latestDate] = fallbackRows;
+                  console.log('[person] 第二轮找到日期:', latestDate, '数据条数:', fallbackRows.length);
+                } else {
+                  // 如果所有日期都没有数据，使用日期列表中的最后一个（即使为空）
+                  latestDate = allDates[allDates.length - 1];
+                  memberData[latestDate] = histMemberData[latestDate] || [];
+                  console.warn('[person] 未找到有数据的日期，使用最后一个日期:', latestDate);
+                }
+              }
+              // 处理从 history 接口返回的 memberRaw（用于小时级数据）
+              // 注意：优先使用通过 date 参数查询获取的 memberRaw（已在 rawMap 中）
+              // 只有当 rawMap 中没有该日期的数据时，才尝试从 history 接口的 memberRaw 中获取
+              if(!rawMap[latestDate] || !rawMap[latestDate].trim() || rawMap[latestDate].length < 100){
+                // rawMap 中没有有效数据，尝试从 history 接口获取
+                const histMemberRaw = historyPayload.memberRaw || {};
+                // 优先尝试从对象中获取指定日期的数据
+                if (typeof histMemberRaw === 'object' && histMemberRaw[latestDate]) {
+                  const dateRaw = CacheManager.normalizeMemberRaw(histMemberRaw[latestDate]);
+                  if (dateRaw && dateRaw.length > 100) {
+                    rawMap[latestDate] = dateRaw;
+                    console.log('[person] ✅ 从 history 接口获取到', latestDate, '的 memberRaw (对象)，长度:', dateRaw.length);
+                  } else {
+                    console.warn('[person] ⚠️ history 接口返回的 memberRaw 无效或太短，长度:', dateRaw ? dateRaw.length : 0);
+                  }
+                } else {
+                  // 尝试直接转换整个 memberRaw 对象
+                  const normalizedRaw = CacheManager.normalizeMemberRaw(histMemberRaw);
+                  if (normalizedRaw && normalizedRaw.length > 100) {
+                    rawMap[latestDate] = normalizedRaw;
+                    console.log('[person] ✅ 从 history 接口获取到', latestDate, '的 memberRaw，长度:', normalizedRaw.length);
+                  } else {
+                    console.warn('[person] ⚠️ history 接口未返回', latestDate, '的有效 memberRaw，histMemberRaw类型:', typeof histMemberRaw, '长度:', normalizedRaw ? normalizedRaw.length : 0);
+                  }
+                }
+              } else {
+                console.log('[person] ✅ rawMap 中已有', latestDate, '的 memberRaw（来自 date 参数查询），长度:', rawMap[latestDate].length);
+              }
+            }
+          }
+        }catch(err){
+          console.warn('[person] 从 history 获取最新日期失败，回退到 latest 接口', err);
+        }
+        
+        // 如果从 history 获取的数据缺少 memberRaw，尝试从 latest 接口获取
+        if(latestDate && (!rawMap[latestDate] || !rawMap[latestDate].trim())){
+          try{
+            const latestUrl = `${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1`;
+            let latestResp = null;
+            try{
+              latestResp = await fetch(latestUrl, { mode: 'cors', cache: 'no-store', headers: { 'cache-control': 'no-store' } });
+            }catch(e){
+              console.warn('[person] latest fetch via proxy failed, fallback to upstream', e);
+            }
+            if(!latestResp || !latestResp.ok){
+              const fallbackUrl = `https://api.dailygh4.com/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1`;
+              latestResp = await fetch(fallbackUrl, { mode: 'cors', cache: 'no-store', headers: { 'cache-control': 'no-store' } });
+            }
+            if(latestResp && latestResp.ok){
+        const payload = await latestResp.json();
+              const latestRawMap = payload.memberRaw || {};
+              // 使用 CacheManager 修复类型问题
+              const latestRaw = CacheManager.normalizeMemberRaw(latestRawMap[latestDate] || latestRawMap);
+              if (latestRaw) {
+                rawMap[latestDate] = latestRaw;
+                console.log('[person] ✅ 从 latest 接口获取到', latestDate, '的 memberRaw，长度:', latestRaw.length);
+              }
+            }
+          }catch(e){
+            console.warn('[person] 从 latest 获取 memberRaw 失败', e);
+          }
+        }
+        
+        // 如果 history 接口没有返回数据，回退到 latest 接口
+        if(!latestDate || !memberData[latestDate] || !memberData[latestDate].length){
+          let latestResp = null;
+          try{
+            const latestUrl = `${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1`;
+            latestResp = await fetch(latestUrl, { mode: 'cors', cache: 'no-store', headers: { 'cache-control': 'no-store' } });
+          }catch(e){
+            console.warn('[person] latest fetch via proxy failed, fallback to upstream', e);
+          }
+          if(!latestResp || !latestResp.ok){
+            const fallbackUrl = `https://api.dailygh4.com/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1`;
+            latestResp = await fetch(fallbackUrl, { mode: 'cors', cache: 'no-store', headers: { 'cache-control': 'no-store' } });
+            if(!latestResp.ok){
+              const t = await latestResp.text();
+              throw new Error(t || '拉取失败');
+            }
+          }
+          const payload = await latestResp.json();
+          // 使用 CacheManager 修复类型问题
+          const normalizedRawMap = {};
+          const rawMapObj = payload.memberRaw || {};
+          for (const [date, raw] of Object.entries(rawMapObj)) {
+            const normalized = CacheManager.normalizeMemberRaw(raw);
+            if (normalized) {
+              normalizedRawMap[date] = normalized;
+            }
+          }
+          rawMap = normalizedRawMap;
+          const latestMemberData = payload.memberData || {};
+          const dates = Object.keys(latestMemberData).sort();
+          // 从后往前找第一个有数据的日期
+          let foundLatestDate = null;
+          for(let i = dates.length - 1; i >= 0; i--){
+            const checkDate = dates[i];
+            const checkRows = latestMemberData[checkDate] || [];
+            if(checkRows && checkRows.length > 0){
+              foundLatestDate = checkDate;
+              break;
+            }
+          }
+          if(foundLatestDate){
+            latestDate = foundLatestDate;
+            memberData = { [foundLatestDate]: latestMemberData[foundLatestDate] };
+            console.log('[person] 从 latest 接口找到日期:', latestDate, '数据条数:', latestMemberData[foundLatestDate].length);
+          } else if(dates.length){
+            // 如果所有日期都没有数据，使用最后一个日期
+            latestDate = dates[dates.length - 1];
+            memberData = latestMemberData;
+            console.warn('[person] latest 接口所有日期都无数据，使用最后一个日期:', latestDate);
+          }
+        }
+        
+        // 如果从 history 获取的数据，需要获取该日期的原始数据（HAR）用于时间戳识别
+        // 优先通过 date 参数查询，确保获取最新的 HAR 数据
+        if(latestDate && (!rawMap[latestDate] || !rawMap[latestDate].trim())){
+          console.log('[person] 开始获取', latestDate, '的 HAR 数据，当前 rawMap[latestDate]:', rawMap[latestDate] ? '存在但为空' : '不存在');
+          try{
+            // 先尝试通过 date 参数查询，获取最新的 HAR 数据
+            const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(latestDate)}`, { cache: 'no-store' });
+            if(dateHistoryResp.ok){
+              const dateHistoryPayload = await dateHistoryResp.json();
+              // 使用 CacheManager 修复类型问题
+              const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+              if (normalizedRaw) {
+                rawMap[latestDate] = normalizedRaw;
+                console.log('[person] ✅ 通过 date 参数获取到', latestDate, '的 HAR 数据，长度:', normalizedRaw.length);
+              } else {
+                console.warn('[person] ⚠️ date 参数查询返回的 memberRaw 无效:', {
+                  exists: !!dateHistoryPayload.memberRaw,
+                  type: typeof dateHistoryPayload.memberRaw,
+                  isString: typeof dateHistoryPayload.memberRaw === 'string',
+                  length: typeof dateHistoryPayload.memberRaw === 'string' ? dateHistoryPayload.memberRaw.length : 'N/A'
+                });
+              }
+            } else {
+              console.warn('[person] ⚠️ date 参数查询失败，状态码:', dateHistoryResp.status);
+            }
+          }catch(e){ 
+            console.error('[person] ❌ date 参数查询异常:', e);
+          }
+          // 如果还是为空，尝试从 latest 接口获取
+          if(!rawMap[latestDate] || !rawMap[latestDate].trim()){
+            console.log('[person] date 参数查询未获取到数据，尝试从 latest 接口获取');
+            try{
+              const latestResp = await fetch(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1`, { cache: 'no-store' });
+              if(latestResp.ok){
+                const latestPayload = await latestResp.json();
+                const latestRawMap = latestPayload.memberRaw || {};
+                // 使用 CacheManager 修复类型问题
+                const latestRaw = CacheManager.normalizeMemberRaw(latestRawMap[latestDate] || latestRawMap);
+                if (latestRaw) {
+                  rawMap[latestDate] = latestRaw;
+                  console.log('[person] ✅ 从 latest 接口获取到', latestDate, '的 HAR 数据，长度:', latestRaw.length);
+                } else {
+                  console.warn('[person] ⚠️ latest 接口中也没有', latestDate, '的 HAR 数据，latestRawMap keys:', Object.keys(latestRawMap));
+                }
+              } else {
+                console.warn('[person] ⚠️ latest 接口查询失败，状态码:', latestResp.status);
+              }
+            }catch(e){ 
+              console.error('[person] ❌ latest 接口查询异常:', e);
+            }
+          }
+          // 最终检查
+          if(!rawMap[latestDate] || !rawMap[latestDate].trim()){
+            console.error('[person] ❌ 无法获取', latestDate, '的 HAR 数据，天维度将无法显示数据');
+          } else {
+            console.log('[person] ✅ 最终确认 rawMap 中已有', latestDate, '的 HAR 数据，长度:', rawMap[latestDate].length);
+          }
+        } else {
+          console.log('[person] ✅ rawMap 中已有', latestDate, '的 HAR 数据，长度:', rawMap[latestDate].length);
+        }
+        
+        const dataMap = memberData;
+
+        if(!latestDate){
+          setStatus('error', '服务器未返回有效日期数据');
+          return;
+        }
+        
+        // 确保整月数据覆盖（与榜单页逻辑一致）
+        // 但优先确保最新日期的 HAR 数据已获取（用于天维度显示）
+        const monthStart = getMonthStart(latestDate);
+        const monthDates = listDatesBetween(monthStart, latestDate);
+        
+        // 确保所有历史日期（包括 10-31 到 11-04、11-13 等）的数据都被获取
+        // 从 history 接口获取所有日期的数据，确保不遗漏任何日期
+        let allHistoryDates = [];
+        try{
+          const allHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}`, { cache: 'no-store' });
+          if(allHistoryResp.ok){
+            const allHistoryPayload = await allHistoryResp.json();
+            const allHistMemberData = allHistoryPayload.memberData || {};
+            const allHistRawMap = allHistoryPayload.memberRaw || {};
+            allHistoryDates = (allHistoryPayload.dates || Object.keys(allHistMemberData)).sort();
+            const allDates = allHistoryDates;
+            
+            // 合并所有日期的数据到 memberData 和 rawMap
+            for(const date of allDates){
+              if(!memberData[date] && Array.isArray(allHistMemberData[date]) && allHistMemberData[date].length){
+                memberData[date] = allHistMemberData[date];
+              }
+              if(!rawMap[date] || !rawMap[date].trim()){
+                const dateRaw = CacheManager.normalizeMemberRaw(
+                  typeof allHistRawMap === 'object' && allHistRawMap[date] 
+                    ? allHistRawMap[date] 
+                    : allHistRawMap
+                );
+                if(dateRaw && dateRaw.length > 100){
+                  rawMap[date] = dateRaw;
+                  console.log('[person] ✅ 从 history 接口获取到', date, '的 HAR 数据，长度:', dateRaw.length);
+                }
+              }
+            }
+            
+            // 对于 memberData 中为空但 dates 列表中存在的日期，尝试通过 date 参数单独查询
+            // 注意：不限制在 monthDates 中，确保获取所有历史日期（包括 10-31 到 11-04）
+            for(const date of allDates){
+              if(!memberData[date] || !memberData[date].length){
+                try{
+                  const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(date)}`, { cache: 'no-store' });
+                  if(dateHistoryResp.ok){
+                    const dateHistoryPayload = await dateHistoryResp.json();
+                    const dateRows = Array.isArray(dateHistoryPayload.rows) ? dateHistoryPayload.rows : [];
+                    if(dateRows.length){
+                      memberData[date] = dateRows;
+                      console.log('[person] ✅ 通过 date 参数获取到', date, '的数据，条数:', dateRows.length);
+                    }
+                    // 同时获取 HAR 数据
+                    const dateRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+                    if(dateRaw && dateRaw.length > 100){
+                      rawMap[date] = dateRaw;
+                      console.log('[person] ✅ 通过 date 参数获取到', date, '的 HAR 数据，长度:', dateRaw.length);
+                    }
+                  }
+                }catch(e){
+                  console.warn('[person] 查询日期', date, '失败:', e);
+                }
+              }
+            }
+          }
+        }catch(e){
+          console.warn('[person] 获取所有历史数据失败:', e);
+        }
+        
+        // 如果最新日期的 HAR 数据还未获取，优先获取（尝试多个来源）
+        if(latestDate && (!rawMap[latestDate] || !rawMap[latestDate].trim())){
+          // 方法1：通过 date 参数查询 history 接口
+          try{
+            const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(latestDate)}`, { cache: 'no-store' });
+            if(dateHistoryResp.ok){
+              const dateHistoryPayload = await dateHistoryResp.json();
+              // 使用 CacheManager 修复类型问题
+              const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+              if (normalizedRaw) {
+                rawMap[latestDate] = normalizedRaw;
+                console.log('[person] ✅ 通过 history?date 获取到', latestDate, '的 HAR 数据，长度:', normalizedRaw.length);
+              }
+            }
+          }catch(e){
+            console.warn('[person] 通过 history?date 获取 HAR 数据失败:', e);
+          }
+          
+          // 方法2：如果方法1失败，尝试从 latest 接口获取（可能包含多个日期的 HAR）
+          if(!rawMap[latestDate] || !rawMap[latestDate].trim()){
+            try{
+              const latestResp = await fetch(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1`, { cache: 'no-store' });
+              if(latestResp.ok){
+                const latestPayload = await latestResp.json();
+                const latestRawMap = latestPayload.memberRaw || {};
+                // 如果 latest 返回的是对象，尝试获取对应日期的值
+                if(typeof latestRawMap === 'object' && latestRawMap[latestDate]){
+                  const normalizedRaw = CacheManager.normalizeMemberRaw(latestRawMap[latestDate]);
+                  if (normalizedRaw) {
+                    rawMap[latestDate] = normalizedRaw;
+                    console.log('[person] ✅ 通过 latest 接口获取到', latestDate, '的 HAR 数据，长度:', normalizedRaw.length);
+                  }
+                }
+              }
+            }catch(e){
+              console.warn('[person] 通过 latest 接口获取 HAR 数据失败:', e);
+            }
+          }
+          
+          // 最终检查
+          if(!rawMap[latestDate] || !rawMap[latestDate].trim()){
+            console.warn('[person] ⚠️ 无法获取', latestDate, '的 HAR 数据，天维度将无法显示小时级数据');
+          }
+        }
+        
+        // 确保所有历史日期都被覆盖，不仅仅是当月日期
+        // 使用 allHistoryDates（从 history 接口获取的所有日期）而不是 monthDates
+        const allDatesForCoverage = Array.from(new Set([...monthDates, ...allHistoryDates])).sort();
+        await ensureDateCoverage({
+          clientId,
+          dates: allDatesForCoverage,
+          memberDataMap: dataMap,
+          rawMap: rawMap
+        });
+        
+        // 使用 CacheManager 保存到缓存（会自动修复类型问题）
+        CacheManager.saveToCache(memberData, rawMap);
+        
+        // 同时同步到本地存储（保持兼容性）
+        for (const [date, rows] of Object.entries(memberData || {})) {
+          try {
+            localStorage.setItem(storageKey(date), JSON.stringify(rows));
+          } catch (e) {
+            console.warn(`[person] 同步 ${date} 的 memberData 失败:`, e);
+          }
+        }
+        
+        for (const [date, raw] of Object.entries(rawMap || {})) {
+          try {
+            localStorage.setItem(storageRawKey(date), raw);
+          } catch (e) {
+            console.warn(`[person] 同步 ${date} 的 memberRaw 失败:`, e);
+          }
+        }
+
         const unionDates = Array.from(new Set([ ...Object.keys(rawMap), ...Object.keys(dataMap) ])).sort();
         let updatedCount = 0, keptCount = 0;
 
@@ -326,10 +1285,8 @@
             for(const r of rows){
               const iso = r && r.startedDateTime ? String(r.startedDateTime) : null;
               if(!iso) continue;
-              const dt = new Date(iso);
-              const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0');
-              const dsLocal = `${y}-${m}-${d}`;
-              if(dsLocal !== date) continue;
+              const ds = iso.split('T')[0];
+              if(ds !== date) continue;
               const ts = Date.parse(iso);
               if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxIso = iso; }
             }
@@ -347,10 +1304,8 @@
               for(const e of entries){
                 const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
                 if(!t) continue;
-                const dt = new Date(t);
-                const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0');
-                const dsLocal = `${y}-${m}-${d}`;
-                if(dsLocal !== targetDate) continue;
+                const ds = String(t).split('T')[0];
+                if(ds !== targetDate) continue;
                 const ts = Date.parse(String(t));
                 if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxStr = String(t); }
               }
@@ -358,22 +1313,16 @@
             }
           }catch(e){}
           try{
-            const re = new RegExp(`(\\d{4}-\\d{2}-\\d{2})[T\\s]([0-9:.-]+(?:Z|[+-][0-9:]+)?)`, 'g');
-            const matches = String(rawText).matchAll(re);
-            if(matches){
+            const re = new RegExp(`${targetDate}[T\\s][0-9:.-]+(?:Z|[+-][0-9:]+)?`, 'g');
+            const matches = String(rawText).match(re);
+            if(matches && matches.length){
               let maxTs = -Infinity; let maxStr = null;
-              for(const match of matches){
-                const datePart = match[1];
-                const timePart = match[2];
-                const iso = `${datePart}T${timePart}`.replace(' ', 'T');
-                const dt = new Date(iso);
-                const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0');
-                const dsLocal = `${y}-${m}-${d}`;
-                if(dsLocal !== targetDate) continue;
+              for(const s of matches){
+                const iso = s.replace(' ', 'T');
                 const ts = Date.parse(iso);
                 if(Number.isFinite(ts) && ts > maxTs){ maxTs = ts; maxStr = iso; }
               }
-              if(maxStr) return maxStr;
+              return maxStr;
             }
           }catch(e){}
           return null;
@@ -382,8 +1331,7 @@
         for(const d of unionDates){
           try{
             const srvRaw = rawMap[d] || '';
-            const srvRowsRaw = Array.isArray(dataMap[d]) ? dataMap[d] : [];
-            const srvRows = srvRowsRaw.map(normalizeMemberRow).filter(Boolean);
+            const srvRows = Array.isArray(dataMap[d]) ? dataMap[d] : [];
             const locRaw = localStorage.getItem(storageRawKey(d)) || '';
             const locRowsStr = localStorage.getItem(storageKey(d));
             const locRows = locRowsStr ? (function(){ try{ return JSON.parse(locRowsStr); }catch(e){ return []; } })() : [];
@@ -414,19 +1362,22 @@
             // 两边都没有有效数据，不做处理
           }catch(e){ /* 单个日期合并失败忽略 */ }
         }
-        setStatus('success', `拉取完成：保留本地 ${keptCount} 项，新增/更新 ${updatedCount} 项`);
+        setStatus('success', `拉取完成：保留本地 ${keptCount} 项，新增/更新 ${updatedCount} 项${latestDate ? `（最新日期：${latestDate}）` : ''}`);
         setLastSync(Date.now());
 
-        // 恢复后：只有在用户没有选择日期时才切换到最新日期并重渲染（尊重用户选择的历史日期）
+        // 恢复后：切换到最新日期并重渲染
         try{
           allDates = listStoredDates();
-          if(!prevSelected && allDates.length) selectedDate = allDates[allDates.length-1];
-          else if(prevSelected) { /* 保持用户选择的日期，不覆盖 */ }
-          else if(allDates.length) selectedDate = allDates[allDates.length-1];
+          selectedDate = allDates.length ? allDates[allDates.length-1] : null;
           // 仅重建当前成员的序列并重渲染，不重复绑定事件
           const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
           const dates = listStoredDates();
           const seriesRaw = [];
+          // 过滤掉张三和李四的数据
+          if(name === '张三' || name === '李四') {
+            renderChartUnified([], buildCompareMap(mode));
+            return;
+          }
           for(const dd of dates){
             const rows = getStoredRowsForDate(dd) || [];
             let found = null;
@@ -478,6 +1429,8 @@
             for(const [nm, mm] of hourlyMap.entries()){
               const name = String(nm||'').trim();
               if(!name) continue;
+              // 过滤掉张三和李四的数据
+              if(name === '张三' || name === '李四') continue;
               // 取该日内的最新记录作为日快照
               let best = null;
               for(const rec of mm.values()){
@@ -513,14 +1466,22 @@
           }catch(e){ /* 某日失败忽略 */ }
         }
         setStatus('success', `本地刷新完成：更新 ${updatedDays} 日，新增 ${addedRecords} 条记录${force ? `，覆盖 ${overriddenRecords} 条` : ''}`);
-        // 刷新后：只有在用户没有选择日期时才更新为最新日期（尊重用户选择的历史日期）
+        // 刷新后：更新最近日期并重渲染
         try{
-          const prevSelected = selectedDate;
+          const prevLatestDate = selectedDate;
           allDates = listStoredDates();
-          const newLatest = allDates.length ? allDates[allDates.length-1] : null;
-          if(!prevSelected && newLatest) selectedDate = newLatest;
-          else if(prevSelected && newLatest && prevSelected !== newLatest) { /* 用户选了历史日期，不覆盖 */ }
-          else if(!selectedDate && allDates.length) selectedDate = allDates[allDates.length-1];
+          const newLatestDate = allDates.length ? allDates[allDates.length-1] : null;
+          
+          // 如果从服务器获取到了新的日期（日期不同或者没有选择日期），更新selectedDate
+          if(newLatestDate && (!prevLatestDate || newLatestDate > prevLatestDate)){
+            selectedDate = newLatestDate;
+            updateDateNavigation();
+            console.log('[person] ✅ 天维度日期已更新为最新:', selectedDate);
+          } else if(!selectedDate && allDates.length){
+            // 如果之前没有选择日期，更新为最新日期
+            selectedDate = allDates[allDates.length-1];
+            updateDateNavigation();
+          }
           const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
           const seriesRaw = [];
           for(const dd of allDates){
@@ -543,7 +1504,13 @@
           if(domFans) domFans.textContent = latest ? (latest.fans ?? '—') : '—';
           if(domLike) domLike.textContent = latest ? (latest.like ?? '—') : '—';
           if(domCollect) domCollect.textContent = latest ? (latest.collect ?? '—') : '—';
-          renderChartUnified(seriesRaw, buildCompareMap(mode));
+          // 重新渲染图表（使用当前选择的日期和模式）
+          // 如果是天维度，使用 renderChartDayHourly；否则使用 renderChartUnified
+          if(mode === 'day'){
+            renderChartDayHourly();
+          } else {
+            renderChartUnified(buildSeriesForName(name), buildCompareMap(mode));
+          }
         }catch(e){ /* 刷新失败忽略 */ }
       }catch(err){ setStatus('error', `本地刷新失败：${err && err.message ? err.message : err}`); }
     }
@@ -709,30 +1676,30 @@
       return out;
     }
 
-    // 新增：小时级增长的首点基准（若存在上一小时用其作为基准，否则为0）
+    // 新增：小时级增长的首点基准（以当天第一个时间点为基准）
     function toSequentialDeltaWithFirstForHourMap(arr, labels, hourMap, field){
       const out = new Array(arr.length).fill(null);
-      const firstLabel = (labels && labels.length) ? String(labels[0]) : null;
-      let prevVal = null;
-      try{
-        if(firstLabel){
-          const keys = Array.from(hourMap.keys()).filter(k => String(k) < firstLabel).sort();
-          const prevKey = keys.length ? keys[keys.length-1] : null;
-          if(prevKey){
-            const obj = hourMap.get(prevKey);
-            const v = obj ? Number(obj[field]) : null;
-            prevVal = Number.isFinite(v) ? v : null;
+      // 对于天维度，增长趋势应该以当天第一个时间点的数据为基准
+      // 第一个时间点：增长 = 0（相对于自己）
+      // 后续时间点：增长 = 当前值 - 第一个时间点的值
+      let firstVal = null;
+      if(arr.length > 0 && arr[0] != null){
+        firstVal = Number(arr[0]);
+        if(Number.isFinite(firstVal)){
+          // 第一个时间点：增长 = 0
+          out[0] = 0;
+        }
+      }
+      
+      // 后续时间点：相对于第一个时间点的增长
+      for(let i=1; i<arr.length; i++){
+        const curr = arr[i];
+        if(firstVal != null && curr != null){
+          const currNum = Number(curr);
+          if(Number.isFinite(currNum)){
+            out[i] = currNum - firstVal;
           }
         }
-      }catch(e){}
-      if(arr.length > 0){
-        const curr0 = arr[0];
-        out[0] = (prevVal != null && curr0 != null) ? (Number(curr0) - Number(prevVal)) : (curr0 != null ? 0 : null);
-      }
-      for(let i=1; i<arr.length; i++){
-        const prev = arr[i-1];
-        const curr = arr[i];
-        out[i] = (prev != null && curr != null) ? (Number(curr) - Number(prev)) : null;
       }
       return out;
     }
@@ -789,53 +1756,319 @@
 
     // 构建指定日期的小时级数据（解析 HAR 原始日志）
     function buildHourlyMapForDate(dateStr){
-      if(!dateStr) {
-        console.warn('[buildHourlyMapForDate] dateStr is empty');
-        return new Map();
-      }
+      if(!dateStr) return new Map();
       let raw = '';
       try{ raw = localStorage.getItem(storageRawKey(dateStr)) || ''; }catch(e){ raw = ''; }
-      if(!raw || !raw.trim()) {
-        console.warn(`[buildHourlyMapForDate] No memberRaw data for ${dateStr}, key: ${storageRawKey(dateStr)}`);
-        return new Map();
+      console.log('[buildHourlyMapForDate] 获取 raw 数据:', { dateStr, hasRaw: !!raw, rawLength: raw ? raw.length : 0, rawType: typeof raw, rawPreview: raw ? raw.substring(0, 50) : '' });
+      if(!raw || !raw.trim() || raw.length <= 2){
+        console.log('[buildHourlyMapForDate] No raw data for', dateStr, '(长度:', raw ? raw.length : 0, '), 尝试从 memberData 生成小时级数据');
+        // 如果HAR数据不存在，尝试从memberData生成小时级数据
+        return buildHourlyMapFromMemberData(dateStr);
       }
       let obj = null;
       try{ obj = JSON.parse(raw); }
-      catch(e){ const m = String(raw).match(/\{[\s\S]*\}/); if(m){ try{ obj = JSON.parse(m[0]); }catch(e2){ obj = null; } } }
+      catch(e){ 
+        const m = String(raw).match(/\{[\s\S]*\}/); 
+        if(m){ 
+          try{ obj = JSON.parse(m[0]); }
+          catch(e2){ 
+            console.warn('[buildHourlyMapForDate] JSON parse failed:', e2);
+            obj = null; 
+          } 
+        } 
+      }
+      if(!obj){
+        console.warn('[buildHourlyMapForDate] Failed to parse raw data for', dateStr);
+        return new Map();
+      }
       const map = new Map(); // name -> Map(hourStr -> {fans, like, collect, ts})
       try{
         const entries = obj?.log?.entries;
+        console.log('[buildHourlyMapForDate] entries count:', entries ? entries.length : 0);
         if(Array.isArray(entries)){
+          // 调试：检查 entries 中的时间戳分布
+          const timeStamps = entries.map(e => e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime).filter(Boolean);
+          const uniqueTimes = new Set(timeStamps);
+          console.log('[buildHourlyMapForDate] 唯一时间戳数量:', uniqueTimes.size, '总 entries:', entries.length);
+          if(uniqueTimes.size < entries.length / 2){
+            console.warn('[buildHourlyMapForDate] ⚠️ 警告：大量 entries 使用相同的时间戳，可能导致时间点丢失');
+            // 输出时间戳分布统计
+            const timeCounts = {};
+            timeStamps.forEach(ts => {
+              const key = String(ts).substring(0, 16); // 精确到分钟
+              timeCounts[key] = (timeCounts[key] || 0) + 1;
+            });
+            const duplicates = Object.entries(timeCounts).filter(([_, count]) => count > 1);
+            if(duplicates.length > 0){
+              console.warn('[buildHourlyMapForDate] 重复的时间戳:', duplicates.slice(0, 10));
+            }
+          }
+          let skippedNoTime = 0;
+          let skippedInvalidTime = 0;
+          let skippedDateMismatch = 0;
+          let skippedNoText = 0;
+          let skippedParseFail = 0;
+          let skippedNoName = 0;
+          let skippedTestData = 0;
+          let processedCount = 0;
+          
           for(const entry of entries){
             const t = entry?.startedDateTime || entry?.request?.startedDateTime || entry?.response?.startedDateTime;
-            if(!t) continue;
-            const dt = new Date(t);
-            const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0');
-            const dsLocal = `${y}-${m}-${d}`;
-            if(dsLocal !== dateStr) continue;
-            const hh = String(dt.getHours()).padStart(2,'0') + ':00';
+            if(!t) {
+              skippedNoTime++;
+              continue;
+            }
+            // 使用 UTC 时区解析时间戳，保持原始时间
+            const tStr = String(t);
+            // 提取日期部分（YYYY-MM-DD）和时间部分（HH:MM:SS 或 HH:MM）
+            // 支持格式：2025-11-13T10:00:00Z, 2025-11-13T10:00Z, 2025-11-13T10:00:00.000Z
+            const dateTimeMatch = tStr.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+            if(!dateTimeMatch) {
+              skippedInvalidTime++;
+              if(skippedInvalidTime <= 3) console.warn('[buildHourlyMapForDate] Invalid time format:', tStr);
+              continue;
+            }
+            const dsUTC = dateTimeMatch[1];
+            const hour = dateTimeMatch[2];
+            const minute = dateTimeMatch[3];
+            const second = dateTimeMatch[4] || '00';
+            
+            // 重要：HAR 数据中的时间戳是 UTC 时间，但我们需要使用 UTC 日期来匹配，而不是本地日期
+            // 因为服务器端存储的数据是按 UTC 日期组织的，例如 2025-11-14 的数据可能包含 2025-11-14T00:00:00Z 到 2025-11-14T23:59:59Z
+            // 如果转换为本地日期，20:00 之后的数据（UTC）会变成次日的本地时间，导致日期不匹配
+            // 解决方案：直接使用 UTC 日期进行匹配，但显示时使用本地时间
+            let entryDate = dsUTC; // 使用 UTC 日期进行匹配（因为数据是按 UTC 日期组织的）
+            
+            // 检查日期：如果是次日00:00，也算作当天的24:00（即当天的最后一个时间点）
+            const nextDay = new Date(dateStr + 'T00:00:00Z');
+            nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+            const nextDayStr = nextDay.toISOString().split('T')[0];
+            const isNextDay00 = (entryDate === nextDayStr && hour === '00' && minute === '00' && second === '00');
+            // 匹配当天日期，或次日的00:00（视为当天的24:00）
+            // 注意：如果日期不匹配，输出调试信息（仅前几个）
+            if(entryDate !== dateStr && !isNextDay00) {
+              skippedDateMismatch++;
+              if(skippedDateMismatch <= 5) {
+                console.warn(`[buildHourlyMapForDate] 日期不匹配: entry UTC日期=${entryDate}, 目标日期=${dateStr}, 时间=${hour}:${minute}:${second}`);
+              }
+              continue;
+            }
+            
+            // 提取完整的时分（HH:MM），如果是次日00:00则显示为24:00
+            // 注意：这里使用 UTC 时间的小时和分钟，因为数据是按 UTC 时间存储的
+            // 但显示时，用户看到的是 UTC 时间（例如 20:00 UTC 对应本地时间 04:00，但显示为 20:00）
+            const hh = isNextDay00 ? '24:00' : `${hour}:${minute}`;
             const textVal = entry?.response?.content?.text;
-            if(!textVal) continue;
+            if(!textVal) {
+              skippedNoText++;
+              continue;
+            }
             let payload = null;
             try{ payload = JSON.parse(textVal); }
-            catch(e){ const mm = String(textVal).match(/\{[\s\S]*\}/); if(mm){ try{ payload = JSON.parse(mm[0]); }catch(e2){ payload=null; } } }
-            if(!payload || typeof payload !== 'object') continue;
-            const data = payload?.data || payload || {}; const info = (data && data.info) || {};
-            const name = String(data?.realName || data?.姓名 || '').trim();
-            if(!name) continue;
-            const fans = Number(info?.fansNum ?? data?.fansNum ?? data?.粉丝数 ?? 0);
-            const like = Number(info?.likeNum ?? data?.likeNum ?? data?.点赞数 ?? 0);
-            const collect = Number(info?.collectNum ?? data?.collectNum ?? data?.收藏数 ?? 0);
+            catch(e){ 
+              const mm = String(textVal).match(/\{[\s\S]*\}/); 
+              if(mm){ 
+                try{ payload = JSON.parse(mm[0]); }
+                catch(e2){ 
+                  skippedParseFail++;
+                  if(skippedParseFail <= 3) console.warn('[buildHourlyMapForDate] JSON parse failed for entry:', { startedDateTime: t, textValLength: textVal.length, error: e2 });
+                  payload=null; 
+                } 
+              } else {
+                skippedParseFail++;
+              }
+            }
+            if(!payload || typeof payload !== 'object') {
+              skippedParseFail++;
+              continue;
+            }
+            const data = payload?.data || {};
+            // info 可能在 payload 顶层，也可能在 data 里面（兼容两种格式）
+            const info = payload?.info || data?.info || {};
+            // 优先使用 realName，如果没有则尝试其他字段
+            let name = String(data?.realName || '').trim();
+            if(!name){
+              // 尝试从其他字段获取名称
+              name = String(data?.name || data?.nickName || data?.nick || '').trim();
+            }
+            if(!name) {
+              skippedNoName++;
+              if(skippedNoName <= 3) console.warn('[buildHourlyMapForDate] Entry missing name:', { data, payload, entry: { startedDateTime: t } });
+              continue;
+            }
+            // 过滤掉张三和李四的数据
+            if(name === '张三' || name === '李四') {
+              skippedTestData++;
+              continue;
+            }
+            const fans = Number(info?.fansNum || 0);
+            const like = Number(info?.likeNum || 0);
+            const collect = Number(info?.collectNum || 0);
+            
+            // 调试日志：检查数据是否正确提取
+            if(name === '杨博文' || name === currentName){
+              console.log(`[buildHourlyMapForDate] ${name} ${hh} 数据:`, { fans, like, collect, ts: t, info, data });
+            }
+            
             if(!map.has(name)) map.set(name, new Map());
+            const existingData = map.get(name).get(hh);
+            // 如果同一时间点已有数据，保留时间戳更大的（更新的数据）
+            if(existingData){
+              const existingTs = existingData.ts || 0;
+              const currentTs = Date.parse(t);
+              if(currentTs > existingTs){
+                map.get(name).set(hh, { fans, like, collect, ts: currentTs });
+              }
+            } else {
             map.get(name).set(hh, { fans, like, collect, ts: Date.parse(t) });
+          }
+            processedCount++;
+          }
+          
+          // 输出统计信息
+          console.log(`[buildHourlyMapForDate] 处理统计: 总 entries=${entries.length}, 已处理=${processedCount}, 跳过: 无时间=${skippedNoTime}, 无效时间=${skippedInvalidTime}, 日期不匹配=${skippedDateMismatch}, 无文本=${skippedNoText}, 解析失败=${skippedParseFail}, 无名称=${skippedNoName}, 测试数据=${skippedTestData}`);
+          
+          // 检查 20:00 之后的数据
+          const entriesAfter20 = entries.filter(e => {
+            const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+            if(!t) return false;
+            const tStr = String(t);
+            const dateTimeMatch = tStr.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+            if(!dateTimeMatch) return false;
+            const entryDate = dateTimeMatch[1];
+            const hour = parseInt(dateTimeMatch[2]);
+            return entryDate === dateStr && hour >= 20;
+          });
+          console.log(`[buildHourlyMapForDate] ${dateStr} 的 20:00 之后 entries 数量:`, entriesAfter20.length);
+          if(entriesAfter20.length > 0){
+            const hoursAfter20 = entriesAfter20.map(e => {
+              const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+              const tStr = String(t);
+              const match = tStr.match(/T(\d{2}):(\d{2})/);
+              return match ? `${match[1]}:${match[2]}` : '';
+            }).filter(Boolean);
+            console.log(`[buildHourlyMapForDate] ${dateStr} 的 20:00 之后的时间点:`, hoursAfter20.slice(0, 10));
           }
         } else {
           // 直接接口 JSON：作为单点快照
           const data = obj?.data || {}; const info = data?.info || {};
-          const name = String(data?.realName || data?.姓名 || '').trim();
+          const name = String(data?.realName || '').trim();
           if(name){ const m = new Map(); m.set('00:00', { fans: Number(info?.fansNum||0), like: Number(info?.likeNum||0), collect: Number(info?.collectNum||0), ts: Date.now() }); map.set(name, m); }
         }
-      }catch(e){ return new Map(); }
+      }catch(e){ 
+        console.error('[buildHourlyMapForDate] Error:', e);
+        return new Map(); 
+      }
+      console.log('[buildHourlyMapForDate] Final map size:', map.size, 'members:', Array.from(map.keys()));
+      // 调试：输出每个成员的时间点数量和列表
+      for(const [memberName, hourMap] of map.entries()){
+        const timePoints = Array.from(hourMap.keys()).sort((a,b)=> {
+          if(a === '24:00') return 1;
+          if(b === '24:00') return -1;
+          const [ah, am] = a.split(':').map(Number);
+          const [bh, bm] = b.split(':').map(Number);
+          return (ah * 60 + am) - (bh * 60 + bm);
+        });
+        console.log(`[buildHourlyMapForDate] ${memberName}: ${hourMap.size} 个时间点`, timePoints);
+        // 如果某个成员只有一个时间点，输出详细信息用于调试
+        if(hourMap.size === 1){
+          const [onlyTime, onlyData] = Array.from(hourMap.entries())[0];
+          console.warn(`[buildHourlyMapForDate] ⚠️ ${memberName} 只有一个时间点 ${onlyTime}:`, onlyData);
+        }
+      }
+      return map;
+    }
+
+    // 从 memberData 生成小时级数据（当 HAR 数据不存在时使用）
+    function buildHourlyMapFromMemberData(dateStr){
+      if(!dateStr) return new Map();
+      console.log('[buildHourlyMapFromMemberData] 从 memberData 生成', dateStr, '的小时级数据');
+      
+      // 从 localStorage 获取该日期的 memberData
+      const rows = getStoredRowsForDate(dateStr) || [];
+      if(!rows || !rows.length){
+        console.warn('[buildHourlyMapFromMemberData]', dateStr, '没有 memberData');
+        return new Map();
+      }
+      
+      const map = new Map(); // name -> Map(hourStr -> {fans, like, collect, ts})
+      
+      for(const row of rows){
+        if(!row) continue;
+        
+        // 提取姓名
+        const name = String(row.realName || row.姓名 || '').trim();
+        if(!name || name === '张三' || name === '李四') continue;
+        
+        // 提取时间戳
+        let startedDateTime = row.startedDateTime;
+        if(!startedDateTime){
+          // 如果没有 startedDateTime，尝试从其他字段获取
+          startedDateTime = row.timestamp || row.time || row.dateTime;
+        }
+        
+        if(!startedDateTime){
+          // 如果没有时间戳，使用日期当天的 00:00
+          startedDateTime = `${dateStr}T00:00:00Z`;
+        }
+        
+        // 解析时间戳
+        const tStr = String(startedDateTime);
+        const dateTimeMatch = tStr.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+        if(!dateTimeMatch){
+          console.warn('[buildHourlyMapFromMemberData] Invalid time format:', tStr);
+          continue;
+        }
+        
+        const dsUTC = dateTimeMatch[1];
+        const hour = dateTimeMatch[2];
+        const minute = dateTimeMatch[3];
+        const second = dateTimeMatch[4] || '00';
+        
+        // 检查日期：如果是次日00:00，也算作当天的24:00
+        const nextDay = new Date(dateStr + 'T00:00:00Z');
+        nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+        const nextDayStr = nextDay.toISOString().split('T')[0];
+        const isNextDay00 = (dsUTC === nextDayStr && hour === '00' && minute === '00' && second === '00');
+        
+        // 匹配当天日期，或次日的00:00（视为当天的24:00）
+        if(dsUTC !== dateStr && !isNextDay00) continue;
+        
+        // 提取完整的时分（HH:MM）
+        const hh = isNextDay00 ? '24:00' : `${hour}:${minute}`;
+        
+        // 提取数据
+        const fans = Number(row.fansNum != null ? row.fansNum : (row.粉丝数 != null ? row.粉丝数 : 0));
+        const like = Number(row.likeNum != null ? row.likeNum : (row.点赞数 != null ? row.点赞数 : 0));
+        const collect = Number(row.collectNum != null ? row.collectNum : (row.收藏数 != null ? row.收藏数 : 0));
+        const ts = Date.parse(startedDateTime) || Date.now();
+        
+        // 添加到 map
+        if(!map.has(name)) map.set(name, new Map());
+        const existingData = map.get(name).get(hh);
+        // 如果同一时间点已有数据，保留时间戳更大的（更新的数据）
+        if(existingData){
+          const existingTs = existingData.ts || 0;
+          if(ts > existingTs){
+            map.get(name).set(hh, { fans, like, collect, ts });
+          }
+        } else {
+          map.get(name).set(hh, { fans, like, collect, ts });
+        }
+      }
+      
+      console.log('[buildHourlyMapFromMemberData] 生成的小时级数据，成员数:', map.size);
+      for(const [memberName, hourMap] of map.entries()){
+        const timePoints = Array.from(hourMap.keys()).sort((a,b)=> {
+          if(a === '24:00') return 1;
+          if(b === '24:00') return -1;
+          const [ah, am] = a.split(':').map(Number);
+          const [bh, bm] = b.split(':').map(Number);
+          return (ah * 60 + am) - (bh * 60 + bm);
+        });
+        console.log(`[buildHourlyMapFromMemberData] ${memberName}: ${hourMap.size} 个时间点`, timePoints);
+      }
+      
       return map;
     }
 
@@ -895,6 +2128,8 @@
     
     function renderChart(series, compareMap){
       const empty = document.getElementById('emptyMsg');
+      const defaultEmptyText = '暂无该成员历史数据，请先在榜单页保存当日数据。';
+      if(empty) empty.textContent = defaultEmptyText;
       const ctx = document.getElementById('trendChart');
       // 根据时间维度生成当期按日标签：周（日-六）或月（1-末）
       let labels = (mode === 'month') ? listDatesInMonth(selectedDate) : listDatesInWeek(selectedDate);
@@ -910,8 +2145,8 @@
         dataLike = toSequentialDeltaWithFirst(dataLike, labels, mainMap, 'like');
         dataCollect = toSequentialDeltaWithFirst(dataCollect, labels, mainMap, 'collect');
       }
-      // 月视图：隐藏无数据日期，避免视觉留白（仅保留当前指标有值的日期）
-      if(mode === 'month'){
+      // 周/月视图：隐藏无数据日期，避免视觉留白（仅保留当前指标有值的日期）
+      if(mode === 'week' || mode === 'month'){
         const mask = labels.map((_, i) => {
           const v = showFans ? dataFans[i] : (showLike ? dataLike[i] : dataCollect[i]);
           return v != null;
@@ -1006,80 +2241,240 @@
             },
             y: (function(){
               const ys = computeYAxisScale(baseDatasets);
-              return { beginAtZero: false, min: ys.min, max: ys.max, ticks: { stepSize: ys.step, callback: function(value){ const n = Number(value); return Number.isFinite(n) ? n.toFixed(0) : value; } }, border: { display: false } };
+              return { 
+                beginAtZero: false, 
+                min: ys.min, 
+                max: ys.max, 
+                ticks: { 
+                  stepSize: ys.step, 
+                  callback: function(value){ 
+                    const n = Number(value); 
+                    return Number.isFinite(n) ? n.toFixed(0) : value; 
+                  } 
+                }, 
+                border: { display: false }
+              };
             })()
+          },
+          layout: {
+            padding: {
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0
+            }
           }
         }
       };
       if(chart) chart.destroy();
+      try{
       chart = new Chart(ctx, cfg);
+        console.log('[renderChartDayHourly] Chart created successfully');
+      }catch(e){
+        console.error('[renderChartDayHourly] Chart creation failed:', e);
+        if(empty){
+          empty.textContent = `图表渲染失败：${e.message || e}`;
+          empty.style.display='block';
+        }
+      }
     }
 
     // 日维度（日内小时）渲染
-    async function renderChartDayHourly(){
+    function renderChartDayHourly(){
       const empty = document.getElementById('emptyMsg');
+      const defaultEmptyText = '暂无该成员历史数据，请先在榜单页保存当日数据。';
+      if(empty) empty.textContent = defaultEmptyText;
       const ctx = document.getElementById('trendChart');
-      // 确保 selectedDate 有值
+      
+      // 检查 selectedDate 是否有效
       if(!selectedDate){
-        const dates = listStoredDates();
-        selectedDate = dates.length ? dates[dates.length-1] : null;
-      }
-      if(!selectedDate){
+        empty.textContent = '请先选择日期';
         empty.style.display='block';
-        empty.textContent = '暂无数据，请先选择日期或从服务器恢复最新存档';
-        if(chart){ chart.destroy(); chart = null; }
+        if(chart){ chart.destroy(); }
         return;
       }
+      
+      // 调试信息
+      console.log('[renderChartDayHourly] selectedDate:', selectedDate);
+      console.log('[renderChartDayHourly] currentName:', currentName);
       const rawKey = storageRawKey(selectedDate);
-      let hasRawLocal = localStorage.getItem(rawKey);
-      // 本地无该日 HAR 时先按需拉取，再构建 hourlyMap，避免先打 No memberRaw 再拉取
-      if(!hasRawLocal || !hasRawLocal.trim()){
+      const rawData = localStorage.getItem(rawKey);
+      console.log('[renderChartDayHourly] localStorage key:', rawKey);
+      console.log('[renderChartDayHourly] localStorage has data:', !!rawData, rawData ? `length: ${rawData.length}` : '');
+      
+      // 如果当前日期没有数据，尝试从其他日期获取（可能是数据日期和选择日期不一致）
+      // 注意：HAR 数据中的时间戳是 UTC 时间，需要转换为本地日期进行比较
+      let hourlyMap = buildHourlyMapForDate(selectedDate);
+      if(hourlyMap.size === 0 && rawData){
+        // 尝试解析 rawData，找出实际的日期（考虑 UTC 时区转换）
         try{
-          const clientId = location.hostname || 'default';
-          const baseCandidates = ['', API_BASE, 'https://api.dailygh4.com'];
-          for(const base of baseCandidates){
-            const url = base ? `${base}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}` : `/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}`;
-            const resp = await fetch(url, { mode: 'cors', cache: 'no-store' });
-            if(!resp.ok) continue;
-            const payload = await resp.json();
-            const rawVal = payload.memberRaw;
-            const raw = (typeof rawVal === 'string' && rawVal.trim()) ? rawVal : (rawVal && rawVal[selectedDate] ? String(rawVal[selectedDate]).trim() : '');
-            if(raw){
-              try{ localStorage.setItem(rawKey, raw); }catch(e){}
-              hasRawLocal = raw;
-              const rows = Array.isArray(payload.rows) ? payload.rows : (Array.isArray(payload.memberData && payload.memberData[selectedDate]) ? payload.memberData[selectedDate] : []);
-              if(rows.length){ try{ localStorage.setItem(storageKey(selectedDate), JSON.stringify(rows)); }catch(e){} }
-              break;
+          const rawObj = JSON.parse(rawData);
+          const entries = rawObj?.log?.entries;
+          if(Array.isArray(entries) && entries.length > 0){
+            // 收集所有唯一的日期（考虑 UTC 到本地时间的转换）
+            const dateSet = new Set();
+            for(const entry of entries){
+              const t = entry?.startedDateTime || entry?.request?.startedDateTime || entry?.response?.startedDateTime;
+              if(!t) continue;
+              // 将 UTC 时间转换为本地日期
+              try{
+                const utcDate = new Date(t);
+                if(!isNaN(utcDate.getTime())){
+                  // 获取本地日期（YYYY-MM-DD）
+                  const localDate = utcDate.toISOString().split('T')[0];
+                  // 但也要考虑：如果 UTC 时间是 2025-11-14T16:00:00Z，在 UTC+8 时区下是 2025-11-15 00:00:00
+                  // 所以我们需要使用本地日期
+                  const localYear = utcDate.getFullYear();
+                  const localMonth = String(utcDate.getMonth() + 1).padStart(2, '0');
+                  const localDay = String(utcDate.getDate()).padStart(2, '0');
+                  const localDateStr = `${localYear}-${localMonth}-${localDay}`;
+                  dateSet.add(localDateStr);
+                }
+              }catch(e){}
+            }
+            
+            // 如果找到的日期与选择日期不一致，尝试使用找到的日期
+            const foundDates = Array.from(dateSet).sort();
+            if(foundDates.length > 0){
+              // 优先使用与选择日期最接近的日期
+              let targetDate = foundDates.find(d => d === selectedDate) || foundDates[foundDates.length - 1];
+              if(targetDate !== selectedDate){
+                console.warn(`[renderChartDayHourly] ⚠️ 数据日期(${foundDates.join(', ')})与选择日期(${selectedDate})不一致，尝试使用实际日期 ${targetDate} 构建`);
+                hourlyMap = buildHourlyMapForDate(targetDate);
+                if(hourlyMap.size > 0){
+                  console.log(`[renderChartDayHourly] ✅ 使用实际日期 ${targetDate} 成功构建了 hourlyMap`);
+                }
+              }
             }
           }
-        }catch(e){ /* 按需拉取失败 */ }
+        }catch(e){
+          console.warn('[renderChartDayHourly] 解析 rawData 失败:', e);
+        }
       }
-      let hourlyMap = buildHourlyMapForDate(selectedDate);
+      console.log('[renderChartDayHourly] hourlyMap size:', hourlyMap.size);
+      console.log('[renderChartDayHourly] hourlyMap keys:', Array.from(hourlyMap.keys()));
+      if(hourlyMap.has(currentName)){
+        const memberHourly = hourlyMap.get(currentName);
+        console.log('[renderChartDayHourly]', currentName, '的小时级数据:', Array.from(memberHourly.entries()));
+      } else {
+        console.warn('[renderChartDayHourly]', currentName, '不在 hourlyMap 中');
+      }
+      if(hourlyMap.has(currentName)){
+        const memberHours = hourlyMap.get(currentName);
+        console.log('[renderChartDayHourly] currentName hours:', Array.from(memberHours.keys()));
+      }
+      
+      // 显示数据最后更新时间
+      let latestTimestamp = null;
+      if(hourlyMap.has(currentName)){
+        const memberHours = hourlyMap.get(currentName);
+        for(const [hour, data] of memberHours.entries()){
+          if(data && data.ts && (!latestTimestamp || data.ts > latestTimestamp)){
+            latestTimestamp = data.ts;
+          }
+        }
+      }
+      if(latestTimestamp){
+        // 以当前本地时间为准显示
+        const now = new Date();
+        const currentTimeStr = now.toLocaleString('zh-CN', { hour12: false });
+        
+        const statusText = `数据更新时间：${currentTimeStr}`;
+        
+        // 在图表下方显示数据更新时间提示
+        const statusEl = document.getElementById('dataUpdateStatus');
+        if(statusEl){
+          statusEl.textContent = statusText;
+          statusEl.style.display = 'block';
+          statusEl.style.color = '#666';
+        }
+      }else{
+        const statusEl = document.getElementById('dataUpdateStatus');
+        if(statusEl) statusEl.style.display = 'none';
+      }
+      
       const hours = new Set();
+      
+      // 包含该日内出现的所有小时（存在原始记录即可）
       const addHours = (nm)=>{ 
         const mm = hourlyMap.get(nm); 
-        if(mm){ for(const h of mm.keys()) hours.add(h); } 
+        if(mm){ 
+          for(const h of mm.keys()) {
+            hours.add(h);
+          }
+        } 
       };
+      
       addHours(currentName);
       for(const nm of compareNames) addHours(nm);
-      const labels = Array.from(hours).sort((a,b)=> a.localeCompare(b));
-      if(!labels.length){ 
-        empty.style.display='block';
-        const hasRaw = localStorage.getItem(rawKey);
-        if(!hasRaw || !hasRaw.trim()){
-          empty.textContent = `暂无 ${selectedDate} 的小时级数据，请从服务器恢复最新存档`;
+      // 自定义排序：正确处理时间格式（HH:MM），24:00 视为最大值
+      const labels = Array.from(hours).sort((a,b)=> {
+        // 24:00 视为最大值
+        if(a === '24:00') return 1;
+        if(b === '24:00') return -1;
+        // 其他时间按数值排序
+        const [ah, am] = a.split(':').map(Number);
+        const [bh, bm] = b.split(':').map(Number);
+        const aMin = (ah || 0) * 60 + (am || 0);
+        const bMin = (bh || 0) * 60 + (bm || 0);
+        return aMin - bMin;
+      });
+      
+      // 如果没有小时级数据，回退到使用日级数据并显示完整的0-24点时间轴
+      if(!labels.length){
+        // 尝试从日级数据中获取该日期的数据
+        const rows = getStoredRowsForDate(selectedDate) || [];
+        const found = rows.find(r => String(r.realName || r.姓名 || '').trim() === currentName);
+        if(found){
+          // 有日级数据，显示完整的0-24点时间轴（每小时一个点）
+          // 生成0-24点的标签
+          for(let h = 0; h < 24; h++){
+            const hStr = String(h).padStart(2, '0');
+            labels.push(`${hStr}:00`);
+          }
+          labels.push('24:00'); // 添加次日00:00作为24点
+          
+          const hourMap = new Map();
+          const fans = Number(found.fansNum != null ? found.fansNum : (found.粉丝数 != null ? found.粉丝数 : 0));
+          const like = Number(found.likeNum != null ? found.likeNum : (found.点赞数 != null ? found.点赞数 : 0));
+          const collect = Number(found.collectNum != null ? found.collectNum : (found.收藏数 != null ? found.收藏数 : 0));
+          const ts = Date.now();
+          
+          // 所有时间点都使用相同的日级数据
+          for(const label of labels){
+            hourMap.set(label, { fans, like, collect, ts });
+          }
+          
+          hourlyMap.set(currentName, hourMap);
+          
+          // 同时也需要为对比成员设置数据（如果有）
+          for(const nm of compareNames){
+            const cmpRows = getStoredRowsForDate(selectedDate) || [];
+            const cmpFound = cmpRows.find(r => String(r.realName || r.姓名 || '').trim() === nm);
+            if(cmpFound){
+              const cmpHourMap = new Map();
+              const cmpFans = Number(cmpFound.fansNum != null ? cmpFound.fansNum : (cmpFound.粉丝数 != null ? cmpFound.粉丝数 : 0));
+              const cmpLike = Number(cmpFound.likeNum != null ? cmpFound.likeNum : (cmpFound.点赞数 != null ? cmpFound.点赞数 : 0));
+              const cmpCollect = Number(cmpFound.collectNum != null ? cmpFound.collectNum : (cmpFound.收藏数 != null ? cmpFound.收藏数 : 0));
+              const cmpTs = Date.now();
+              for(const label of labels){
+                cmpHourMap.set(label, { fans: cmpFans, like: cmpLike, collect: cmpCollect, ts: cmpTs });
+              }
+              hourlyMap.set(nm, cmpHourMap);
+            }
+          }
+          
+          console.log(`[renderChartDayHourly] 使用日级数据回退，生成${labels.length}个时间点`);
         } else {
-          empty.textContent = `暂无 ${selectedDate} 的小时级数据（${currentName || '当前成员'}）`;
+          empty.textContent = `该日期（${selectedDate}）缺少原始 HAR 小时节点数据，且无日级快照数据。请确认已同步完整数据。`;
+          empty.style.display='block';
+          if(chart){ chart.destroy(); }
+          return;
         }
-        if(chart){ chart.destroy(); chart = null; }
-        return; 
       }
       empty.style.display='none';
       const mainColor = colorOf(currentName || '');
-      // 主成员在 map 中的 key 可能与 currentName 略有差异（如 realName vs 姓名），做一次匹配
-      let m = hourlyMap.get(currentName);
-      if(!m || !m.size){ for(const [k,v] of hourlyMap){ if(String(k).trim() === String(currentName||'').trim() && v && v.size){ m = v; break; } } }
-      m = m || new Map();
+      const m = hourlyMap.get(currentName) || new Map();
       let dataFans = labels.map(h => (m.get(h)?.fans ?? null));
       let dataLike = labels.map(h => (m.get(h)?.like ?? null));
       let dataCollect = labels.map(h => (m.get(h)?.collect ?? null));
@@ -1089,7 +2484,7 @@
         dataCollect = toSequentialDeltaWithFirstForHourMap(dataCollect, labels, m, 'collect');
       }
       const baseDatasets = [];
-      // 天维度只使用单一 y 轴（scales 仅定义了 y），不要 yAxisID 否则 Chart.js 找不到对应 scale 会导致数据不绘制
+      // 天维度统一使用单个 Y 轴（不再使用多个 yAxisID）
       if(showFans){ baseDatasets.push({ label: currentName, data: dataFans, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.08), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
       if(showLike){ baseDatasets.push({ label: currentName, data: dataLike, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.07), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
       if(showCollect){ baseDatasets.push({ label: currentName, data: dataCollect, borderColor: mainColor, backgroundColor: colorWithAlpha(mainColor, 0.06), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false }); }
@@ -1120,13 +2515,27 @@
           baseDatasets.push({ label: nm, data: cmpCollect, borderColor: cmpColor, backgroundColor: colorWithAlpha(cmpColor, 0.04), tension: 0.5, cubicInterpolationMode: 'monotone', borderWidth: 1.5, spanGaps: false });
         }
       }
+      // 调试信息：检查数据
+      console.log('[renderChartDayHourly] labels:', labels);
+      console.log('[renderChartDayHourly] baseDatasets count:', baseDatasets.length);
+      if(baseDatasets.length > 0){
+        console.log('[renderChartDayHourly] first dataset data:', baseDatasets[0].data);
+      }
+      
       const cfg = {
         type: 'line',
         data: { labels, datasets: baseDatasets },
         options: {
           responsive: true,
           interaction: { mode: 'index', intersect: false },
-          elements: { point: { radius: 0, hitRadius: 0, hoverRadius: 0 } },
+          elements: { 
+            point: { 
+              // 天维度：如果是完整的0-24点（25个点），不显示点以避免混乱；如果是少于5个点，显示较大的点
+              radius: labels.length <= 4 ? 4 : 1,
+              hitRadius: 8, 
+              hoverRadius: 6 
+            } 
+          },
           plugins: {
             legend: { position: 'top' },
             tooltip: {
@@ -1152,11 +2561,51 @@
             }
           },
           scales: {
-            x: { ticks: { maxRotation: 0, minRotation: 0 } },
+            x: { 
+              ticks: { 
+                maxRotation: 0, 
+                minRotation: 0,
+                // 天维度标签显示策略：如果有25个点（0-24），每3小时显示一个；否则显示所有
+                callback: function(value, index) {
+                  if (Array.isArray(labels) && index < labels.length) {
+                    const label = labels[index];
+                    // 如果是完整的0-24点时间轴（25个点），每3小时显示一个标签
+                    if(labels.length === 25){
+                      const hourPart = label.split(':')[0];
+                      const hour = parseInt(hourPart);
+                      if(hour % 3 === 0 || hour === 24) return label;
+                      return ''; // 其他时间点不显示标签
+                    }
+                    return label;
+                  }
+                  return value;
+                }
+              } 
+            },
             y: (function(){
               const ys = computeYAxisScale(baseDatasets);
-              return { beginAtZero: false, min: ys.min, max: ys.max, ticks: { stepSize: ys.step, callback: function(value){ const n = Number(value); return Number.isFinite(n) ? n.toFixed(0) : value; } }, border: { display: false } };
+              return { 
+                beginAtZero: false, 
+                min: ys.min, 
+                max: ys.max, 
+                ticks: { 
+                  stepSize: ys.step, 
+                  callback: function(value){ 
+                    const n = Number(value); 
+                    return Number.isFinite(n) ? n.toFixed(0) : value; 
+                  } 
+                }, 
+                border: { display: false }
+              };
             })()
+          },
+          layout: {
+            padding: {
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0
+            }
           }
         }
       };
@@ -1276,7 +2725,15 @@
       allDates = listStoredDates();
       selectedDate = allDates.length ? allDates[allDates.length-1] : null;
       mode = 'day';
+      updateDateNavigation();
+      updateVersionBadge();
       renderChartUnified(seriesRaw, buildCompareMap(mode));
+      
+      // 天维度初始化完成后，为了确保显示最新的数据，主动从服务器检查更新
+      // 这样当用户从榜单页跳转过来时，可以及时获取当天的最新数据
+      restoreLatestFromServer().catch(()=>{
+        console.warn('[person] 初始化时检查更新失败，继续使用本地数据');
+      });
 
       // 勾选事件：按需显示粉丝/点赞/收藏
       const chkFans = document.getElementById('toggleFans');
@@ -1307,9 +2764,251 @@
         });
       }
       const restoreBtn = document.getElementById('restoreLatestBtn');
-      restoreBtn?.addEventListener('click', restoreLatestFromServer);
+      restoreBtn?.addEventListener('click', async () => {
+        await restoreLatestFromServer(true);
+        // 如果当前是天维度，确保获取并更新该日期的 HAR 数据
+        if(mode === 'day' && selectedDate){
+          const clientId = resolveClientId();
+          try{
+            const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}`, { cache: 'no-store' });
+            if(dateHistoryResp.ok){
+              const dateHistoryPayload = await dateHistoryResp.json();
+              const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+              if(normalizedRaw && normalizedRaw.length > 100){
+                try{
+                  // 检查数据中是否包含 20:00 之后的数据
+                  const testParse = JSON.parse(normalizedRaw);
+                  if(testParse && testParse.log && testParse.log.entries){
+                    const entriesAfter20 = testParse.log.entries.filter(e => {
+                      const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+                      if(!t) return false;
+                      const tStr = String(t);
+                      const match = tStr.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):/);
+                      if(!match) return false;
+                      const entryDate = match[1];
+                      const hour = parseInt(match[2]);
+                      return entryDate === selectedDate && hour >= 20;
+                    });
+                    console.log(`[person] 手动刷新：${selectedDate} 的 20:00 之后 entries 数量:`, entriesAfter20.length);
+                    if(entriesAfter20.length > 0){
+                      const hours = entriesAfter20.map(e => {
+                        const t = e?.startedDateTime || e?.request?.startedDateTime || e?.response?.startedDateTime;
+                        const tStr = String(t);
+                        const match = tStr.match(/T(\d{2}):(\d{2})/);
+                        return match ? `${match[1]}:${match[2]}` : '';
+                      }).filter(Boolean);
+                      console.log(`[person] 手动刷新：${selectedDate} 的 20:00 之后的时间点:`, hours.slice(0, 10));
+                    } else {
+                      console.warn(`[person] ⚠️ 手动刷新：${selectedDate} 的 HAR 数据中没有 20:00 之后的数据`);
+                    }
+                  }
+                  localStorage.setItem(storageRawKey(selectedDate), normalizedRaw);
+                  console.log('[person] ✅ 手动刷新：已更新', selectedDate, '的最新 HAR 数据，长度:', normalizedRaw.length);
+                }catch(e){
+                  console.warn('[person] ⚠️ 手动刷新：保存 HAR 数据失败:', e);
+                }
+              } else {
+                console.warn('[person] ⚠️ 手动刷新：获取到的 HAR 数据无效，长度:', normalizedRaw ? normalizedRaw.length : 0);
+              }
+            } else {
+              console.warn('[person] ⚠️ 手动刷新：获取 HAR 数据失败，状态码:', dateHistoryResp.status);
+            }
+          }catch(e){
+            console.warn('[person] ⚠️ 手动刷新：获取 HAR 数据失败:', e);
+          }
+        }
+        refreshFromLocal();
+      });
       const localBtn = document.getElementById('localRefreshBtn');
       localBtn?.addEventListener('click', refreshFromLocal);
+      
+      // 天维度数据自动刷新机制：如果当前是天维度，每 3 分钟自动刷新一次（包括历史日期）
+      let autoRefreshInterval = null;
+      function startAutoRefreshForDay() {
+        // 清除已有的定时器
+        if (autoRefreshInterval) {
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
+        
+        // 如果当前是天维度，启动自动刷新（包括历史日期，因为历史日期的数据也可能更新）
+        const today = new Date().toISOString().split('T')[0];
+        console.log('[person] 检查自动刷新条件:', { mode, selectedDate, today, shouldStart: mode === 'day' });
+        if (mode === 'day' && selectedDate) {
+          console.log('[person] ✅ 启动天维度自动刷新（每 3 分钟），选择日期:', selectedDate);
+          autoRefreshInterval = setInterval(() => {
+            // 检查是否仍然是天维度且有选择日期
+            console.log('[person] 自动刷新检查:', { mode, selectedDate, shouldRefresh: mode === 'day' && selectedDate });
+            if (mode === 'day' && selectedDate) {
+              console.log('[person] ✅ 自动刷新天维度数据，日期:', selectedDate);
+              restoreLatestFromServer(true).then(() => {
+                console.log('[person] ✅ 自动刷新完成，开始刷新本地数据...');
+                // 确保获取该日期的最新 HAR 数据
+                const clientId = resolveClientId();
+                fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}`, { cache: 'no-store' })
+                  .then(resp => {
+                    if(resp.ok){
+                      return resp.json();
+                    }
+                    return null;
+                  })
+                  .then(payload => {
+                    if(payload && payload.memberRaw){
+                      const normalizedRaw = CacheManager.normalizeMemberRaw(payload.memberRaw);
+                      console.log('[person] 自动刷新：normalizedRaw 类型:', typeof normalizedRaw, '长度:', normalizedRaw ? normalizedRaw.length : 0);
+                      if(normalizedRaw && typeof normalizedRaw === 'string' && normalizedRaw.length > 100){
+                        try{
+                          // 验证数据格式：尝试解析为 JSON
+                          const testParse = JSON.parse(normalizedRaw);
+                          if(testParse && testParse.log && testParse.log.entries && Array.isArray(testParse.log.entries) && testParse.log.entries.length > 0){
+                            localStorage.setItem(storageRawKey(selectedDate), normalizedRaw);
+                            console.log('[person] ✅ 自动刷新：已更新', selectedDate, '的最新 HAR 数据，长度:', normalizedRaw.length, 'entries:', testParse.log.entries.length);
+                          } else {
+                            console.warn('[person] ⚠️ 自动刷新：HAR 数据格式无效（无 entries）:', { hasLog: !!testParse?.log, hasEntries: !!testParse?.log?.entries, entriesLength: testParse?.log?.entries?.length });
+                          }
+                        }catch(e){
+                          console.warn('[person] ⚠️ 自动刷新：HAR 数据解析失败:', e, '原始数据长度:', normalizedRaw.length, '前100字符:', normalizedRaw.substring(0, 100));
+                        }
+                      } else {
+                        console.warn('[person] ⚠️ 自动刷新：HAR 数据无效:', { 
+                          hasNormalizedRaw: !!normalizedRaw, 
+                          type: typeof normalizedRaw, 
+                          length: normalizedRaw ? normalizedRaw.length : 0,
+                          isString: typeof normalizedRaw === 'string',
+                          isLongEnough: normalizedRaw && normalizedRaw.length > 100
+                        });
+                      }
+                    } else {
+                      console.warn('[person] ⚠️ 自动刷新：payload 中没有 memberRaw:', { hasPayload: !!payload, hasMemberRaw: !!(payload && payload.memberRaw) });
+                    }
+                    // 刷新本地数据并重新渲染
+                    console.log('[person] 自动刷新：准备调用 refreshFromLocal，当前 mode:', mode, 'selectedDate:', selectedDate);
+                    refreshFromLocal().then(() => {
+                      console.log('[person] ✅ 自动刷新：refreshFromLocal 完成，准备重新渲染图表');
+                      // 确保图表重新渲染
+                      if(mode === 'day'){
+                        console.log('[person] 自动刷新：调用 renderChartDayHourly');
+                        renderChartDayHourly();
+                      } else {
+                        const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
+                        console.log('[person] 自动刷新：调用 renderChartUnified，name:', name);
+                        renderChartUnified(buildSeriesForName(name), buildCompareMap(mode));
+                      }
+                    }).catch(err => {
+                      console.error('[person] ❌ 自动刷新：refreshFromLocal 失败:', err);
+                    });
+                  })
+                  .catch(err => {
+                    console.warn('[person] ⚠️ 自动刷新：获取最新 HAR 数据失败:', err);
+                    // 即使获取 HAR 失败，也刷新本地数据
+                    console.log('[person] 自动刷新：HAR 获取失败，但仍调用 refreshFromLocal');
+                    refreshFromLocal().then(() => {
+                      if(mode === 'day'){
+                        renderChartDayHourly();
+                      } else {
+                        const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
+                        renderChartUnified(buildSeriesForName(name), buildCompareMap(mode));
+                      }
+                    }).catch(e => {
+                      console.error('[person] ❌ 自动刷新：refreshFromLocal 失败:', e);
+                    });
+                  });
+              }).catch(err => {
+                console.warn('[person] ❌ 自动刷新失败:', err);
+              });
+            } else {
+              // 如果不是天维度或没有选择日期，停止自动刷新
+              if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                console.log('[person] 停止天维度自动刷新');
+              }
+            }
+          }, 3 * 60 * 1000); // 每 3 分钟刷新一次
+          
+          // 立即执行一次刷新（不等待 3 分钟）
+          console.log('[person] 自动刷新：立即执行第一次刷新');
+          if (mode === 'day' && selectedDate) {
+            restoreLatestFromServer(true).then(() => {
+              console.log('[person] ✅ 自动刷新（立即）：restoreLatestFromServer 完成');
+              const clientId = resolveClientId();
+              fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}`, { cache: 'no-store' })
+                .then(resp => {
+                  if(resp.ok){
+                    return resp.json();
+                  }
+                  return null;
+                })
+                .then(payload => {
+                  if(payload && payload.memberRaw){
+                    const normalizedRaw = CacheManager.normalizeMemberRaw(payload.memberRaw);
+                    if(normalizedRaw && typeof normalizedRaw === 'string' && normalizedRaw.length > 100){
+                      try{
+                        const testParse = JSON.parse(normalizedRaw);
+                        if(testParse && testParse.log && testParse.log.entries && Array.isArray(testParse.log.entries) && testParse.log.entries.length > 0){
+                          localStorage.setItem(storageRawKey(selectedDate), normalizedRaw);
+                          console.log('[person] ✅ 自动刷新（立即）：已更新', selectedDate, '的最新 HAR 数据，长度:', normalizedRaw.length, 'entries:', testParse.log.entries.length);
+                        }
+                      }catch(e){
+                        console.warn('[person] ⚠️ 自动刷新（立即）：HAR 数据解析失败:', e);
+                      }
+                    }
+                  }
+                  refreshFromLocal().then(() => {
+                    if(mode === 'day'){
+                      renderChartDayHourly();
+                    } else {
+                      const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
+                      renderChartUnified(buildSeriesForName(name), buildCompareMap(mode));
+                    }
+                  });
+                })
+                .catch(err => {
+                  console.warn('[person] ⚠️ 自动刷新（立即）：获取最新 HAR 数据失败:', err);
+                  refreshFromLocal().then(() => {
+                    if(mode === 'day'){
+                      renderChartDayHourly();
+                    } else {
+                      const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
+                      renderChartUnified(buildSeriesForName(name), buildCompareMap(mode));
+                    }
+                  });
+                });
+            }).catch(err => {
+              console.warn('[person] ❌ 自动刷新（立即）失败:', err);
+            });
+          }
+        }
+      }
+      
+      // 监听模式切换和日期切换，自动启动/停止刷新
+      const granularitySeg = document.getElementById('granularity');
+      if (granularitySeg) {
+        granularitySeg.addEventListener('click', (e) => {
+          const btn = e.target.closest('button');
+          if (btn && btn.dataset.mode) {
+            setTimeout(() => {
+              startAutoRefreshForDay();
+            }, 100);
+          }
+        });
+      }
+      
+      // 监听日期选择器变化（注意：在 updateDateNavigation 中已经有另一个监听器，这里只负责启动自动刷新）
+      // 这个监听器会在日期切换后启动自动刷新
+      
+      // 页面加载后启动自动刷新（如果是天维度且选择的是今天）
+      setTimeout(() => {
+        startAutoRefreshForDay();
+      }, 2000); // 延迟 2 秒启动，避免与初始加载冲突
+      
+      // 页面卸载时清除定时器
+      window.addEventListener('beforeunload', () => {
+        if (autoRefreshInterval) {
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
+      });
       if(localBtn){
         let forceBtn = document.getElementById('localForceRefreshBtn');
         if(!forceBtn){
@@ -1451,7 +3150,8 @@
             lab.style.background = colorWithAlpha(c, 0.28);
           }catch(e){}
         }
-        restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+        renderChartUnified(buildSeriesForName(currentName || ''), buildCompareMap(mode));
+        updateDateNavigation();
       });
 
       // 已移除搜索框与过滤逻辑，始终展示完整候选成员列表
@@ -1464,13 +3164,9 @@
         [...seg.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         mode = btn.dataset.mode || 'week';
-        // 根据模式重新渲染
-        if(mode === 'day'){
-          renderChartDayHourly();
-        } else {
-          const series = buildSeriesForName(currentName || '');
-          renderChartUnified(series, buildCompareMap(mode));
-        }
+        // 切换维度后按选择的日期本地重渲染
+        renderChartUnified(buildSeriesForName(currentName || ''), buildCompareMap(mode));
+        updateDateNavigation();
       });
 
       // 趋势类型切换
@@ -1481,56 +3177,87 @@
         [...typeSeg.querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         trendType = btn.dataset.type || 'growth';
-        restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+        renderChartUnified(buildSeriesForName(currentName || ''), buildCompareMap(mode));
       });
 
       // 日期导航（所有维度均可选单日；week/month 以该日所在周/月作为区间）
       function updateDateNavigation(){
         const dateNav = document.getElementById('dateNavigation');
         const dateSelector = document.getElementById('dateSelector');
-        if(!dateNav || !dateSelector) return;
         const stored = listStoredDates().sort().reverse();
         const fallbackToday = new Date().toISOString().split('T')[0];
         dateNav.style.display = 'flex';
         dateSelector.innerHTML = '<option value="">请选择日期</option>';
-        const dates = stored.length ? stored : [fallbackToday];
+        // 过滤掉未来日期，只显示今天及之前的日期
+        const today = new Date().toISOString().split('T')[0];
+        const validDates = stored.filter(d => d <= today);
+        const dates = validDates.length ? validDates : [fallbackToday];
         const current = selectedDate || fallbackToday;
         dates.forEach(d => {
           const opt = document.createElement('option');
           opt.value = d; opt.textContent = d; if(d===current) opt.selected = true; dateSelector.appendChild(opt);
         });
       }
-      const dateSelectorEl = document.getElementById('dateSelector');
-      if(dateSelectorEl){
-        dateSelectorEl.addEventListener('change', async (e)=>{
-          const v = e.target.value;
-          if(v){
-            selectedDate = v;
-            // 根据当前模式重新渲染图表
+      document.getElementById('dateSelector').addEventListener('change', async (e)=>{
+        const v = e.target.value;
+        if(v){
+          selectedDate = v;
+          try{
+            const monthDates = listDatesBetween(getMonthStart(v), v);
+            await ensureDateCoverage({
+              clientId: resolveClientId(),
+              dates: monthDates
+            });
+            // 如果是天维度，确保获取该日期的最新 HAR 数据
             if(mode === 'day'){
-              renderChartDayHourly();
-            } else {
-              const series = buildSeriesForName(currentName || '');
-              renderChartUnified(series, buildCompareMap(mode));
+              try{
+                const clientId = resolveClientId();
+                const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(v)}`, { cache: 'no-store' });
+                if(dateHistoryResp.ok){
+                  const dateHistoryPayload = await dateHistoryResp.json();
+                  const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+                  // 更新 memberRaw（HAR 数据）到 localStorage
+                  if(normalizedRaw && normalizedRaw.length > 100){
+                    try{ 
+                      localStorage.setItem(storageRawKey(v), normalizedRaw);
+                      console.log('[person] ✅ 日期切换：已更新日期', v, '的 HAR 数据，长度:', normalizedRaw.length);
+                    }catch(_){}
+                  } else {
+                    console.warn('[person] ⚠️ 日期切换：获取到的 HAR 数据无效，长度:', normalizedRaw ? normalizedRaw.length : 0);
+                  }
+                }
+              }catch(err){
+                console.warn('[person] 获取日期', v, '的 HAR 数据失败:', err);
+              }
             }
+          }catch(err){
+            console.warn('[person] dateSelector ensure coverage failed:', err);
           }
-        });
-      }
-      // 在数据更新后刷新日期选择器
-      updateDateNavigation();
-      
-      // 在数据刷新后更新日期选择器
-      const originalRefreshFromLocal = refreshFromLocal;
-      refreshFromLocal = async function(opts){
-        const result = await originalRefreshFromLocal.call(this, opts);
-        updateDateNavigation();
-        return result;
-      };
+          renderChartUnified(buildSeriesForName(currentName || ''), buildCompareMap(mode));
+          // 日期切换后，重新启动自动刷新
+          setTimeout(() => {
+            startAutoRefreshForDay();
+          }, 100);
+        }
+      });
+
 
       // 初始化后自动拉取并重算，确保增长趋势最新，并在数据就绪后重建默认TOP7
       restoreLatestFromServer()
         .then(()=>refreshFromLocal())
         .then(()=>{
+          // 如果当前是天维度，确保使用最新日期并重新渲染
+          if(mode === 'day'){
+            const allDates = listStoredDates();
+            if(allDates.length){
+              const latestStoredDate = allDates[allDates.length - 1];
+              if(!selectedDate || selectedDate !== latestStoredDate){
+                selectedDate = latestStoredDate;
+                updateDateNavigation();
+                console.log('[person] 天维度自动切换到最新日期:', selectedDate);
+              }
+            }
+          }
           try{
             const fromStorage = listAllMemberNames().filter(n => n);
             const fallback = Object.keys(birthFallbacks || {}).filter(n => n);
@@ -1594,6 +3321,5 @@
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"cb471b1deb6c4779b39901a64a726535","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
-</html><!-- force-deploy: 1772797963 -->
+</html>
