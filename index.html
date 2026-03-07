@@ -54,10 +54,10 @@
     /* 增长用红色，下降用绿色 */
     .num-pos { color: #c62828; font-weight: 600; }
     .num-neg { color: #2e7d32; font-weight: 600; }
-    .range-bar { text-align:center; color:#555; font-size:13px; margin: 8px 0 !important; display:block; width:100%; }
+    .range-bar { text-align:center; color:#555; font-size:13px; margin: 6px 0 8px !important; display:block; width:100%; }
     #preview .range-bar { text-align: center !important; }
     /* 导出 PNG 时：日期区间整体居中，上下留白间距一致 */
-    #preview.export-png .range-bar { margin: 8px 0 !important; text-align: center !important; }
+    #preview.export-png .range-bar { margin: 6px 0 8px !important; text-align: center !important; }
     /* 统一保留的样式，去除重复的 table/th,td 定义 */
     .tab-switcher { display:flex; gap:8px; margin: 10px 0; background:#f3f5fb; padding:4px; border-radius:10px; }
     .tab-switcher button { flex:1; border:none; background:transparent; padding:10px 14px; border-radius:8px; font-size:15.5px; font-weight:600; color:#475569; cursor:pointer; transition:background .2s ease, color .2s ease; }
@@ -132,8 +132,8 @@
     .avatar-name { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); padding: 2px 6px; font-size: 12px; line-height: 1.4; color: #fff; background: rgba(0,0,0,0.38); border-radius: 6px; white-space: nowrap; }
     /* 手机端同步样式：日期区间与说明留白在小屏一致 */
     @media (max-width: 640px){
-      .range-bar { margin: 12px 0 !important; text-align: center !important; }
-      #preview.export-png .range-bar { margin-top: 24px !important; margin-bottom: 12px !important; }
+      .range-bar { margin: 6px 0 8px !important; text-align: center !important; }
+      #preview.export-png .range-bar { margin-top: 6px !important; margin-bottom: 8px !important; }
       .preview-notes { margin: 12px 0 18px !important; }
       #preview.export-png .preview-notes { margin-bottom: 32px !important; }
       /* 手机端额外加大左边距，保证 emoji 不压到文本 */
