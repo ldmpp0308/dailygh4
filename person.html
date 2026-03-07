@@ -2118,7 +2118,7 @@
       }catch(e){ return '未知'; }
     }
 
-    let chart; let compareNames = new Set(); let currentName = null; let showFans = true; let showLike = false; let showCollect = false; let mode = 'week'; let trendType = 'growth'; let selectedDate = null; let allDates = [];
+    let chart; let compareNames = new Set(); let currentName = null; let showFans = true; let showLike = false; let showCollect = false; let mode = 'week'; let trendType = 'growth'; let selectedDate = null; let allDates = []; let userSelectedDate = false;
     
     // 统一渲染函数：根据模式选择正确的渲染方法
     function renderChartUnified(series, compareMap) {
@@ -2724,9 +2724,11 @@
       domAge.textContent = fmtAge(birthTs, refDate);
       domZodiac.textContent = fmtZodiac(birthTs);
 
-      // 默认：天颗粒度
+      // 默认：天颗粒度（只在用户未主动选择日期时才设置默认日期）
       allDates = listStoredDates();
-      selectedDate = allDates.length ? allDates[allDates.length-1] : null;
+      if(!userSelectedDate){
+        selectedDate = allDates.length ? allDates[allDates.length-1] : null;
+      }
       mode = 'day';
       updateDateNavigation();
       updateVersionBadge();
@@ -3202,9 +3204,6 @@
           opt.value = d; opt.textContent = d; if(d===current) opt.selected = true; dateSelector.appendChild(opt);
         });
       }
-      // 标志位：用户是否主动选择了日期
-      let userSelectedDate = false;
-      
       document.getElementById('dateSelector').addEventListener('change', async (e)=>{
         const v = e.target.value;
         if(v){
