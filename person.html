@@ -836,9 +836,9 @@
             refreshFromLocal();
           }, 50);
           
-          // 后台异步检查更新（不阻塞界面）
+          // 后台异步检查更新（不阻塞界面，不切换日期）
           setTimeout(() => {
-            restoreLatestFromServer(true); // 强制刷新，获取最新数据
+            restoreLatestFromServer(true, false); // 强制刷新获取最新数据，但不切换日期
           }, 100);
           return;
         }
@@ -2747,7 +2747,7 @@
         chkFans.addEventListener('change', () => {
           if(!chkFans.checked) return;
           showFans = true; showLike = false; showCollect = false;
-          restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+          restoreLatestFromServer(false, false).then(()=>refreshFromLocal({ autoSwitchDate: false })).catch(()=>{});
         });
       }
       if(chkLike){
@@ -2755,7 +2755,7 @@
         chkLike.addEventListener('change', () => {
           if(!chkLike.checked) return;
           showFans = false; showLike = true; showCollect = false;
-          restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+          restoreLatestFromServer(false, false).then(()=>refreshFromLocal({ autoSwitchDate: false })).catch(()=>{});
         });
       }
       if(chkCollect){
@@ -2763,7 +2763,7 @@
         chkCollect.addEventListener('change', () => {
           if(!chkCollect.checked) return;
           showFans = false; showLike = false; showCollect = true;
-          restoreLatestFromServer().then(()=>refreshFromLocal()).catch(()=>{});
+          restoreLatestFromServer(false, false).then(()=>refreshFromLocal({ autoSwitchDate: false })).catch(()=>{});
         });
       }
       const restoreBtn = document.getElementById('restoreLatestBtn');
