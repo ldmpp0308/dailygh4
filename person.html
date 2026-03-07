@@ -798,7 +798,7 @@
       }
     }
 
-    async function restoreLatestFromServer(force){
+    async function restoreLatestFromServer(force, autoSwitchDate = true){
       const statusEl = document.getElementById('restoreStatus');
       function setStatus(type, msg){ if(statusEl) { statusEl.style.color = (type==='error') ? '#d93025' : (type==='success' ? '#137333' : 'var(--text-muted)'); statusEl.textContent = msg; } }
       
@@ -1365,10 +1365,12 @@
         setStatus('success', `拉取完成：保留本地 ${keptCount} 项，新增/更新 ${updatedCount} 项${latestDate ? `（最新日期：${latestDate}）` : ''}`);
         setLastSync(Date.now());
 
-        // 恢复后：切换到最新日期并重渲染
+        // 恢复后：切换到最新日期并重渲染（根据autoSwitchDate参数决定是否切换）
         try{
           allDates = listStoredDates();
-          selectedDate = allDates.length ? allDates[allDates.length-1] : null;
+          if(autoSwitchDate){
+            selectedDate = allDates.length ? allDates[allDates.length-1] : null;
+          }
           // 仅重建当前成员的序列并重渲染，不重复绑定事件
           const name = currentName || (function(){ const params = new URLSearchParams(location.search); return decodeURIComponent(params.get('name') || '').trim(); })();
           const dates = listStoredDates();
@@ -1472,12 +1474,13 @@
           allDates = listStoredDates();
           const newLatestDate = allDates.length ? allDates[allDates.length-1] : null;
           
-          // 如果从服务器获取到了新的日期（日期不同或者没有选择日期），更新selectedDate
-          if(newLatestDate && (!prevLatestDate || newLatestDate > prevLatestDate)){
+          // 如果从服务器获取到了新的日期（日期不同或者没有选择日期），更新selectedDate（根据opts.autoSwitchDate决定是否切换）
+          const shouldAutoSwitch = !opts || opts.autoSwitchDate !== false;
+          if(shouldAutoSwitch && newLatestDate && (!prevLatestDate || newLatestDate > prevLatestDate)){
             selectedDate = newLatestDate;
             updateDateNavigation();
             console.log('[person] ✅ 天维度日期已更新为最新:', selectedDate);
-          } else if(!selectedDate && allDates.length){
+          } else if(shouldAutoSwitch && !selectedDate && allDates.length){
             // 如果之前没有选择日期，更新为最新日期
             selectedDate = allDates[allDates.length-1];
             updateDateNavigation();
@@ -2841,8 +2844,8 @@
             console.log('[person] 自动刷新检查:', { mode, selectedDate, shouldRefresh: mode === 'day' && selectedDate });
             if (mode === 'day' && selectedDate) {
               console.log('[person] ✅ 自动刷新天维度数据，日期:', selectedDate);
-              restoreLatestFromServer(true).then(() => {
-                console.log('[person] ✅ 自动刷新完成，开始刷新本地数据...');
+              restoreLatestFromServer(true, false).then(() => {
+                console.log('[person] ✅ 自动刷新完成，开始刷新本地数据（不切换日期）...');
                 // 确保获取该日期的最新 HAR 数据
                 const clientId = resolveClientId();
                 fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}`, { cache: 'no-store' })
@@ -2929,8 +2932,8 @@
           // 立即执行一次刷新（不等待 3 分钟）
           console.log('[person] 自动刷新：立即执行第一次刷新');
           if (mode === 'day' && selectedDate) {
-            restoreLatestFromServer(true).then(() => {
-              console.log('[person] ✅ 自动刷新（立即）：restoreLatestFromServer 完成');
+            restoreLatestFromServer(true, false).then(() => {
+              console.log('[person] ✅ 自动刷新（立即）：restoreLatestFromServer 完成（不切换日期）');
               const clientId = resolveClientId();
               fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(selectedDate)}`, { cache: 'no-store' })
                 .then(resp => {
