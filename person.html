@@ -2118,7 +2118,9 @@
       }catch(e){ return '未知'; }
     }
 
-    let chart; let compareNames = new Set(); let currentName = null; let showFans = true; let showLike = false; let showCollect = false; let mode = 'week'; let trendType = 'growth'; let selectedDate = null; let allDates = []; let userSelectedDate = false;
+    let chart; let compareNames = new Set(); let currentName = null; let showFans = true; let showLike = false; let showCollect = false; let mode = 'week'; let trendType = 'growth'; let selectedDate = null; let allDates = []; 
+    // 从 sessionStorage 读取用户选择状态，页面刷新后仍保持
+    let userSelectedDate = sessionStorage.getItem('user_selected_date') === 'true';
     
     // 统一渲染函数：根据模式选择正确的渲染方法
     function renderChartUnified(series, compareMap) {
@@ -2770,6 +2772,9 @@
       }
       const restoreBtn = document.getElementById('restoreLatestBtn');
       restoreBtn?.addEventListener('click', async () => {
+        // 用户主动点击服务器刷新，清除用户选择状态，允许切回最新日期
+        sessionStorage.removeItem('user_selected_date');
+        userSelectedDate = false;
         await restoreLatestFromServer(true);
         // 如果当前是天维度，确保获取并更新该日期的 HAR 数据
         if(mode === 'day' && selectedDate){
@@ -3208,6 +3213,7 @@
         const v = e.target.value;
         if(v){
           userSelectedDate = true; // 标记用户已主动选择日期
+          sessionStorage.setItem('user_selected_date', 'true'); // 持久化到 sessionStorage
           selectedDate = v;
           try{
             const monthDates = listDatesBetween(getMonthStart(v), v);
