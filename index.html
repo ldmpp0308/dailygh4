@@ -591,7 +591,7 @@ try{
   document.head.appendChild(style);
 }catch(e){}
 // API 基址：使用 Pages Functions 代理（会自动添加 CORS 头）
-const API_BASE = '';
+const API_BASE = 'https://api.dailygh4.com';
 let currentTab = 'auto';
 let autoTabState = { loading: false, lastFetched: 0 };
 
@@ -1162,8 +1162,8 @@ async function refreshAutoTab(force){
     btn?.setAttribute('disabled','disabled');
     updateAutoStatus('info', force ? '正在从服务器获取最新数据...' : '正在检查更新...');
     
-    // 优化：添加超时控制，避免长时间等待
-    const fetchWithTimeout = (url, options = {}, timeout = 10000) => {
+    // 优化：添加超时控制和指数退避重试机制
+    const fetchWithTimeout = (url, options = {}, timeout = 15000) => {
       return Promise.race([
         fetch(url, options),
         new Promise((_, reject) => 
@@ -1176,6 +1176,22 @@ async function refreshAutoTab(force){
         }
         throw err;
       });
+    };
+    
+    // 新增：指数退避重试机制
+    const fetchWithRetry = async (url, options = {}, maxRetries = 3, baseDelay = 1000) => {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          return await fetchWithTimeout(url, options);
+        } catch (err) {
+          console.warn(`[fetchWithRetry] 第 ${i + 1}/${maxRetries} 次请求失败:`, url, err.message);
+          if (i === maxRetries - 1) throw err;
+          // 指数退避：1s, 2s, 4s
+          const delay = baseDelay * Math.pow(2, i);
+          console.log(`[fetchWithRetry] ${delay}ms 后重试...`);
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
     };
     
     // 优先从 history 接口获取所有日期，找到真正的"最新"日期（确保显示真正的最新数据）
@@ -1205,21 +1221,21 @@ async function refreshAutoTab(force){
     // 并行发起 latest 和 history 请求
     const timestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
     
-    // latest API：快速获取最新数据（优先）
-    latestApiPromise = fetchWithTimeout(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
+    // latest API：快速获取最新数据（优先）- 使用重试机制
+    latestApiPromise = fetchWithRetry(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
       ...cacheOptions,
       method: 'GET'
-    }, 5000).catch(err => {
-      console.warn('[refreshAutoTab] latest API 请求失败:', err);
+    }, 3, 1000).catch(err => {
+      console.warn('[refreshAutoTab] latest API 请求失败（已重试3次）:', err);
       return null;
     });
     
-    // history API：后台获取历史日期列表（不阻塞）
-    historyApiPromise = fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${timestamp}`, { 
+    // history API：后台获取历史日期列表（不阻塞）- 使用重试机制
+    historyApiPromise = fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${timestamp}`, { 
       ...cacheOptions,
       method: 'GET'
-    }, 3000).catch(err => {
-      console.warn('[refreshAutoTab] history API 请求失败:', err);
+    }, 3, 1000).catch(err => {
+      console.warn('[refreshAutoTab] history API 请求失败（已重试3次）:', err);
       return null;
     });
     
@@ -1325,10 +1341,10 @@ async function refreshAutoTab(force){
             
             const queryPromises = toQueryNow.map(checkDate => {
               const dateTimestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
-              return fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(checkDate)}${dateTimestamp}`, { 
+              return fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(checkDate)}${dateTimestamp}`, { 
                 ...cacheOptions,
                 method: 'GET'
-              }, 3000).then(dateHistoryResp => { // 缩短超时：5秒→3秒
+              }, 3, 1000).then(dateHistoryResp => {
                 if(dateHistoryResp.ok){
                   return dateHistoryResp.json().then(dateHistoryPayload => {
                     const checkRows = Array.isArray(dateHistoryPayload.rows) ? dateHistoryPayload.rows : [];
@@ -1438,10 +1454,10 @@ async function refreshAutoTab(force){
     if(!latestDate || !memberData[latestDate] || !memberData[latestDate].length){
       try{
         const timestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
-        const resp = await fetchWithTimeout(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
+        const resp = await fetchWithRetry(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
           ...cacheOptions,
           method: 'GET'
-        }, 5000); // 优化：添加超时控制：5秒，快速失败
+        }, 3, 1000);
         if(resp.ok){
           const payload = await resp.json();
           syncPayloadToLocal(payload);
@@ -1482,10 +1498,27 @@ async function refreshAutoTab(force){
     
     autoTabState.lastFetched = Date.now();
     
+    // 强化缓存优先策略：如果服务器没有返回有效日期，尝试从本地缓存获取最新日期
     if(!latestDate){
-      renderAutoTable([], {});
-      updateAutoStatus('error', '服务器未返回有效日期数据');
-      return;
+      console.warn('[refreshAutoTab] 服务器未返回有效日期，尝试从本地缓存获取...');
+      const cachedDates = CacheManager.getCachedDates().sort();
+      if(cachedDates && cachedDates.length > 0){
+        // 使用本地缓存的最新日期
+        latestDate = cachedDates[cachedDates.length - 1];
+        console.log(`[refreshAutoTab] ✅ 使用本地缓存的最新日期: ${latestDate}`);
+        // 从缓存加载数据
+        const cachedRows = getStoredRowsForDate(latestDate);
+        if(cachedRows && cachedRows.length > 0){
+          memberData[latestDate] = cachedRows;
+          console.log(`[refreshAutoTab] ✅ 从本地缓存加载数据，条数: ${cachedRows.length}`);
+        }
+        // 显示提示但继续渲染
+        updateAutoStatus('info', '已使用本地缓存数据（服务器连接失败）');
+      } else {
+        renderAutoTable([], {});
+        updateAutoStatus('error', '服务器未返回有效日期数据，且本地无缓存');
+        return;
+      }
     }
     // 优化：只确保必要日期的数据覆盖（最新日期、前一日）
     // 基准日期（本周涨幅、本月涨幅）改为按需查询，不在这里查询
@@ -1502,10 +1535,10 @@ async function refreshAutoTab(force){
     if(!allHistoryDates || allHistoryDates.length === 0){
       // 如果第一次调用失败，才尝试获取（添加超时控制）
       try{
-        const allHistoryResp = await fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${force ? `&_t=${Date.now()}&_r=${Math.random()}` : ''}`, { 
+        const allHistoryResp = await fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${force ? `&_t=${Date.now()}&_r=${Math.random()}` : ''}`, { 
           ...cacheOptions,
           method: 'GET'
-        }, 3000); // 优化：缩短超时：5秒→3秒，快速失败
+        }, 3, 1000);
         if(allHistoryResp.ok){
           const allHistoryPayload = await allHistoryResp.json();
           allHistoryDates = (allHistoryPayload.dates || Object.keys(allHistoryPayload.memberData || {})).sort();
@@ -1552,20 +1585,20 @@ async function refreshAutoTab(force){
         const timestamp = force ? `&_t=${Date.now()}` : '';
         const timestamp2 = force ? `&_t=${Date.now()}` : '';
         
-        const prevPromise = fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevDate)}${timestamp}`, { 
+        const prevPromise = fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevDate)}${timestamp}`, { 
           ...cacheOptions,
           method: 'GET'
-        }, 3000).catch(err => {
-          console.warn(`[refreshAutoTab] 前一日查询失败:`, err);
+        }, 3, 1000).catch(err => {
+          console.warn(`[refreshAutoTab] 前一日查询失败（已重试3次）:`, err);
           return null;
         });
         
         const prevPrevPromise = (!cachedPrevPrevRows || cachedPrevPrevRows.length === 0 || force) 
-          ? fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevPrevDate)}${timestamp2}`, { 
+          ? fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevPrevDate)}${timestamp2}`, { 
               ...cacheOptions,
               method: 'GET'
-            }, 3000).catch(err => {
-              console.warn(`[refreshAutoTab] 前前一日查询失败:`, err);
+            }, 3, 1000).catch(err => {
+              console.warn(`[refreshAutoTab] 前前一日查询失败（已重试3次）:`, err);
               return null;
             })
           : Promise.resolve(null);
@@ -3675,7 +3708,7 @@ async function ensureDateCoverage(options){
   
   // 优化：限制并行请求数量，避免过多请求
   if(needFetch.length > 0){
-    const maxConcurrent = 5; // 提高并发数：3→5
+    const maxConcurrent = 3; // 降低并发数避免限流：5→3
     const toFetchNow = needFetch.slice(0, maxConcurrent);
     const toFetchLater = needFetch.slice(maxConcurrent);
     
