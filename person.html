@@ -3216,31 +3216,41 @@
           sessionStorage.setItem('user_selected_date', 'true'); // 持久化到 sessionStorage
           selectedDate = v;
           try{
-            const monthDates = listDatesBetween(getMonthStart(v), v);
-            await ensureDateCoverage({
-              clientId: resolveClientId(),
-              dates: monthDates
-            });
-            // 如果是天维度，确保获取该日期的最新 HAR 数据
-            if(mode === 'day'){
-              try{
-                const clientId = resolveClientId();
-                const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(v)}`, { cache: 'no-store' });
-                if(dateHistoryResp.ok){
-                  const dateHistoryPayload = await dateHistoryResp.json();
-                  const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
-                  // 更新 memberRaw（HAR 数据）到 localStorage
-                  if(normalizedRaw && normalizedRaw.length > 100){
-                    try{ 
-                      localStorage.setItem(storageRawKey(v), normalizedRaw);
-                      console.log('[person] ✅ 日期切换：已更新日期', v, '的 HAR 数据，长度:', normalizedRaw.length);
-                    }catch(_){}
-                  } else {
-                    console.warn('[person] ⚠️ 日期切换：获取到的 HAR 数据无效，长度:', normalizedRaw ? normalizedRaw.length : 0);
+            // 检查本地是否已有该日期的缓存数据（rows 和 HAR 数据）
+            const hasLocalRows = !!getStoredRowsForDate(v).length;
+            const hasLocalRaw = !!localStorage.getItem(storageRawKey(v));
+            const hasCache = hasLocalRows && hasLocalRaw;
+            
+            if(hasCache){
+              console.log('[person] 📦 日期切换：本地已有缓存，直接使用', v, { rows: hasLocalRows, raw: hasLocalRaw });
+            } else {
+              console.log('[person] 🌐 日期切换：本地无缓存，从服务器拉取', v, { hasRows: hasLocalRows, hasRaw: hasLocalRaw });
+              const monthDates = listDatesBetween(getMonthStart(v), v);
+              await ensureDateCoverage({
+                clientId: resolveClientId(),
+                dates: monthDates
+              });
+              // 仅当本地没有 HAR 数据时，才从服务器拉取
+              if(mode === 'day' && !hasLocalRaw){
+                try{
+                  const clientId = resolveClientId();
+                  const dateHistoryResp = await fetch(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(v)}`, { cache: 'no-store' });
+                  if(dateHistoryResp.ok){
+                    const dateHistoryPayload = await dateHistoryResp.json();
+                    const normalizedRaw = CacheManager.normalizeMemberRaw(dateHistoryPayload.memberRaw);
+                    // 更新 memberRaw（HAR 数据）到 localStorage
+                    if(normalizedRaw && normalizedRaw.length > 100){
+                      try{ 
+                        localStorage.setItem(storageRawKey(v), normalizedRaw);
+                        console.log('[person] ✅ 日期切换：已保存日期', v, '的 HAR 数据，长度:', normalizedRaw.length);
+                      }catch(_){}
+                    } else {
+                      console.warn('[person] ⚠️ 日期切换：获取到的 HAR 数据无效，长度:', normalizedRaw ? normalizedRaw.length : 0);
+                    }
                   }
+                }catch(err){
+                  console.warn('[person] 获取日期', v, '的 HAR 数据失败:', err);
                 }
-              }catch(err){
-                console.warn('[person] 获取日期', v, '的 HAR 数据失败:', err);
               }
             }
           }catch(err){
