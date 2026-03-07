@@ -3199,9 +3199,13 @@
           opt.value = d; opt.textContent = d; if(d===current) opt.selected = true; dateSelector.appendChild(opt);
         });
       }
+      // 标志位：用户是否主动选择了日期
+      let userSelectedDate = false;
+      
       document.getElementById('dateSelector').addEventListener('change', async (e)=>{
         const v = e.target.value;
         if(v){
+          userSelectedDate = true; // 标记用户已主动选择日期
           selectedDate = v;
           try{
             const monthDates = listDatesBetween(getMonthStart(v), v);
@@ -3247,15 +3251,15 @@
       restoreLatestFromServer()
         .then(()=>refreshFromLocal())
         .then(()=>{
-          // 如果当前是天维度，确保使用最新日期并重新渲染
-          if(mode === 'day'){
+          // 如果当前是天维度且用户未主动选择日期，才自动切换到最新日期
+          if(mode === 'day' && !userSelectedDate){
             const allDates = listStoredDates();
             if(allDates.length){
               const latestStoredDate = allDates[allDates.length - 1];
               if(!selectedDate || selectedDate !== latestStoredDate){
                 selectedDate = latestStoredDate;
                 updateDateNavigation();
-                console.log('[person] 天维度自动切换到最新日期:', selectedDate);
+                console.log('[person] 天维度自动切换到最新日期（首次加载）:', selectedDate);
               }
             }
           }
