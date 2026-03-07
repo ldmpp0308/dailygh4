@@ -67,7 +67,8 @@
     .auto-card { background:#fafafa; border:1px solid #e5e7eb; border-radius:10px; padding:16px; margin-bottom:16px; display:flex; flex-direction:column; gap:12px; }
     .auto-card-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
     .auto-card-title { font-size:18px; font-weight:600; color:#1f2937; }
-    .auto-card-desc { font-size:13px; color:#6b7280; margin-top:2px; }
+    .auto-card-desc { font-size:13px; color:#6b7280; margin-top:4px; }
+    .auto-card-desc-row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
     .auto-meta { display:flex; flex-wrap:wrap; gap:16px; font-size:13px; color:#4b5563; }
     .auto-status { font-weight:600; }
     .auto-status.success { color:#137333; }
@@ -173,10 +174,10 @@
     <div id="tab-auto" class="tab-panel active" role="tabpanel" aria-labelledby="tab-auto-btn">
       <div class="auto-card">
         <div class="auto-card-header">
-          <div>
-            <div class="auto-card-title">自动刷新视图</div>
-            <div class="auto-card-desc">该模式下直接从服务器拉取最新榜单并展示结果</div>
-          </div>
+          <div class="auto-card-title">自动刷新视图</div>
+        </div>
+        <div class="auto-card-desc-row">
+          <div class="auto-card-desc">自动拉取服务器最新榜单数据</div>
           <div class="auto-actions">
             <button type="button" class="auto-refresh-btn" id="autoRefreshBtn" onclick="refreshAutoTab(true)">立即刷新</button>
             <button type="button" class="btn-secondary" onclick="exportAutoImage()">导出图片</button>
