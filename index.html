@@ -27,12 +27,12 @@
   <!-- xlsx.js 和 html2canvas 改为按需加载，避免阻塞页面渲染 -->
   <style>
     body { font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background:#f6f7fb; margin:0; }
-    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 8px rgba(0,0,0,0.06); padding: 50px 12px 12px; position: relative; }
+    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 8px rgba(0,0,0,0.06); padding: 50px 12px 20px; position: relative; }
     h1 { font-size: 24px; margin: 0; color:#111; letter-spacing: 1px; line-height: 1.4; position: relative; }
     .desc { color:#616a76; font-size: 14px; margin-top: 6px; margin-bottom: 0; line-height: 1.8; }
     .container::before { content:""; position:absolute; top:0; left:0; right:0; height: 30px; border-top-left-radius:12px; border-top-right-radius:12px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
     /* Page header cosmetics */
-    .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 0px; border-bottom: none; margin-bottom: 2px; }
+    .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 0px; border-bottom: none; margin-bottom: 0px; }
     .header-icon { width:44px; height:44px; border-radius:10px; background: linear-gradient(135deg, #7c4dff, #4c6ef5); box-shadow: 0 8px 20px rgba(76,110,245,0.25); display:flex; align-items:center; justify-content:center; color:#fff; }
     .header-icon svg { width:22px; height:22px; }
     .title-wrap { flex:1; }
@@ -59,7 +59,7 @@
     /* 导出 PNG 时：日期区间整体居中，上下留白间距一致 */
     #preview.export-png .range-bar { margin: 8px 0 !important; text-align: center !important; }
     /* 统一保留的样式，去除重复的 table/th,td 定义 */
-    .tab-switcher { display:flex; gap:8px; margin: 8px 0; background:#f3f5fb; padding:4px; border-radius:10px; }
+    .tab-switcher { display:flex; gap:8px; margin: 10px 0; background:#f3f5fb; padding:4px; border-radius:10px; }
     .tab-switcher button { flex:1; border:none; background:transparent; padding:10px 14px; border-radius:8px; font-size:15.5px; font-weight:600; color:#475569; cursor:pointer; transition:background .2s ease, color .2s ease; }
     .tab-switcher button.active { background:#ffffff; color:#1e293b; box-shadow:0 6px 18px rgba(76,110,245,0.12); }
     .tab-panel { display:none; margin-top: -4px; }
@@ -76,7 +76,7 @@
     .auto-status.info { color:#1a73e8; }
     .auto-preview { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:12px; }
     .auto-preview .muted { text-align:center; padding:20px 0; }
-    .auto-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .auto-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
     .auto-refresh-btn { background:#4c6ef5; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; }
     .auto-refresh-btn:disabled { opacity:0.6; cursor:not-allowed; }
     .actions { display:flex; gap:10px; margin-top: 8px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center; }
