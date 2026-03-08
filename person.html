@@ -2893,7 +2893,7 @@
                     }
                     // 刷新本地数据并重新渲染
                     console.log('[person] 自动刷新：准备调用 refreshFromLocal，当前 mode:', mode, 'selectedDate:', selectedDate);
-                    refreshFromLocal().then(() => {
+                    refreshFromLocal({ autoSwitchDate: false }).then(() => {
                       console.log('[person] ✅ 自动刷新：refreshFromLocal 完成，准备重新渲染图表');
                       // 确保图表重新渲染
                       if(mode === 'day'){
@@ -2912,7 +2912,7 @@
                     console.warn('[person] ⚠️ 自动刷新：获取最新 HAR 数据失败:', err);
                     // 即使获取 HAR 失败，也刷新本地数据
                     console.log('[person] 自动刷新：HAR 获取失败，但仍调用 refreshFromLocal');
-                    refreshFromLocal().then(() => {
+                    refreshFromLocal({ autoSwitchDate: false }).then(() => {
                       if(mode === 'day'){
                         renderChartDayHourly();
                       } else {
@@ -2964,7 +2964,7 @@
                       }
                     }
                   }
-                  refreshFromLocal().then(() => {
+                  refreshFromLocal({ autoSwitchDate: false }).then(() => {
                     if(mode === 'day'){
                       renderChartDayHourly();
                     } else {
@@ -2975,7 +2975,7 @@
                 })
                 .catch(err => {
                   console.warn('[person] ⚠️ 自动刷新（立即）：获取最新 HAR 数据失败:', err);
-                  refreshFromLocal().then(() => {
+                  refreshFromLocal({ autoSwitchDate: false }).then(() => {
                     if(mode === 'day'){
                       renderChartDayHourly();
                     } else {
@@ -3265,19 +3265,17 @@
 
 
       // 初始化后自动拉取并重算，确保增长趋势最新，并在数据就绪后重建默认TOP7
-      restoreLatestFromServer()
-        .then(()=>refreshFromLocal())
+      restoreLatestFromServer(true, false)  // 强制刷新，但不切换日期
+        .then(()=>refreshFromLocal({ autoSwitchDate: false }))  // 不切换日期
         .then(()=>{
-          // 如果当前是天维度且用户未主动选择日期，才自动切换到最新日期
-          if(mode === 'day' && !userSelectedDate){
+          // 仅当首次进入且没有选择日期时，设置为最新日期
+          if(mode === 'day' && !selectedDate && !userSelectedDate){
             const allDates = listStoredDates();
             if(allDates.length){
-              const latestStoredDate = allDates[allDates.length - 1];
-              if(!selectedDate || selectedDate !== latestStoredDate){
-                selectedDate = latestStoredDate;
-                updateDateNavigation();
-                console.log('[person] 天维度自动切换到最新日期（首次加载）:', selectedDate);
-              }
+              selectedDate = allDates[allDates.length - 1];
+              updateDateNavigation();
+              renderChartUnified(buildSeriesForName(currentName || ''), buildCompareMap(mode));
+              console.log('[person] 天维度首次加载，设置为最新日期:', selectedDate);
             }
           }
           try{
@@ -3306,10 +3304,12 @@
             compareNames = new Set(compares);
           }catch(e){ compareNames = new Set(); }
           renderMoreMembers();
-          renderChartUnified([], buildCompareMap(mode));
+          if(!selectedDate){
+            renderChartUnified([], buildCompareMap(mode));
+          }
         })
         .catch(()=>{
-          refreshFromLocal().then(()=>{
+          refreshFromLocal({ autoSwitchDate: false }).then(()=>{
             try{
               const fromStorage = listAllMemberNames().filter(n => n);
               const fallback = Object.keys(birthFallbacks || {}).filter(n => n);
@@ -3336,7 +3336,9 @@
               compareNames = new Set(compares);
             }catch(e){ compareNames = new Set(); }
             renderMoreMembers();
-            renderChartUnified([], buildCompareMap(mode));
+            if(!selectedDate){
+              renderChartUnified([], buildCompareMap(mode));
+            }
           });
         });
     }
