@@ -64,7 +64,7 @@
 
     .stats { display:none; }
     .metrics-inline { margin-top: 16px; display: flex; justify-content: center; gap: 12px; }
-    .metrics-inline .metric { display: flex; align-items: baseline; justify-content: center; text-align: center; font-size: 14px; color: var(--text-strong); gap: 6px; }
+    .metrics-inline .metric { display: flex; align-items: baseline; justify-content: center; text-align: center; font-size: 14px; color: var(--text-strong); gap: 4px; }
     .metrics-inline .value { font-weight: 500; }
 
     .controls { display:flex; align-items:center; gap:10px; margin-top: 8px; }
@@ -3028,6 +3028,7 @@
           forceBtn.title = '强制从本地原始存档补齐并覆盖当日';
           forceBtn.textContent = '补齐当日';
           forceBtn.style.marginLeft = '8px';
+          forceBtn.style.display = 'none';
           localBtn.insertAdjacentElement('afterend', forceBtn);
         }
         forceBtn.addEventListener('click', ()=>{
