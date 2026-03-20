@@ -991,154 +991,89 @@ async function exportAutoImage(){
     const fileName = `高会排行榜-${date}.png`;
     const dataUrl = canvas.toDataURL('image/png');
     
-    // 微信浏览器：直接在页面显示图片，让用户长按保存
-    if(isWeChat) {
-      try {
-        // 移除之前可能存在的导出图片容器
-        const existingExport = document.getElementById('wechat-export-image');
-        if(existingExport) {
-          existingExport.remove();
-        }
-        
-        // 创建图片显示容器
-        const exportContainer = document.createElement('div');
-        exportContainer.id = 'wechat-export-image';
-        exportContainer.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
-        
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        img.style.cssText = 'max-width:100%; max-height:85vh; height:auto; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5); display:block;';
-        img.alt = fileName;
-        img.setAttribute('crossorigin', 'anonymous');
-        
-        // 确保图片加载完成
-        img.onload = function() {
-          console.log('微信导出：图片加载成功');
-        };
-        img.onerror = function(e) {
-          console.error('微信导出：图片加载失败', e);
-          showError('图片生成失败，请重试');
-          exportContainer.remove();
-        };
-        
-        const tip = document.createElement('div');
-        tip.textContent = '长按图片保存到相册';
-        tip.style.cssText = 'color:#fff; font-size:16px; margin-top:20px; padding:12px 24px; background:rgba(76,110,245,0.8); border-radius:24px; font-weight:500;';
-        
-        const closeBtn = document.createElement('div');
-        closeBtn.textContent = '✕ 关闭';
-        closeBtn.style.cssText = 'position:absolute; top:20px; right:20px; color:#fff; font-size:18px; padding:10px 20px; background:rgba(255,255,255,0.3); border-radius:20px; cursor:pointer; user-select:none;';
-        closeBtn.onclick = function() {
-          exportContainer.remove();
-        };
-        closeBtn.ontouchstart = function() {
-          exportContainer.remove();
-        };
-        
-        exportContainer.appendChild(img);
-        exportContainer.appendChild(tip);
-        exportContainer.appendChild(closeBtn);
-        document.body.appendChild(exportContainer);
-        
-        // 点击背景关闭
-        exportContainer.onclick = function(e) {
-          if(e.target === exportContainer) {
-            exportContainer.remove();
-          }
-        };
-        
-        // 防止滚动
-        document.body.style.overflow = 'hidden';
-        exportContainer.onremove = function() {
-          document.body.style.overflow = '';
-        };
-        
-        console.log('微信导出：图片容器已创建，dataUrl长度:', dataUrl.length);
-        return;
-      } catch(e) {
-        console.error('微信导出异常:', e);
-        showError('导出失败：' + (e.message || '未知错误'));
-        container.classList.remove('export-png');
-        return;
+    // 所有浏览器：弹窗展示高清图片
+    try {
+      // 移除之前可能存在的弹窗
+      const existingModal = document.getElementById('export-image-modal');
+      if(existingModal) {
+        existingModal.remove();
       }
-    }
-    
-    // 移动端使用不同的下载方式
-    if(isMobile) {
-      // 移动端：优先尝试下载，如果失败则打开新窗口显示图片
-      // 先尝试使用 toBlob 和下载链接
-      canvas.toBlob(function(blob) {
-        if(!blob) {
-          alert('导出图片失败，请重试');
-          return;
+      
+      // 创建弹窗容器
+      const modal = document.createElement('div');
+      modal.id = 'export-image-modal';
+      modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
+      
+      // 创建图片元素
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.style.cssText = 'max-width:100%; max-height:75vh; height:auto; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5); display:block; background:#fff;';
+      img.alt = fileName;
+      
+      // 图片加载完成提示
+      img.onload = function() {
+        console.log('导出图片：图片加载成功');
+      };
+      img.onerror = function(e) {
+        console.error('导出图片：图片加载失败', e);
+        showError('图片生成失败，请重试');
+        modal.remove();
+      };
+      
+      // 创建操作按钮区域
+      const btnArea = document.createElement('div');
+      btnArea.style.cssText = 'display:flex; gap:12px; margin-top:20px; flex-wrap:wrap; justify-content:center;';
+      
+      // 下载按钮
+      const downloadBtn = document.createElement('button');
+      downloadBtn.textContent = '💾 下载图片';
+      downloadBtn.style.cssText = 'padding:12px 24px; font-size:16px; background:linear-gradient(135deg, #6366F1 0%, #4c6ef5 100%); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:500; box-shadow:0 4px 6px -1px rgba(76, 110, 245, 0.2);';
+      downloadBtn.onclick = function() {
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = dataUrl;
+        link.click();
+        showSuccess('图片已下载');
+      };
+      
+      // 关闭按钮
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = '✕ 关闭';
+      closeBtn.style.cssText = 'padding:12px 24px; font-size:16px; background:#F1F5F9; color:#334155; border:1px solid #E2E8F0; border-radius:8px; cursor:pointer; font-weight:500;';
+      closeBtn.onclick = function() {
+        modal.remove();
+        document.body.style.overflow = '';
+      };
+      
+      // 提示文字
+      const tip = document.createElement('div');
+      tip.textContent = '💡 提示：可右键图片另存为，或点击下载按钮保存';
+      tip.style.cssText = 'color:#fff; font-size:14px; margin-top:16px; opacity:0.8;';
+      
+      btnArea.appendChild(downloadBtn);
+      btnArea.appendChild(closeBtn);
+      
+      modal.appendChild(img);
+      modal.appendChild(btnArea);
+      modal.appendChild(tip);
+      document.body.appendChild(modal);
+      
+      // 点击背景关闭
+      modal.onclick = function(e) {
+        if(e.target === modal) {
+          modal.remove();
+          document.body.style.overflow = '';
         }
-        const url = URL.createObjectURL(blob);
-        
-        // 尝试创建下载链接
-        try {
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = url;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          
-          // 触发点击（在用户手势事件中调用，应该可以工作）
-          const clickEvent = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-          });
-          link.dispatchEvent(clickEvent);
-          
-          // 延迟清理
-          setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }, 100);
-          
-          // 如果下载失败，打开新窗口显示图片（用户可长按保存）
-          setTimeout(() => {
-            const imgWindow = window.open();
-            if(imgWindow) {
-              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
-              imgWindow.document.close();
-              showSuccess('图片已打开，请长按图片保存');
-            } else {
-              // 如果弹窗被阻止，直接显示图片URL
-              showSuccess('请长按下方链接保存图片：<br><a href="' + url + '" download="' + fileName + '" style="color:#4c6ef5; text-decoration:underline;">点击下载图片</a>');
-            }
-          }, 500);
-        } catch(e) {
-          // 如果下载失败，打开新窗口显示图片
-          const imgWindow = window.open();
-          if(imgWindow) {
-            imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
-            imgWindow.document.close();
-            showSuccess('图片已打开，请长按图片保存');
-          } else {
-            // 如果弹窗被阻止，使用 data URL
-            const imgWindow = window.open();
-            if(imgWindow) {
-              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${dataUrl}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
-              imgWindow.document.close();
-              showSuccess('图片已打开，请长按图片保存');
-            } else {
-              showError('无法打开图片，请检查浏览器弹窗设置');
-            }
-          }
-        }
-      }, 'image/png');
-    } else {
-      // 桌面端：使用 toDataURL
-    const link = document.createElement('a');
-    const date = lastAutoMeta?.latestDate || new Date().toISOString().split('T')[0];
-    link.download = `高会排行榜-${date}.png`;
-    link.href = canvas.toDataURL('image/png');
-      link.style.display = 'none';
-      document.body.appendChild(link);
-    link.click();
-      document.body.removeChild(link);
-      showSuccess('图片已导出');
+      };
+      
+      // 防止背景滚动
+      document.body.style.overflow = 'hidden';
+      
+      console.log('导出图片：弹窗已创建，dataUrl长度:', dataUrl.length);
+      return;
+    } catch(e) {
+      console.error('导出图片异常:', e);
+      showError('导出失败：' + (e.message || '未知错误'));
     }
   }).catch(err => {
     container.classList.remove('export-png');
