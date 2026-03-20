@@ -921,7 +921,7 @@ function createExportTable(rows, meta){
   
   // 计算最大粉丝数用于进度条
   const maxFans = Math.max(...rows.map(r => Number(r.粉丝数||0)).filter(n => n > 0), 1);
-  const flameThreshold = 500; // 火焰图标阈值
+  const flameThreshold = 3000; // 火焰图标阈值
   
   // 动态构建表头
   const headerCols = ['排名','姓名'];
