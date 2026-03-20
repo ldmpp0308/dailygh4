@@ -932,7 +932,7 @@ async function exportAutoImage(){
   const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
   
   // 显示加载提示
-  showSuccess('正在加载导出工具，请稍候...');
+  showSuccess('正在准备导出，请稍候...');
   
   try {
     // 按需加载 html2canvas
@@ -943,14 +943,14 @@ async function exportAutoImage(){
     return;
   }
   
-  showSuccess('正在生成图片，请稍候...');
+  showSuccess(isMobile ? '正在生成图片（移动端优化中）...' : '正在生成高清图片...');
   container.classList.add('export-png');
   
-  // 优化 scale：根据设备像素比和屏幕大小动态调整
+  // 优化 scale：移动端使用更低的分辨率以提升速度
   const devicePixelRatio = window.devicePixelRatio || 1;
   const optimalScale = isMobile 
-    ? Math.min(devicePixelRatio, 1.2)  // 移动端进一步降低
-    : Math.min(devicePixelRatio, 1.5);  // 桌面端也降低
+    ? 1.0  // 移动端使用 1.0 倍，大幅提升速度
+    : Math.min(devicePixelRatio, 2.0);  // 桌面端最高 2 倍
   
   html2canvas(container, {
     backgroundColor: '#ffffff',
@@ -975,6 +975,21 @@ async function exportAutoImage(){
         const noteElement = clonedContainer.querySelector('.preview-notes');
         if(noteElement) {
           noteElement.style.display = 'none';
+        }
+        // 移动端导出时简化样式以提升性能
+        if(isMobile) {
+          // 移除表格阴影和复杂样式
+          const table = clonedContainer.querySelector('table');
+          if(table) {
+            table.style.boxShadow = 'none';
+            table.style.border = '1px solid #ddd';
+          }
+          // 简化粉丝数进度条样式
+          const fanCells = clonedContainer.querySelectorAll('td[style*="linear-gradient"]');
+          fanCells.forEach(cell => {
+            cell.style.backgroundImage = 'none';
+            cell.style.backgroundColor = '#fff9e6'; // 简化为浅色背景
+          });
         }
       }
     }
