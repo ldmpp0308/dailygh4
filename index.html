@@ -910,15 +910,103 @@ function refreshAutoTableDisplay(){
   }
 }
 
+// 创建完整的导出表格（不分页，包含所有数据）
+function createExportTable(rows, meta){
+  // 读取复选框状态
+  const showCollect = document.getElementById('autoToggleCollect')?.checked || false;
+  const showLike = document.getElementById('autoToggleLike')?.checked || false;
+  const showFans = document.getElementById('autoToggleFans')?.checked !== false;
+  const showWeekGrowth = document.getElementById('autoToggleWeekGrowth')?.checked || false;
+  const showMonthGrowth = document.getElementById('autoToggleMonthGrowth')?.checked || false;
+  
+  // 计算最大粉丝数用于进度条
+  const maxFans = Math.max(...rows.map(r => Number(r.粉丝数||0)).filter(n => n > 0), 1);
+  const flameThreshold = 500; // 火焰图标阈值
+  
+  // 动态构建表头
+  const headerCols = ['排名','姓名'];
+  if (showFans) headerCols.push('粉丝数');
+  if (showCollect) headerCols.push('收藏数');
+  if (showLike) headerCols.push('点赞数');
+  headerCols.push('距上一名','今日涨幅');
+  if (showWeekGrowth) headerCols.push('本周涨幅');
+  if (showMonthGrowth) headerCols.push('本月涨幅');
+  headerCols.push('排名变化');
+
+  let html = '<table style="width:100%; border-collapse:collapse; font-size:14px;"><thead><tr>' + 
+    headerCols.map(h => `<th style="padding:10px 8px; background:#F1F5F9; color:#334155; font-weight:600; text-align:center; border:1px solid #E2E8F0;">${h}</th>`).join('') + 
+    '</tr></thead><tbody>';
+
+  for(const r of rows){
+    // 过滤掉张三和李四的数据
+    const name = r.姓名 || r.realName || '';
+    if(name === '张三' || name === '李四') continue;
+    const isEven = (Number(r.排名||0) % 2 === 0);
+    const fans = Number(r.粉丝数||0);
+    const pct = maxFans > 0 ? Math.round(fans / maxFans * 100) : 0;
+    
+    const growthRaw = (r.涨幅 === '' || r.涨幅 == null) ? null : Number(r.涨幅);
+    const growthText = (growthRaw == null) ? '' : (growthRaw === 0 ? '-' : (growthRaw > 0 ? `+${growthRaw}` : `${growthRaw}`));
+    const growthColor = (growthRaw == null || growthRaw === 0) ? '#334155' : (growthRaw > 0 ? '#10B981' : '#EF4444');
+    const showFlame = (growthRaw != null && growthRaw > flameThreshold);
+    
+    const rankChangeText = r.排名变化 === '持平' ? '-' : (r.排名变化 || '');
+    const rankChangeColor = rankChangeText.startsWith('上升') ? '#10B981' : (rankChangeText.startsWith('下降') ? '#EF4444' : '#334155');
+    
+    const diffPrevRaw = (r['与前一名差值'] === '' || r['与前一名差值'] == null) ? null : Number(r['与前一名差值']);
+    const diffPrevText = (diffPrevRaw == null) ? '' : (diffPrevRaw === 0 ? '-' : `${diffPrevRaw}`);
+    
+    const bgColor = isEven ? '#ffffff' : '#F8FAFC';
+    const cells = [];
+    
+    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${r.排名}</td>`);
+    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${r.姓名}</td>`);
+    
+    if (showFans) {
+      const fansCellStyle = `background: linear-gradient(to right, #FBBF24 ${pct}%, transparent ${pct}%); padding:8px; text-align:center; border:1px solid #E2E8F0;`;
+      cells.push(`<td style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
+    }
+    if (showCollect) cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${r.收藏数 || ''}</td>`);
+    if (showLike) cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${r.点赞数 || ''}</td>`);
+    
+    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${diffPrevText}</td>`);
+    
+    // 今日涨幅
+    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor}; color:${growthColor}; font-weight:600;">${growthText}${showFlame ? ' 🔥' : ''}</td>`);
+    
+    // 本周涨幅
+    if (showWeekGrowth) {
+      const wgRaw = (r['本周涨幅'] === '' || r['本周涨幅'] == null) ? null : Number(r['本周涨幅']);
+      const wgText = (wgRaw == null) ? '' : (wgRaw === 0 ? '-' : (wgRaw > 0 ? `+${wgRaw}` : `${wgRaw}`));
+      const wgColor = (wgRaw == null || wgRaw === 0) ? '#334155' : (wgRaw > 0 ? '#10B981' : '#EF4444');
+      cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor}; color:${wgColor};">${wgText}</td>`);
+    }
+    
+    // 本月涨幅
+    if (showMonthGrowth) {
+      const mgRaw = (r['本月涨幅'] === '' || r['本月涨幅'] == null) ? null : Number(r['本月涨幅']);
+      const mgText = (mgRaw == null) ? '' : (mgRaw === 0 ? '-' : (mgRaw > 0 ? `+${mgRaw}` : `${mgRaw}`));
+      const mgColor = (mgRaw == null || mgRaw === 0) ? '#334155' : (mgRaw > 0 ? '#10B981' : '#EF4444');
+      cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor}; color:${mgColor};">${mgText}</td>`);
+    }
+    
+    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor}; color:${rankChangeColor};">${rankChangeText}</td>`);
+    html += `<tr>${cells.join('')}</tr>`;
+  }
+  
+  html += '</tbody></table>';
+  
+  // 添加标题
+  const date = meta?.latestDate || new Date().toISOString().split('T')[0];
+  const titleHtml = `<div style="text-align:center; font-size:18px; font-weight:600; color:#1e293b; padding:16px; background:#F8FAFC; border-bottom:2px solid #E2E8F0;">高会排行榜 - ${date}</div>`;
+  
+  return titleHtml + html;
+}
+
 // 导出自动模式的图片
 async function exportAutoImage(){
   if(!lastAutoRows || !lastAutoRows.length){
     alert('暂无数据可导出');
-    return;
-  }
-  const container = document.getElementById('autoPreview');
-  if(!container){
-    alert('无法找到预览容器');
     return;
   }
   
@@ -943,8 +1031,14 @@ async function exportAutoImage(){
     return;
   }
   
-  showSuccess(isMobile ? '正在生成图片（移动端优化中）...' : '正在生成高清图片...');
-  container.classList.add('export-png');
+  showSuccess(isMobile ? '正在生成完整表格图片...' : '正在生成高清完整表格...');
+  
+  // 创建临时容器用于导出
+  const exportContainer = document.createElement('div');
+  exportContainer.id = 'export-full-table';
+  exportContainer.style.cssText = 'position:absolute; left:-9999px; top:0; width:1200px; background:#ffffff; padding:20px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.1);';
+  exportContainer.innerHTML = createExportTable(lastAutoRows, lastAutoMeta);
+  document.body.appendChild(exportContainer);
   
   // 优化 scale：移动端使用更低的分辨率以提升速度
   const devicePixelRatio = window.devicePixelRatio || 1;
@@ -952,50 +1046,24 @@ async function exportAutoImage(){
     ? 1.0  // 移动端使用 1.0 倍，大幅提升速度
     : Math.min(devicePixelRatio, 2.0);  // 桌面端最高 2 倍
   
-  html2canvas(container, {
+  html2canvas(exportContainer, {
     backgroundColor: '#ffffff',
-    scale: optimalScale, // 优化后的 scale
+    scale: optimalScale,
     logging: false,
     useCORS: true,
     allowTaint: false,
-    foreignObjectRendering: false, // 禁用 foreignObject 以提高性能
-    removeContainer: false, // 保留容器
-    imageTimeout: 0, // 图片超时设为 0（不等待外部图片）
-    ignoreElements: function(element) {
-      // 忽略不可见元素以提高性能
-      return element.style.display === 'none' || element.style.visibility === 'hidden';
-    },
-    onclone: function(clonedDoc) {
-      // 确保克隆的文档中所有样式都正确应用
-      const clonedContainer = clonedDoc.getElementById('autoPreview');
-      if(clonedContainer) {
-        clonedContainer.style.transform = 'none';
-        clonedContainer.style.position = 'relative';
-        // 导出时移除底部说明文案
-        const noteElement = clonedContainer.querySelector('.preview-notes');
-        if(noteElement) {
-          noteElement.style.display = 'none';
-        }
-        // 移动端导出时简化样式以提升性能
-        if(isMobile) {
-          // 移除表格阴影和复杂样式
-          const table = clonedContainer.querySelector('table');
-          if(table) {
-            table.style.boxShadow = 'none';
-            table.style.border = '1px solid #ddd';
-          }
-          // 简化粉丝数进度条样式
-          const fanCells = clonedContainer.querySelectorAll('td[style*="linear-gradient"]');
-          fanCells.forEach(cell => {
-            cell.style.backgroundImage = 'none';
-            cell.style.backgroundColor = '#fff9e6'; // 简化为浅色背景
-          });
-        }
-      }
-    }
+    foreignObjectRendering: false,
+    removeContainer: false,
+    imageTimeout: 0,
+    width: 1240,
+    height: exportContainer.scrollHeight + 40,
+    windowWidth: 1240,
+    windowHeight: exportContainer.scrollHeight + 40
   }).catch(err => {
     if(btn) btn.disabled = false;
-    container.classList.remove('export-png');
+    // 清理临时容器
+    const tempContainer = document.getElementById('export-full-table');
+    if(tempContainer) tempContainer.remove();
     console.error('html2canvas 错误:', err);
     if(isWeChat) {
       showError('图片生成失败，请重试。错误：' + (err.message || '未知错误'));
@@ -1004,8 +1072,10 @@ async function exportAutoImage(){
     }
   }).then(canvas => {
     if(btn) btn.disabled = false;
+    // 清理临时容器
+    const tempContainer = document.getElementById('export-full-table');
+    if(tempContainer) tempContainer.remove();
     if(!canvas) return;
-    container.classList.remove('export-png');
     
     const date = lastAutoMeta?.latestDate || new Date().toISOString().split('T')[0];
     const fileName = `高会排行榜-${date}.png`;
@@ -1096,7 +1166,6 @@ async function exportAutoImage(){
       showError('导出失败：' + (e.message || '未知错误'));
     }
   }).catch(err => {
-    container.classList.remove('export-png');
     console.error('导出图片失败:', err);
     alert('导出图片失败：' + (err.message || err) + '\n请尝试刷新页面后重试');
   });
