@@ -842,7 +842,7 @@ function renderAutoTable(rows, meta, resetPage = false){
     if (showLike) cells.push(`<td>${r.点赞数 || ''}</td>`);
     
     if (showFans) {
-      const fansCellStyle = `background-image: linear-gradient(to right, #FCD34D, #FBBF24); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
+      const fansCellStyle = `background-image: linear-gradient(to right, #FBBF24, #FCD34D); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
       cells.push(`<td style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
     }
     
@@ -2775,7 +2775,7 @@ function renderPreviewTable(rows){
     cells.push(`<td>${r.姓名}</td>`);
     if (showCollect) cells.push(`<td>${r.收藏数}</td>`);
     if (showLike) cells.push(`<td>${r.点赞数}</td>`);
-    const fansCellStyle = `background-image: linear-gradient(to right, #FCD34D, #FBBF24); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
+    const fansCellStyle = `background-image: linear-gradient(to right, #FBBF24, #FCD34D); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
     cells.push(`<td style="${fansCellStyle}">${fans}</td>`);
     cells.push(`<td>${diffPrevText}</td>`);
     // 今日涨幅（带火焰）
