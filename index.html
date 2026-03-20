@@ -737,8 +737,11 @@ function formatNumberDisplay(val, opts){
 // 自动模式的渲染数据缓存（用于复选框切换时重新渲染）
 let lastAutoRows = [];
 let lastAutoMeta = {};
+let autoTableCurrentPage = 1; // 当前页码
 
-function renderAutoTable(rows, meta){
+// 分页渲染：只渲染可视区域数据
+function renderAutoTable(rows, meta, resetPage = false){
+  if(resetPage) autoTableCurrentPage = 1;
   const container = document.getElementById('autoPreview');
   if(!container){ return; }
   
@@ -765,7 +768,29 @@ function renderAutoTable(rows, meta){
   const flameThreshold = 3000;
   
   const rangeHtml = `<div class="range-bar">日期区间：${prevDisplay || '—'} ~ ${latestDisplay || '—'}</div>`;
-  
+
+  // 分页配置：移动端每页30条，电脑端每页50条
+  const itemsPerPage = window.__isMobile ? 30 : 50;
+  const totalItems = rows.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  // 确保页码在有效范围内
+  if(autoTableCurrentPage > totalPages) autoTableCurrentPage = totalPages;
+  if(autoTableCurrentPage < 1) autoTableCurrentPage = 1;
+
+  const startIndex = (autoTableCurrentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentPageRows = rows.slice(startIndex, endIndex);
+
+  // 分页控件HTML
+  const paginationHtml = totalPages > 1 ? `
+    <div class="pagination" style="display:flex; justify-content:center; align-items:center; gap:12px; margin:12px 0; font-size:14px;">
+      <button onclick="changeAutoTablePage(${autoTableCurrentPage - 1})" ${autoTableCurrentPage <= 1 ? 'disabled' : ''} style="padding:6px 12px; border:1px solid #ddd; border-radius:4px; background:${autoTableCurrentPage <= 1 ? '#f5f5f5' : '#fff'}; cursor:${autoTableCurrentPage <= 1 ? 'not-allowed' : 'pointer'};">上一页</button>
+      <span>第 ${autoTableCurrentPage} / ${totalPages} 页 (共${totalItems}条)</span>
+      <button onclick="changeAutoTablePage(${autoTableCurrentPage + 1})" ${autoTableCurrentPage >= totalPages ? 'disabled' : ''} style="padding:6px 12px; border:1px solid #ddd; border-radius:4px; background:${autoTableCurrentPage >= totalPages ? '#f5f5f5' : '#fff'}; cursor:${autoTableCurrentPage >= totalPages ? 'not-allowed' : 'pointer'};">下一页</button>
+    </div>
+  ` : '';
+
   // 动态构建表头（与手动模式一致）
   const headerCols = ['排名','姓名'];
   if (showCollect) headerCols.push('收藏数');
@@ -775,10 +800,10 @@ function renderAutoTable(rows, meta){
   if (showWeekGrowth) headerCols.push('本周涨幅');
   if (showMonthGrowth) headerCols.push('本月涨幅');
   headerCols.push('排名变化');
-  
+
   let html = '<table><thead><tr>' + headerCols.map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
-  
-  for(const r of rows){
+
+  for(const r of currentPageRows){
     // 过滤掉张三和李四的数据
     const name = r.姓名 || r.realName || '';
     if(name === '张三' || name === '李四') continue;
@@ -835,7 +860,7 @@ function renderAutoTable(rows, meta){
   }
   
   html += '</tbody></table>';
-  
+
   // 底部说明
   const noteHtml = `
     <div class="preview-notes" style="margin:12px 0 18px; padding-left:1ch; color:#606c76; font-size:12px; line-height:1.7;">
@@ -846,9 +871,24 @@ function renderAutoTable(rows, meta){
       <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
       <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
     </div>`;
-  
-  container.innerHTML = rangeHtml + html + noteHtml;
+
+  container.innerHTML = rangeHtml + paginationHtml + html + paginationHtml + noteHtml;
   try{ renderAvatarGrid(rows); }catch(_){}
+}
+
+// 分页切换函数
+function changeAutoTablePage(newPage){
+  if(newPage < 1) return;
+  const itemsPerPage = window.__isMobile ? 30 : 50;
+  const totalPages = Math.ceil(lastAutoRows.length / itemsPerPage);
+  if(newPage > totalPages) return;
+
+  autoTableCurrentPage = newPage;
+  renderAutoTable(lastAutoRows, lastAutoMeta);
+
+  // 滚动到表格顶部
+  const container = document.getElementById('autoPreview');
+  if(container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // 复选框切换时重新渲染（不重新拉取数据）
