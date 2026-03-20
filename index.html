@@ -884,7 +884,7 @@ function renderAutoTable(rows, meta, resetPage = false){
       <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
     </div>`;
 
-  container.innerHTML = rangeHtml + paginationHtml + html + paginationHtml + noteHtml;
+  container.innerHTML = rangeHtml + paginationHtml + html + paginationHtml;
   try{ renderAvatarGrid(rows); }catch(_){}
 }
 
@@ -2744,7 +2744,7 @@ function renderPreviewTable(rows){
       <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
       <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
     </div>`;
-  container.innerHTML = rangeHtml + html + noteHtml;
+  container.innerHTML = rangeHtml + html;
 }
 
 function renderAvatarGrid(rows){
