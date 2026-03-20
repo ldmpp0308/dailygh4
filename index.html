@@ -806,9 +806,9 @@ function renderAutoTable(rows, meta, resetPage = false){
 
   // 动态构建表头（与手动模式一致）
   const headerCols = ['排名','姓名'];
+  if (showFans) headerCols.push('粉丝数');
   if (showCollect) headerCols.push('收藏数');
   if (showLike) headerCols.push('点赞数');
-  if (showFans) headerCols.push('粉丝数');
   headerCols.push('距上一名','今日涨幅');
   if (showWeekGrowth) headerCols.push('本周涨幅');
   if (showMonthGrowth) headerCols.push('本月涨幅');
@@ -838,13 +838,13 @@ function renderAutoTable(rows, meta, resetPage = false){
     const cells = [];
     cells.push(`<td>${r.排名}</td>`);
     cells.push(`<td>${r.姓名}</td>`);
-    if (showCollect) cells.push(`<td>${r.收藏数 || ''}</td>`);
-    if (showLike) cells.push(`<td>${r.点赞数 || ''}</td>`);
     
     if (showFans) {
       const fansCellStyle = `background-image: linear-gradient(to right, #FBBF24, #FCD34D); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
       cells.push(`<td style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
     }
+    if (showCollect) cells.push(`<td>${r.收藏数 || ''}</td>`);
+    if (showLike) cells.push(`<td>${r.点赞数 || ''}</td>`);
     
     cells.push(`<td>${diffPrevText}</td>`);
     
@@ -2742,11 +2742,12 @@ function renderPreviewTable(rows){
   if(!rows || !rows.length){ container.innerHTML = rangeHtml + '<div class="muted">暂无数据预览</div>'; return; }
   // 计算粉丝数最大值用于数据条宽度
   const maxFans = Math.max(...rows.map(r=>Number(r.粉丝数||0)));
-  // 动态构建表头，顺序：排名 姓名 收藏数 点赞数 粉丝数 距上一名 今日涨幅 本周涨幅 本月涨幅 排名变化
+  // 动态构建表头，顺序：排名 姓名 粉丝数 收藏数 点赞数 距上一名 今日涨幅 本周涨幅 本月涨幅 排名变化
   const headerCols = ['排名','姓名'];
+  headerCols.push('粉丝数');
   if (showCollect) headerCols.push('收藏数');
   if (showLike) headerCols.push('点赞数');
-  headerCols.push('粉丝数','距上一名','今日涨幅');
+  headerCols.push('距上一名','今日涨幅');
   if (showWeekGrowth) headerCols.push('本周涨幅');
   if (showMonthGrowth) headerCols.push('本月涨幅');
   headerCols.push('排名变化');
@@ -2773,10 +2774,10 @@ function renderPreviewTable(rows){
     const cells = [];
     cells.push(`<td>${r.排名}</td>`);
     cells.push(`<td>${r.姓名}</td>`);
-    if (showCollect) cells.push(`<td>${r.收藏数}</td>`);
-    if (showLike) cells.push(`<td>${r.点赞数}</td>`);
     const fansCellStyle = `background-image: linear-gradient(to right, #FBBF24, #FCD34D); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
     cells.push(`<td style="${fansCellStyle}">${fans}</td>`);
+    if (showCollect) cells.push(`<td>${r.收藏数}</td>`);
+    if (showLike) cells.push(`<td>${r.点赞数}</td>`);
     cells.push(`<td>${diffPrevText}</td>`);
     // 今日涨幅（带火焰）
     cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${growthText}${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}</span></td>`);
@@ -3365,9 +3366,10 @@ async function exportExcel(){
   });
   // 与网页表头顺序保持一致
   const headers = ['日期','排序','姓名'];
+  headers.push('粉丝数');
   if (showCollect) headers.push('收藏数');
   if (showLike) headers.push('点赞数');
-  headers.push('粉丝数','距上一名','今日涨幅');
+  headers.push('距上一名','今日涨幅');
   if (showWeekGrowth) headers.push('本周涨幅');
   if (showMonthGrowth) headers.push('本月涨幅');
   headers.push('排序变化');
