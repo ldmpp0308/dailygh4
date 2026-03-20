@@ -621,16 +621,6 @@ function initTabSwitcher(){
     // 优化：立即激活自动标签页，减少初始延迟
     // 先显示加载状态，然后立即开始加载数据
     const activateAutoTab = () => {
-      // 移动端优化：检测手机时关闭自动刷新，避免消耗流量和CPU
-      if(window.__isMobile){
-        console.log('[activateAutoTab] 移动端检测到，自动刷新已关闭（手动点击仍可刷新）');
-        const container = document.getElementById('autoPreview');
-        if(container && !container.querySelector('table')){
-          container.innerHTML = '<div class="muted" style="padding:20px; text-align:center;">请点击"立即刷新"加载数据（移动端自动刷新已关闭以节省流量）</div>';
-        }
-        return; // 移动端不自动加载，等待用户手动点击
-      }
-
       // 立即显示加载状态
       const container = document.getElementById('autoPreview');
       if(container && !container.querySelector('table')){
