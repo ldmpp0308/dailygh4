@@ -884,7 +884,7 @@ function renderAutoTable(rows, meta, resetPage = false){
       <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
     </div>`;
 
-  container.innerHTML = rangeHtml + paginationHtml + html + paginationHtml;
+  container.innerHTML = rangeHtml + paginationHtml + html + paginationHtml + noteHtml;
   try{ renderAvatarGrid(rows); }catch(_){}
 }
 
@@ -971,6 +971,11 @@ async function exportAutoImage(){
       if(clonedContainer) {
         clonedContainer.style.transform = 'none';
         clonedContainer.style.position = 'relative';
+        // 导出时移除底部说明文案
+        const noteElement = clonedContainer.querySelector('.preview-notes');
+        if(noteElement) {
+          noteElement.style.display = 'none';
+        }
       }
     }
   }).catch(err => {
@@ -2744,7 +2749,7 @@ function renderPreviewTable(rows){
       <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
       <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
     </div>`;
-  container.innerHTML = rangeHtml + html;
+  container.innerHTML = rangeHtml + html + noteHtml;
 }
 
 function renderAvatarGrid(rows){
