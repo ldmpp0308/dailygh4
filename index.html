@@ -878,12 +878,12 @@ function renderAutoTable(rows, meta, resetPage = false){
     <div class="preview-notes" style="margin:12px 0 18px; padding-left:1ch; color:#606c76; font-size:12px; line-height:1.7;">
       <div><strong>说明：</strong></div>
       <div>1、今日涨幅：今日粉丝数 - 昨日粉丝数</div>
-      <div>2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）</div>
-      <div>3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数</div>
+      <div>2、本周涨幅：今日粉丝数 - 上周日粉丝数</div>
+      <div>3、本月涨幅：今日粉丝数 - 上月最后一天粉丝数</div>
       <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
-      <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
+      <div>5、数据从 2025/10/10开始统计</div>
     </div>`;
-
+  
   container.innerHTML = rangeHtml + paginationHtml + html + paginationHtml + noteHtml;
   try{ renderAvatarGrid(rows); }catch(_){}
 }
@@ -2828,10 +2828,10 @@ function renderPreviewTable(rows){
     <div class="preview-notes" style="margin:12px 0 18px; padding-left:1ch; color:#606c76; font-size:12px; line-height:1.7;">
       <div><strong>说明：</strong></div>
       <div>1、今日涨幅：今日粉丝数 - 昨日粉丝数</div>
-      <div>2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）</div>
-      <div>3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数</div>
+      <div>2、本周涨幅：今日粉丝数 - 上周日粉丝数</div>
+      <div>3、本月涨幅：今日粉丝数 - 上月最后一天粉丝数</div>
       <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
-      <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
+      <div>5、数据从 2025/10/10开始统计</div>
     </div>`;
   container.innerHTML = rangeHtml + html + noteHtml;
 }
@@ -3413,10 +3413,10 @@ async function exportExcel(){
     [''],
     [' 说明：'],
     [' 1、今日涨幅：今日粉丝数 - 昨日粉丝数'],
-    [' 2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）'],
-    [' 3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数'],
+    [' 2、本周涨幅：今日粉丝数 - 上周日粉丝数'],
+    [' 3、本月涨幅：今日粉丝数 - 上月最后一天粉丝数'],
     [' 4、排名变化：与昨日排名对比，正数表示排名上升'],
-    [' 5、所有数据从 2025/10/10开始统计，在此之前的不支持查看'],
+    [' 5、数据从 2025/10/10开始统计'],
   ];
   XLSX.utils.sheet_add_aoa(ws, notes, { origin: -1 });
 
