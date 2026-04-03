@@ -32,7 +32,7 @@
     .desc { color:#616a76; font-size: 14px; margin-top: 6px; margin-bottom: 0; line-height: 1.8; }
     .container::before { display:none; }
     /* Page header cosmetics */
-    .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 8px; border-bottom:none; margin-bottom: 0; }
+    .page-header { display:none; }
     .header-icon { width:44px; height:44px; border-radius:10px; background: linear-gradient(135deg, #7c4dff, #4c6ef5); box-shadow: 0 8px 20px rgba(76,110,245,0.25); display:flex; align-items:center; justify-content:center; color:#fff; }
     .header-icon svg { width:22px; height:22px; }
     .title-wrap { flex:1; }
@@ -73,14 +73,14 @@
     .auto-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.18); font-size:11px; color:#fff; backdrop-filter:blur(10px); }
     .page-header .auto-badge { background:#edf3ff; border:1px solid #dbe6ff; color:#53627c; box-shadow:none; backdrop-filter:none; }
     .page-header .auto-badge strong { color:#2c3d63; }
-    .auto-meta { display:grid; grid-template-columns:minmax(0, 1.6fr) minmax(260px, 1fr); gap:14px; align-items:stretch; }
-    .auto-meta-card { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:15px 16px; backdrop-filter:blur(10px); display:grid; grid-template-rows:auto minmax(58px, 1fr) auto; align-items:start; min-height:132px; }
+    .auto-meta { display:grid; grid-template-columns:minmax(0, 1.6fr) minmax(260px, 1fr); gap:12px; align-items:stretch; }
+    .auto-meta-card { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:14px 16px 13px; backdrop-filter:blur(10px); display:grid; grid-template-rows:auto minmax(38px, 1fr) auto; align-items:start; min-height:104px; }
     .auto-meta-card.featured { padding:15px 16px; }
     .auto-meta-label { font-size:12px; color:rgba(255,255,255,0.74); }
-    .auto-meta-value { margin-top:8px; font-size:27px; font-weight:800; color:#fff; line-height:1.08; }
-    .auto-meta-value.featured { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:40px; }
+    .auto-meta-value { margin-top:6px; font-size:27px; font-weight:800; color:#fff; line-height:1.08; }
+    .auto-meta-value.featured { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:38px; }
     .auto-meta-time { font-size:18px; font-weight:700; color:rgba(255,255,255,0.84); }
-    .auto-meta-sub { margin-top:7px; font-size:12px; color:rgba(255,255,255,0.72); line-height:1.45; }
+    .auto-meta-sub { margin-top:5px; font-size:12px; color:rgba(255,255,255,0.72); line-height:1.3; }
     .auto-meta-sub.strong { font-size:13px; color:rgba(255,255,255,0.86); }
     .auto-status { font-weight:600; }
     .auto-status.success { color:#d7f8df; }
@@ -90,7 +90,9 @@
     .auto-secondary-btn { background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.22); }
     .auto-preview-wrap { background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,255,0.98)); border:1px solid #e4ebfb; border-radius:20px; padding:15px 14px 12px; box-shadow:0 12px 28px rgba(15,23,42,0.05); }
     .auto-preview-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+    .auto-preview-title-row { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
     .auto-preview-title { font-size:19px; font-weight:700; color:#1f2937; letter-spacing:.2px; }
+    .auto-preview-meta { font-size:11px; color:#64748b; line-height:1.4; }
     .auto-preview-desc { font-size:12px; color:#6b7280; margin-top:4px; line-height:1.5; }
     .auto-preview { background:transparent; border:none; border-radius:0; padding:0; overflow:visible; }
     .auto-preview .muted { text-align:center; padding:20px 0; }
@@ -133,17 +135,19 @@
     .section-desc { font-size:12px; color:#6b7280; line-height:1.5; margin-top:4px; }
     .section-link { color:#4c6ef5; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; padding:6px 10px; border-radius:999px; background:#eef2ff; }
     .auto-preview table { table-layout:fixed; border-radius:14px; overflow:hidden; }
-    .auto-preview th, .auto-preview td { padding:9px 5px; font-size:13px; overflow:hidden; text-overflow:ellipsis; }
-    .auto-preview th:nth-child(1), .auto-preview td:nth-child(1) { width:34px; }
-    .auto-preview th:nth-child(2), .auto-preview td:nth-child(2) { width:64px; text-align:left; }
-    .auto-preview th:last-child, .auto-preview td:last-child { width:52px; }
+    .auto-preview th, .auto-preview td { padding:9px 4px; font-size:13px; overflow:hidden; text-overflow:ellipsis; }
+    .auto-preview th:nth-child(1), .auto-preview td:nth-child(1) { width:40px; }
+    .auto-preview th:nth-child(2), .auto-preview td:nth-child(2) { width:72px; text-align:left; padding-left:7px; }
+    .auto-preview th:nth-child(3), .auto-preview td:nth-child(3) { width:66px; }
+    .auto-preview th:nth-last-child(3), .auto-preview td:nth-last-child(3) { width:56px; }
+    .auto-preview th:nth-last-child(2), .auto-preview td:nth-last-child(2) { width:56px; }
+    .auto-preview th:last-child, .auto-preview td:last-child { width:46px; }
     .auto-preview td:nth-child(1) { font-weight:700; color:#334155; }
     .auto-preview tbody td:nth-child(2) { font-weight:600; color:#1e293b; }
     .growth-cell { font-weight:700; }
     /* 手机端同步样式：日期区间与说明留白在小屏一致 */
     @media (max-width: 640px){
       .container { max-width:none; border-radius:0; box-shadow:none; padding:14px 10px 20px; background:#f7f9ff; }
-      .page-header { padding-bottom:4px; }
       .range-bar { margin: 4px 0 10px !important; text-align: left !important; font-size:11px; }
       #preview.export-png .range-bar { margin-top: 24px !important; margin-bottom: 12px !important; }
       .preview-notes { margin: 12px 0 18px !important; }
@@ -152,17 +156,17 @@
       .auto-badges { gap:6px; overflow-x:auto; flex-wrap:nowrap; padding-bottom:2px; }
       .auto-badge { padding:5px 9px; font-size:10px; white-space:nowrap; }
       .desc, .auto-card-desc, .section-desc, .auto-preview-desc { display:none !important; }
-      .auto-card { padding:13px 12px; border-radius:18px; gap:10px; }
+      .auto-card { padding:13px 12px; border-radius:18px; gap:9px; }
       .auto-card-header { gap:10px; flex-wrap:nowrap; align-items:center; }
       .auto-card-title-row { gap:6px; align-items:baseline; }
       .auto-card-title { font-size:21px; }
       .auto-inline-status { font-size:11px; }
-      .auto-meta { grid-template-columns:minmax(0, 1.3fr) minmax(0, 0.9fr); gap:10px; }
-      .auto-meta-card { padding:11px; border-radius:15px; min-width:0; grid-template-rows:auto minmax(46px, 1fr) auto; min-height:112px; }
-      .auto-meta-value { font-size:18px; }
-      .auto-meta-value.featured { font-size:22px; gap:6px; }
+      .auto-meta { grid-template-columns:minmax(0, 1.3fr) minmax(0, 0.9fr); gap:9px; }
+      .auto-meta-card { padding:10px 11px 9px; border-radius:15px; min-width:0; grid-template-rows:auto minmax(28px, 1fr) auto; min-height:88px; }
+      .auto-meta-value { font-size:18px; margin-top:4px; }
+      .auto-meta-value.featured { font-size:20px; gap:5px; }
       .auto-meta-time { font-size:14px; }
-      .auto-meta-sub { font-size:11px; }
+      .auto-meta-sub { font-size:11px; margin-top:3px; }
       .auto-preview-wrap, .avatar-section { padding:12px 10px 10px; border-radius:16px; }
       .auto-preview-head, .section-head { flex-direction:row; align-items:center; }
       .auto-actions { width:auto; justify-content:flex-end; gap:8px; }
@@ -176,9 +180,12 @@
       .avatar-item img { border-radius:11px; }
       th, td { padding:8px 4px; font-size:12px; }
       .auto-preview th, .auto-preview td { padding:8px 3px; font-size:12px; }
-      .auto-preview th:nth-child(1), .auto-preview td:nth-child(1) { width:28px; }
-      .auto-preview th:nth-child(2), .auto-preview td:nth-child(2) { width:58px; }
-      .auto-preview th:last-child, .auto-preview td:last-child { width:42px; }
+      .auto-preview th:nth-child(1), .auto-preview td:nth-child(1) { width:32px; }
+      .auto-preview th:nth-child(2), .auto-preview td:nth-child(2) { width:64px; padding-left:6px; }
+      .auto-preview th:nth-child(3), .auto-preview td:nth-child(3) { width:62px; }
+      .auto-preview th:nth-last-child(3), .auto-preview td:nth-last-child(3) { width:52px; }
+      .auto-preview th:nth-last-child(2), .auto-preview td:nth-last-child(2) { width:50px; }
+      .auto-preview th:last-child, .auto-preview td:last-child { width:38px; }
     }
     @media (max-width: 420px){
       .auto-card-title { font-size:20px; }
@@ -198,15 +205,6 @@
 </head>
 <body>
   <div class="container">
-    <div class="page-header">
-      <div class="title-wrap">
-        <div class="auto-badges">
-          <span class="auto-badge">每小时自动刷新</span>
-          <span class="auto-badge">上次刷新：<strong id="autoLastSync">—</strong></span>
-        </div>
-      </div>
-    </div>
-
     <div id="tab-auto" class="tab-panel active" role="tabpanel">
       <div class="auto-card">
         <div class="auto-card-header">
@@ -253,7 +251,10 @@
       <div class="auto-preview-wrap">
       <div class="auto-preview-head">
         <div>
-          <div class="auto-preview-title">今日粉丝榜</div>
+          <div class="auto-preview-title-row">
+            <div class="auto-preview-title">今日粉丝榜</div>
+            <span id="autoPreviewMeta" class="auto-preview-meta">—</span>
+          </div>
         </div>
       </div>
       <div class="actions auto-filter-bar" style="align-items:center; margin-bottom:10px;">
@@ -700,6 +701,12 @@ function updateAutoHeroMeta(meta){
   }
 }
 
+function updateAutoPreviewMeta(meta){
+  const metaEl = document.getElementById('autoPreviewMeta');
+  if(!metaEl) return;
+  metaEl.textContent = formatHourForPreviewTitle(meta?.latestIso || meta?.latestDate);
+}
+
 function formatHourForDashboard(tsStr){
   const base = formatDateTimeForDisplay(tsStr);
   if(!base) return '—';
@@ -708,6 +715,16 @@ function formatHourForDashboard(tsStr){
   const hour = String(timePart).split(':')[0] || '00';
   if(!year || !month || !day) return base;
   return `${year}年${month}月${day}日${hour}:00`;
+}
+
+function formatHourForPreviewTitle(tsStr){
+  const base = formatDateTimeForDisplay(tsStr);
+  if(!base) return '—';
+  const [datePart, timePart = '00:00'] = String(base).split(' ');
+  const [year, month, day] = String(datePart).split('-').map(v => Number(v));
+  const hour = String(timePart).split(':')[0] || '00';
+  if(!year || !month || !day) return base;
+  return `${year}年${month}月${day}日${Number(hour)}点`;
 }
 
 function compactRankChangeText(value){
@@ -768,6 +785,7 @@ function renderAutoTable(rows, meta){
   // 缓存数据供复选框切换使用
   lastAutoRows = rows || [];
   lastAutoMeta = meta || {};
+  updateAutoPreviewMeta(meta);
   
   if(!rows || !rows.length){
     container.innerHTML = '<div class="muted">暂无数据</div>';
@@ -782,9 +800,7 @@ function renderAutoTable(rows, meta){
   const showWeekGrowth = document.getElementById('autoToggleWeekGrowth')?.checked || false;
   const showMonthGrowth = document.getElementById('autoToggleMonthGrowth')?.checked || false;
   
-  const latestHourDisplay = formatHourForDashboard(meta?.latestIso || meta?.latestDate);
   const maxFans = Math.max(...rows.map(r=>Number(r.粉丝数||0)));
-  const rangeHtml = `<div class="range-bar">数据时间：${latestHourDisplay || '—'}</div>`;
   
   // 动态构建表头（与手动模式一致）
   const headerCols = ['排名','姓名'];
@@ -852,7 +868,7 @@ function renderAutoTable(rows, meta){
   }
   
   html += '</tbody></table>';
-  container.innerHTML = rangeHtml + html;
+  container.innerHTML = html;
   try{ renderAvatarGrid(rows); }catch(_){}
 }
 
