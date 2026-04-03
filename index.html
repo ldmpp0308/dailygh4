@@ -30,13 +30,13 @@
     .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 8px rgba(0,0,0,0.06); padding: 50px 12px 36px; position: relative; }
     h1 { font-size: 24px; margin: 0; color:#111; letter-spacing: 1px; line-height: 1.4; position: relative; }
     .desc { color:#616a76; font-size: 14px; margin-top: 6px; margin-bottom: 0; line-height: 1.8; }
-    .container::before { content:""; position:absolute; top:0; left:0; right:0; height: 30px; border-top-left-radius:12px; border-top-right-radius:12px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
+    .container::before { display:none; }
     /* Page header cosmetics */
-    .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 14px; border-bottom: 1px solid #eef2f7; margin-bottom: 2px; }
+    .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 12px; border-bottom:none; margin-bottom: 0; }
     .header-icon { width:44px; height:44px; border-radius:10px; background: linear-gradient(135deg, #7c4dff, #4c6ef5); box-shadow: 0 8px 20px rgba(76,110,245,0.25); display:flex; align-items:center; justify-content:center; color:#fff; }
     .header-icon svg { width:22px; height:22px; }
     .title-wrap { flex:1; }
-    .title-wrap h1::after { content:""; position:absolute; left:0; bottom:-8px; width:72px; height:3px; border-radius:2px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); opacity:0.82; }
+    .title-wrap h1::after { display:none; }
     /* 隐藏标题下的说明文本 */
     .title-wrap .desc { display: none; }
     .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -54,7 +54,7 @@
     /* 正数用红色，负数用绿色 */
     .num-pos { color: #c62828; font-weight: 600; }
     .num-neg { color: #2e7d32; font-weight: 600; }
-    .range-bar { text-align:center; color:#555; font-size:13px; margin: 8px 0 !important; display:block; width:100%; }
+    .range-bar { text-align:center; color:#475569; font-size:12px; margin: 6px 0 10px !important; display:block; width:100%; }
     #preview .range-bar { text-align: center !important; }
     /* 导出 PNG 时：日期区间整体居中，上下留白间距一致 */
     #preview.export-png .range-bar { margin: 8px 0 !important; text-align: center !important; }
@@ -62,8 +62,11 @@
     .tab-panel { display:none; margin-top: -4px; }
     .tab-panel.active { display:block; }
     .auto-card { background:linear-gradient(135deg, rgba(108,99,255,0.96), rgba(76,110,245,0.94)); border:none; border-radius:22px; padding:18px; margin-bottom:14px; display:flex; flex-direction:column; gap:14px; color:#fff; box-shadow:0 24px 48px rgba(76,110,245,0.16); }
-    .auto-card-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px; }
+    .auto-card-header { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .auto-card-title-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
     .auto-card-title { font-size:28px; font-weight:700; color:#fff; letter-spacing:.5px; line-height:1.2; }
+    .auto-inline-status { display:none; align-items:center; gap:4px; font-size:12px; line-height:1.2; color:rgba(255,255,255,0.82); }
+    .auto-inline-status-icon { font-size:11px; }
     .auto-card-desc { font-size:13px; color:rgba(255,255,255,0.82); margin-top:6px; line-height:1.6; max-width:720px; }
     .auto-badges { display:flex; gap:10px; flex-wrap:wrap; }
     .auto-badge { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.18); font-size:12px; color:#fff; backdrop-filter:blur(10px); }
@@ -80,19 +83,20 @@
     .auto-status.success { color:#d7f8df; }
     .auto-status.error { color:#ffe0e0; }
     .auto-status.info { color:#d8e7ff; }
-    .auto-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .auto-actions { display:flex; gap:10px; flex-wrap:nowrap; justify-content:flex-end; align-items:center; }
     .auto-secondary-btn { background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.2); }
-    .auto-preview-wrap { background:#fff; border:1px solid #e8edf5; border-radius:22px; padding:18px 16px 16px; box-shadow:0 12px 36px rgba(15,23,42,0.05); }
+    .auto-preview-wrap { background:#fff; border:1px solid #e8edf5; border-radius:22px; padding:16px 14px 14px; box-shadow:0 12px 36px rgba(15,23,42,0.05); }
     .auto-preview-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
     .auto-preview-title { font-size:20px; font-weight:700; color:#1f2937; }
     .auto-preview-desc { font-size:12px; color:#6b7280; margin-top:4px; line-height:1.5; }
-    .auto-preview { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:12px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .auto-preview { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:10px 8px 8px; overflow:visible; }
     .auto-preview .muted { text-align:center; padding:20px 0; }
     .auto-refresh-btn { background:#4c6ef5; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; }
     .auto-refresh-btn:disabled { opacity:0.6; cursor:not-allowed; }
     .actions { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
-    .auto-filter-bar { gap:8px; margin-top:0; margin-bottom:12px; justify-content:flex-start; }
-    .auto-filter-bar label { display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border-radius:999px; border:1px solid #e5e7eb; background:#f8fafc; font-size:12px; color:#334155; white-space:nowrap; }
+    .auto-filter-bar { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:8px; margin-top:0; margin-bottom:10px; }
+    .auto-filter-bar label { display:flex; align-items:center; justify-content:center; gap:5px; padding:8px 4px; border-radius:12px; border:1px solid #e5e7eb; background:#f8fafc; font-size:12px; color:#334155; line-height:1.2; white-space:normal; margin:0; }
+    .auto-filter-bar input { margin:0; }
     button { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 600; cursor:pointer; }
     .btn-primary { background: #4c6ef5; color:#fff; }
     .btn-secondary { background:#20c997; color:#fff; }
@@ -109,88 +113,70 @@
     }
     .flame-icon { display: inline-block; margin-left: 4px; font-size: 14px; line-height: 1; vertical-align: middle; }
     /* 涨幅单元格：文本居中，火焰固定在最左侧，不遮挡文字 */
-    .growth-cell {
-      position: relative;
-      display: block;
-      width: 100%;
-      text-align: center;
-      /* 预留左右内边距，保证居中视觉不偏移，同时避免文本与火焰重叠
-         使用 max() 适配移动端 emoji 真实宽度 */
-      padding-left: max(18px, 1.6em);
-      padding-right: 18px;
-      box-sizing: border-box;
-    }
-    .growth-cell .flame-left {
-      position: absolute;
-      left: 6px;
-      top: 50%;
-      transform: translateY(-50%);
-      pointer-events: none;
-      /* 覆盖通用火焰样式中的左外边距，确保贴近列最左侧 */
-      margin-left: 0;
-    }
-    .flame-icon { font-size: 14px; line-height: 1; }
-    /* 导出 PNG 时进一步扩大左侧预留，避免手机端遮挡 */
-    #preview.export-png .growth-cell { padding-left: max(26px, 2em) !important; }
-    #preview.export-png .growth-cell .flame-left { left: 4px; }
-    /* 导出 PNG 时文本居中、内容完整：预览区域不裁剪且所有单元格居中 */
+    .growth-cell { display:block; width:100%; text-align:center; box-sizing:border-box; }
     #preview { overflow: visible; }
     #preview table th, #preview table td { text-align: center !important; }
-    /* PNG 导出同步说明留白：下方间距加长 */
     #preview.export-png .preview-notes { margin: 12px 0 18px !important; }
-    /* 头像网格：两排共14个，7列布局 */
     .avatar-grid { margin-top: 12px; margin-bottom: 4px; display: grid; grid-template-columns: repeat(7, 1fr); column-gap: 4px; row-gap: 8px; }
-    .avatar-item { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, #7c4dff, #b28cff, #4c6ef5); padding: 1px; display: block; text-decoration: none; color: inherit; cursor: pointer; }
+    .avatar-item { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, #7c4dff, #b28cff, #4c6ef5); padding: 1px; display: block; color: inherit; cursor: pointer; text-decoration:none; }
     .avatar-item img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 9px; background-color: #fff; }
-    .avatar-name { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); padding: 2px 6px; font-size: 12px; line-height: 1.4; color: #fff; background: rgba(0,0,0,0.38); border-radius: 6px; white-space: nowrap; }
+    .avatar-name { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); padding: 2px 4px; font-size: 11px; line-height: 1.35; color: #fff; background: rgba(0,0,0,0.38); border-radius: 6px; white-space: nowrap; }
     .avatar-section { background:#fff; border:1px solid #e8edf5; border-radius:22px; box-shadow:0 12px 36px rgba(15,23,42,0.05); padding:18px 16px 14px; margin-bottom:16px; }
     .section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:8px; }
     .section-title { font-size:20px; font-weight:700; color:#1f2937; margin:0; }
     .section-desc { font-size:12px; color:#6b7280; line-height:1.5; margin-top:4px; }
     .section-link { color:#4c6ef5; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; padding:6px 10px; border-radius:999px; background:#eef2ff; }
+    .auto-preview table { table-layout:fixed; }
+    .auto-preview th, .auto-preview td { padding:5px 3px; font-size:12px; overflow:hidden; text-overflow:ellipsis; }
+    .auto-preview th:nth-child(1), .auto-preview td:nth-child(1) { width:34px; }
+    .auto-preview th:nth-child(2), .auto-preview td:nth-child(2) { width:56px; }
+    .auto-preview th:last-child, .auto-preview td:last-child { width:50px; }
     /* 手机端同步样式：日期区间与说明留白在小屏一致 */
     @media (max-width: 640px){
       .container { max-width:none; border-radius:0; box-shadow:none; padding:44px 10px 20px; }
-      .page-header { padding-bottom:10px; }
-      h1 { font-size:22px; }
-      .title-wrap h1::after { width:56px; bottom:-6px; }
-      .range-bar { margin: 12px 0 !important; text-align: center !important; }
+      .page-header { padding-bottom:8px; }
+      .range-bar { margin: 8px 0 !important; text-align: center !important; font-size:11px; }
       #preview.export-png .range-bar { margin-top: 24px !important; margin-bottom: 12px !important; }
       .preview-notes { margin: 12px 0 18px !important; }
       #preview.export-png .preview-notes { margin-bottom: 32px !important; }
-      /* 手机端额外加大左边距，保证 emoji 不压到文本 */
-      .growth-cell { padding-left: max(22px, 1.8em); padding-right: 16px; }
-      #preview.export-png .growth-cell { padding-left: max(28px, 2.2em) !important; }
-      #preview.export-png .growth-cell .flame-left { left: 4px; }
-      /* 手机端头像姓名：缩小字号，不换行显示并做超长省略 */
-      .avatar-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 12px); }
+      .avatar-name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 8px); }
       .auto-badges { gap:6px; overflow-x:auto; flex-wrap:nowrap; padding-bottom:2px; }
       .auto-badge { padding:7px 10px; font-size:11px; white-space:nowrap; }
       .desc, .auto-card-desc, .section-desc, .auto-preview-desc { display:none !important; }
-      .auto-card { padding:16px 14px; border-radius:18px; gap:14px; }
-      .auto-card-header { gap:12px; }
+      .auto-card { padding:16px 14px; border-radius:18px; gap:12px; }
+      .auto-card-header { gap:10px; flex-wrap:nowrap; align-items:center; }
+      .auto-card-title-row { gap:6px; align-items:baseline; }
       .auto-card-title { font-size:22px; }
-      .auto-meta { grid-template-columns:1fr; }
-      .auto-meta-card { padding:14px 14px; border-radius:16px; }
-      .auto-meta-value { font-size:22px; }
-      .auto-meta-value.featured { font-size:30px; }
-      .auto-meta-time { font-size:16px; }
+      .auto-inline-status { font-size:11px; }
+      .auto-meta { grid-template-columns:minmax(0, 1.3fr) minmax(0, 0.9fr); gap:10px; }
+      .auto-meta-card { padding:12px; border-radius:16px; min-width:0; }
+      .auto-meta-value { font-size:18px; }
+      .auto-meta-value.featured { font-size:22px; gap:6px; }
+      .auto-meta-time { font-size:14px; }
+      .auto-meta-sub { font-size:11px; }
       .auto-preview-wrap, .avatar-section { padding:14px 10px 10px; border-radius:16px; }
-      .auto-preview-head, .section-head { flex-direction:column; align-items:flex-start; }
-      .auto-actions { width:100%; justify-content:flex-start; }
-      .auto-actions button { flex:1; min-width:0; }
-      .auto-secondary-btn { display:none; }
+      .auto-preview-head, .section-head { flex-direction:row; align-items:center; }
+      .auto-actions { width:auto; justify-content:flex-end; gap:8px; }
+      .auto-actions button { flex:none; min-width:0; padding:8px 10px; font-size:13px; white-space:nowrap; }
+      .auto-secondary-btn { display:inline-flex; }
       .actions { gap:8px; justify-content:flex-start; }
-      .auto-filter-bar { flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; }
-      .auto-filter-bar label { flex:0 0 auto; }
-      .avatar-grid { grid-template-columns:repeat(4, 1fr); gap:8px; }
+      .auto-filter-bar { grid-template-columns:repeat(5, minmax(0, 1fr)); overflow:visible; padding-bottom:0; }
+      .auto-filter-bar label { gap:4px; padding:7px 2px; font-size:11px; min-height:38px; }
+      .avatar-grid { grid-template-columns:repeat(7, 1fr); gap:4px; }
       .avatar-item { border-radius:12px; }
       .avatar-item img { border-radius:11px; }
-      th, td { padding:6px 8px; font-size:12px; }
+      th, td { padding:5px 4px; font-size:11px; }
+      .auto-preview th, .auto-preview td { padding:5px 2px; font-size:11px; }
+      .auto-preview th:nth-child(1), .auto-preview td:nth-child(1) { width:28px; }
+      .auto-preview th:nth-child(2), .auto-preview td:nth-child(2) { width:48px; }
+      .auto-preview th:last-child, .auto-preview td:last-child { width:42px; }
     }
     @media (max-width: 420px){
-      .avatar-grid { grid-template-columns:repeat(3, 1fr); }
-      .auto-actions { width:100%; }
+      .auto-card-title { font-size:20px; }
+      .auto-meta-value.featured { font-size:20px; }
+      .auto-meta-time { font-size:13px; }
+      .auto-actions button { padding:7px 8px; font-size:12px; }
+      .auto-filter-bar label { font-size:10px; }
     }
     /* 页脚 LOGO：居中显示，移动端与桌面端自适应宽度 */
     .footer-logo { margin-top: 16px; margin-bottom: 8px; text-align: center; }
@@ -209,10 +195,6 @@
           <span class="auto-badge">每小时自动刷新</span>
           <span class="auto-badge">上次刷新：<strong id="autoLastSync">—</strong></span>
         </div>
-        <h1>🎀 高会排行榜</h1>
-        <div id="apiStatus" style="margin: 12px 0 0; padding: 8px 12px; border-radius: 999px; font-size: 12px; display: none; width: max-content; max-width: 100%;">
-          <span id="apiStatusIcon">🔄</span> <span id="apiStatusText">检查API连接状态...</span>
-        </div>
       </div>
     </div>
 
@@ -220,7 +202,13 @@
       <div class="auto-card">
         <div class="auto-card-header">
           <div>
-            <div class="auto-card-title">实时榜单</div>
+            <div class="auto-card-title-row">
+              <div class="auto-card-title">高会实时排行榜</div>
+              <div id="apiStatus" class="auto-inline-status" aria-live="polite">
+                <span id="apiStatusIcon" class="auto-inline-status-icon">🔄</span>
+                <span id="apiStatusText">检查API连接状态...</span>
+              </div>
+            </div>
           </div>
           <div class="auto-actions">
             <button type="button" class="auto-refresh-btn" id="autoRefreshBtn" onclick="refreshAutoTab(true)">立即刷新</button>
@@ -246,7 +234,6 @@
           <div>
             <h2 class="section-title">成员</h2>
           </div>
-          <a class="section-link" href="person.html">个人页</a>
         </div>
         <div id="avatarGrid" class="avatar-grid" aria-label="成员头像展示"></div>
       </div>
@@ -701,6 +688,26 @@ function updateAutoHeroMeta(meta){
   }
 }
 
+function formatHourForDashboard(tsStr){
+  const base = formatDateTimeForDisplay(tsStr);
+  if(!base) return '—';
+  const [datePart, timePart = '00:00'] = String(base).split(' ');
+  const [year, month, day] = String(datePart).split('-').map(v => Number(v));
+  const hour = String(timePart).split(':')[0] || '00';
+  if(!year || !month || !day) return base;
+  return `${year}年${month}月${day}日${hour}:00`;
+}
+
+function compactRankChangeText(value){
+  const text = String(value || '').trim();
+  if(!text || text === '持平') return '-';
+  const matched = text.match(/(上升|下降)\s*(\d+)/);
+  if(matched){
+    return `${matched[1] === '上升' ? '↑' : '↓'}${matched[2]}`;
+  }
+  return text;
+}
+
 function syncPayloadToLocal(payload){
   if(!payload || typeof payload !== 'object') return;
   const rawMap = payload.memberRaw || {};
@@ -763,12 +770,9 @@ function renderAutoTable(rows, meta){
   const showWeekGrowth = document.getElementById('autoToggleWeekGrowth')?.checked || false;
   const showMonthGrowth = document.getElementById('autoToggleMonthGrowth')?.checked || false;
   
-  const latestDisplay = meta?.latestIso ? formatDateForRange(meta.latestIso) : (meta?.latestDate ? formatDateForRange(meta.latestDate) : '—');
-  const prevDisplay = meta?.prevIso ? formatDateForRange(meta.prevIso) : (meta?.prevDate ? formatDateForRange(meta.prevDate) : '—');
+  const latestHourDisplay = formatHourForDashboard(meta?.latestIso || meta?.latestDate);
   const maxFans = Math.max(...rows.map(r=>Number(r.粉丝数||0)));
-  const flameThreshold = 3000;
-  
-  const rangeHtml = `<div class="range-bar">日期区间：${prevDisplay || '—'} ~ ${latestDisplay || '—'}</div>`;
+  const rangeHtml = `<div class="range-bar">数据时间：${latestHourDisplay || '—'}</div>`;
   
   // 动态构建表头（与手动模式一致）
   const headerCols = ['排名','姓名'];
@@ -793,10 +797,8 @@ function renderAutoTable(rows, meta){
     const growthRaw = (r.涨幅 === '' || r.涨幅 == null) ? null : Number(r.涨幅);
     const growthText = (growthRaw == null) ? '' : (growthRaw === 0 ? '-' : (growthRaw > 0 ? `+${growthRaw}` : `${growthRaw}`));
     const growthCls = (growthRaw == null || growthRaw === 0) ? '' : (growthRaw > 0 ? 'num-pos' : 'num-neg');
-    const showFlame = (growthRaw != null && growthRaw > flameThreshold);
-    
-    const rankChangeText = r.排名变化 === '持平' ? '-' : (r.排名变化 || '');
-    const rankChangeCls = rankChangeText.startsWith('上升') ? 'num-pos' : (rankChangeText.startsWith('下降') ? 'num-neg' : '');
+    const rankChangeText = compactRankChangeText(r.排名变化);
+    const rankChangeCls = rankChangeText.startsWith('↑') ? 'num-pos' : (rankChangeText.startsWith('↓') ? 'num-neg' : '');
     
     const diffPrevRaw = (r['与前一名差值'] === '' || r['与前一名差值'] == null) ? null : Number(r['与前一名差值']);
     const diffPrevText = (diffPrevRaw == null) ? '' : (diffPrevRaw === 0 ? '-' : `${diffPrevRaw}`);
@@ -815,7 +817,7 @@ function renderAutoTable(rows, meta){
     cells.push(`<td>${diffPrevText}</td>`);
     
     // 今日涨幅（带火焰）
-    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}${growthText}</span></td>`);
+    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${growthText}</span></td>`);
     
     // 本周涨幅
     if (showWeekGrowth) {
@@ -838,19 +840,7 @@ function renderAutoTable(rows, meta){
   }
   
   html += '</tbody></table>';
-  
-  // 底部说明
-  const noteHtml = `
-    <div class="preview-notes" style="margin:12px 0 18px; padding-left:1ch; color:#606c76; font-size:12px; line-height:1.7;">
-      <div><strong>说明：</strong></div>
-      <div>1、今日涨幅：今日粉丝数 - 昨日粉丝数</div>
-      <div>2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）</div>
-      <div>3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数</div>
-      <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
-      <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
-    </div>`;
-  
-  container.innerHTML = rangeHtml + html + noteHtml;
+  container.innerHTML = rangeHtml + html;
   try{ renderAvatarGrid(rows); }catch(_){}
 }
 
@@ -1830,34 +1820,29 @@ function updateApiStatus(status, message) {
   
   if (!statusEl || !iconEl || !textEl) return;
   
-  statusEl.style.display = 'block';
+  statusEl.style.display = 'inline-flex';
   textEl.textContent = message;
   
-  // 清除之前的样式
-  statusEl.style.backgroundColor = '';
-  statusEl.style.color = '';
-  statusEl.style.border = '';
+  statusEl.style.backgroundColor = 'transparent';
+  statusEl.style.border = 'none';
+  statusEl.style.padding = '0';
   
   switch(status) {
     case 'checking':
       iconEl.textContent = '🔄';
-      statusEl.style.backgroundColor = '#f0f0f0';
-      statusEl.style.color = '#666';
+      statusEl.style.color = 'rgba(255,255,255,0.72)';
       break;
     case 'online':
       iconEl.textContent = '🟢';
-      statusEl.style.backgroundColor = '#e8f5e8';
-      statusEl.style.color = '#137333';
+      statusEl.style.color = 'rgba(255,255,255,0.84)';
       break;
     case 'offline':
       iconEl.textContent = '🔴';
-      statusEl.style.backgroundColor = '#fce8e6';
-      statusEl.style.color = '#d93025';
+      statusEl.style.color = '#ffd7d7';
       break;
     case 'partial':
       iconEl.textContent = '🟡';
-      statusEl.style.backgroundColor = '#fff3cd';
-      statusEl.style.color = '#856404';
+      statusEl.style.color = '#fff1b3';
       break;
   }
 }
@@ -2687,10 +2672,9 @@ function renderPreviewTable(rows){
     // 是否展示火焰图标（仅当今日涨幅超过阈值）
     const showFlame = (growthRaw != null && growthRaw > flameThreshold);
     const rankChangeText = r.排名变化 === '持平' ? '-' : (r.排名变化 || '');
-    const rankChangeCls = rankChangeText.startsWith('上升') ? 'num-pos' : (rankChangeText.startsWith('下降') ? 'num-neg' : '');
+    const rankChangeCls = rankChangeText.startsWith('↑') ? 'num-pos' : (rankChangeText.startsWith('↓') ? 'num-neg' : '');
     const upIcon = '<svg viewBox="0 0 12 12" class="icon" aria-hidden="true"><path d="M6 2l-3.5 3.5h2.5v4h2v-4h2.5L6 2z" fill="currentColor"/></svg>';
     const downIcon = '<svg viewBox="0 0 12 12" class="icon" aria-hidden="true"><path d="M6 10l3.5-3.5H7v-4H5v4H2.5L6 10z" fill="currentColor"/></svg>';
-    const flameIcon = '<span class="flame-icon flame-left" aria-hidden="true">🔥</span>';
     const growthIcon = (growthRaw == null || growthRaw === 0) ? '' : (growthRaw > 0 ? upIcon : downIcon);
     const rankIcon = rankChangeText.startsWith('上升') ? upIcon : (rankChangeText.startsWith('下降') ? downIcon : '');
     const diffPrevRaw = (r['与前一名差值'] === '' || r['与前一名差值'] == null) ? null : Number(r['与前一名差值']);
@@ -2706,7 +2690,7 @@ function renderPreviewTable(rows){
     cells.push(`<td style="${fansCellStyle}">${fans}</td>`);
     cells.push(`<td>${diffPrevText}</td>`);
     // 今日涨幅（带火焰）
-    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}${growthText}</span></td>`);
+    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${growthText}</span></td>`);
     // 本周涨幅（不回退，无火焰）
     if (showWeekGrowth) {
       const wgRaw = (r['本周涨幅'] === '' || r['本周涨幅'] == null) ? null : Number(r['本周涨幅']);
