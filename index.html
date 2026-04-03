@@ -27,78 +27,81 @@
   <!-- xlsx.js 和 html2canvas 改为按需加载，避免阻塞页面渲染 -->
   <style>
     body { font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background:#f6f7fb; margin:0; }
-    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); padding: 40px 24px 32px; position: relative; }
+    .container { max-width: 1080px; margin: 0 auto; background:#fff; border-radius: 12px; box-shadow: 0 8px 8px rgba(0,0,0,0.06); padding: 50px 12px 36px; position: relative; }
     h1 { font-size: 24px; margin: 0; color:#111; letter-spacing: 1px; line-height: 1.4; position: relative; }
     .desc { color:#616a76; font-size: 14px; margin-top: 6px; margin-bottom: 0; line-height: 1.8; }
     .container::before { content:""; position:absolute; top:0; left:0; right:0; height: 30px; border-top-left-radius:12px; border-top-right-radius:12px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); }
     /* Page header cosmetics */
-    .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 0px; border-bottom: none; margin-bottom: 0px; }
+    .page-header { display:flex; align-items:center; gap:14px; padding: 0 0 14px; border-bottom: 1px solid #eef2f7; margin-bottom: 2px; }
     .header-icon { width:44px; height:44px; border-radius:10px; background: linear-gradient(135deg, #7c4dff, #4c6ef5); box-shadow: 0 8px 20px rgba(76,110,245,0.25); display:flex; align-items:center; justify-content:center; color:#fff; }
     .header-icon svg { width:22px; height:22px; }
     .title-wrap { flex:1; }
-    /* 移除标题下划线 */
+    .title-wrap h1::after { content:""; position:absolute; left:0; bottom:-8px; width:72px; height:3px; border-radius:2px; background: linear-gradient(90deg, #8e73ff, #c3a8ff, #6f8af8); opacity:0.82; }
     /* 隐藏标题下的说明文本 */
     .title-wrap .desc { display: none; }
     .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); transition: all 0.2s ease; }
-    .card:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); transform: translateY(-1px); }
+    .card { background:#fafafa; border:1px solid #eee; border-radius:10px; padding:12px; }
     label { display:block; font-size: 13px; color:#333; margin-bottom:6px; }
-    input[type=date] { width: 100%; box-sizing: border-box; padding:10px 12px; border:1px solid #CBD5E1; border-radius:8px; font-size:14px; transition: all 0.2s; }
-    input[type=date]:focus { outline: none; border-color: #4c6ef5; box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1); }
-    textarea { width: 100%; min-height: 180px; box-sizing: border-box; padding:12px; border:1px solid #CBD5E1; border-radius:12px; font-size:14px; resize: vertical; transition: all 0.2s; line-height: 1.6; }
-    textarea:focus { outline: none; border-color: #4c6ef5; box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1); }
+    input[type=date] { width: 100%; box-sizing: border-box; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-size:14px; }
+    textarea { width: 100%; min-height: 180px; box-sizing: border-box; padding:10px; border:1px solid #ddd; border-radius:10px; font-size:13px; resize: vertical; }
     /* 表格样式与美化 */
-    table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #E2E8F0; }
-    thead th { background: #F8FAFC; color: #334155; font-weight: 600; white-space: nowrap; text-align: center; border-bottom: 1px solid #E2E8F0; padding: 12px 10px; font-size: 13px; }
-    th, td { padding: 10px; border-bottom: 1px solid #E2E8F0; font-size: 14px; line-height: 1.6; text-align: center; white-space: nowrap; border-right: none; transition: background-color 0.15s; }
-    tbody tr:hover { background-color: #F8FAFC; }
-    /* 移除斑马纹 */
-    .zebra-even td { background-color: transparent; }
-    /* 增长用红色，下降用绿色 */
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #b28cff; color: #fff; font-weight: 600; white-space: nowrap; text-align: center; }
+    th, td { padding: 6px 10px; border-bottom: 1px solid #eee; font-size: 13px; line-height: 1.35; border-right: 1px solid #e0e0e0; text-align: center; white-space: nowrap; width: auto; }
+    thead th:last-child, tbody td:last-child { border-right: none; }
+    /* 偶数行浅灰底色（以行序号/排名为准） */
+    /* 斑马纹已移除，保持统一背景 */
+    /* 正数用红色，负数用绿色 */
     .num-pos { color: #c62828; font-weight: 600; }
     .num-neg { color: #2e7d32; font-weight: 600; }
-    .range-bar { text-align:center; color:#555; font-size:13px; margin: 0px 0 8px !important; display:block; width:100%; }
+    .range-bar { text-align:center; color:#555; font-size:13px; margin: 8px 0 !important; display:block; width:100%; }
     #preview .range-bar { text-align: center !important; }
     /* 导出 PNG 时：日期区间整体居中，上下留白间距一致 */
-    #preview.export-png .range-bar { margin: 0px 0 8px !important; text-align: center !important; }
+    #preview.export-png .range-bar { margin: 8px 0 !important; text-align: center !important; }
     /* 统一保留的样式，去除重复的 table/th,td 定义 */
-    .tab-switcher { display:flex; gap:12px; margin: 16px 0; background:#F1F5F9; padding:4px; border-radius:12px; }
-    .tab-switcher button { flex:1; border:none; background:transparent; padding:10px 16px; border-radius:8px; font-size:15px; font-weight:500; color:#64748B; cursor:pointer; transition: all 0.2s ease; }
-    .tab-switcher button:hover { color: #475569; }
-    .tab-switcher button.active { background:#ffffff; color:#4c6ef5; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
-    .tab-panel { display:none; margin-top: 16px; opacity: 0; transition: opacity 0.3s ease; }
-    .tab-panel.active { display:block; opacity: 1; }
-    .auto-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:20px; margin-bottom:20px; display:flex; flex-direction:column; gap:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .auto-card-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
-    .auto-card-title { font-size:18px; font-weight:600; color:#1f2937; }
-    .auto-card-desc { font-size:13px; color:#6b7280; margin-top:-10px; }
-    .auto-card-desc-row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-    .auto-meta { display:flex; flex-wrap:wrap; gap:10px; font-size:13px; color:#4b5563; margin-top:4px; }
+    .tab-switcher { display:flex; gap:8px; margin: 10px 0 20px; background:#f3f5fb; padding:4px; border-radius:10px; }
+    .tab-switcher button { flex:1; border:none; background:transparent; padding:10px 14px; border-radius:8px; font-size:15.5px; font-weight:600; color:#475569; cursor:pointer; transition:background .2s ease, color .2s ease; }
+    .tab-switcher button.active { background:#ffffff; color:#1e293b; box-shadow:0 6px 18px rgba(76,110,245,0.12); }
+    .tab-panel { display:none; margin-top: -4px; }
+    .tab-panel.active { display:block; }
+    .home-section { background:#fff; border:1px solid #e8edf5; border-radius:22px; box-shadow:0 16px 40px rgba(76,110,245,0.08); margin-bottom:16px; overflow:hidden; }
+    .auto-card { background:linear-gradient(135deg, rgba(108,99,255,0.96), rgba(76,110,245,0.94)); border:none; border-radius:22px; padding:22px; margin-bottom:16px; display:flex; flex-direction:column; gap:18px; color:#fff; box-shadow:0 24px 48px rgba(76,110,245,0.16); }
+    .auto-card-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px; }
+    .auto-card-title { font-size:30px; font-weight:700; color:#fff; letter-spacing:.5px; line-height:1.2; }
+    .auto-card-desc { font-size:14px; color:rgba(255,255,255,0.82); margin-top:8px; line-height:1.75; max-width:720px; }
+    .auto-badges { display:flex; gap:10px; flex-wrap:wrap; }
+    .auto-badge { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.18); font-size:12px; color:#fff; backdrop-filter:blur(10px); }
+    .auto-meta { display:grid; grid-template-columns:minmax(0, 1.6fr) minmax(260px, 1fr); gap:14px; }
+    .auto-meta-card { background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.16); border-radius:18px; padding:16px 18px; backdrop-filter:blur(12px); }
+    .auto-meta-card.featured { padding:18px 20px; }
+    .auto-meta-label { font-size:13px; color:rgba(255,255,255,0.76); }
+    .auto-meta-value { margin-top:10px; font-size:28px; font-weight:800; color:#fff; line-height:1.1; }
+    .auto-meta-value.featured { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:40px; }
+    .auto-meta-time { font-size:18px; font-weight:700; color:rgba(255,255,255,0.84); }
+    .auto-meta-sub { margin-top:8px; font-size:12px; color:rgba(255,255,255,0.74); line-height:1.6; }
+    .auto-meta-sub.strong { font-size:13px; color:rgba(255,255,255,0.86); }
     .auto-status { font-weight:600; }
-    .auto-status.success { color:#137333; }
-    .auto-status.error { color:#d93025; }
-    .auto-status.info { color:#1a73e8; }
-    .auto-preview { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:6px; overflow: hidden; }
-    .auto-preview .muted { text-align:center; padding:40px 16px; color: #94A3B8; font-size: 14px; }
-    .auto-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; }
-    .auto-refresh-btn { background:linear-gradient(135deg, #6366F1 0%, #4c6ef5 100%); color:#fff; border:none; border-radius:8px; padding:10px 16px; font-weight:500; cursor:pointer; box-shadow: 0 4px 6px -1px rgba(76, 110, 245, 0.2); transition: all 0.2s; }
-    .auto-refresh-btn:hover { box-shadow: 0 8px 12px -2px rgba(76, 110, 245, 0.3); transform: translateY(-1px); }
-    .auto-refresh-btn:active { transform: translateY(0); }
-    .auto-refresh-btn:disabled { opacity:0.6; cursor:not-allowed; transform: none; box-shadow: none; }
-    .actions { display:flex; gap:12px; margin-top: 16px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
-    button { padding: 10px 16px; border: none; border-radius: 8px; font-weight: 500; cursor:pointer; font-size: 14px; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; }
-    button:hover { transform: translateY(-1px); }
-    button:active { transform: translateY(0); }
-    .btn-primary { background: linear-gradient(135deg, #6366F1 0%, #4c6ef5 100%); color:#fff; box-shadow: 0 4px 6px -1px rgba(76, 110, 245, 0.2); }
-    .btn-primary:hover { box-shadow: 0 8px 12px -2px rgba(76, 110, 245, 0.3); }
-    .btn-secondary { background: linear-gradient(135deg, #10B981 0%, #34D399 100%); color:#fff; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); }
-    .btn-secondary:hover { box-shadow: 0 8px 12px -2px rgba(16, 185, 129, 0.3); }
-    .btn-light { background:#F1F5F9; color:#334155; border: 1px solid #E2E8F0; }
-    .btn-light:hover { background:#E2E8F0; }
-    .msg { display:none; margin-top: 16px; padding:12px 16px; border-radius:8px; font-size:14px; }
-    .msg.error { background:#FEF2F2; color:#EF4444; border:1px solid #FEE2E2; }
-    .msg.success { background:#F0FDF4; color:#10B981; border:1px solid #DCFCE7; }
-    .muted { color:#94A3B8; font-size:13px; }
+    .auto-status.success { color:#d7f8df; }
+    .auto-status.error { color:#ffe0e0; }
+    .auto-status.info { color:#d8e7ff; }
+    .auto-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .auto-preview-wrap { background:#fff; border:1px solid #e8edf5; border-radius:22px; padding:18px 16px 16px; box-shadow:0 12px 36px rgba(15,23,42,0.05); }
+    .auto-preview-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:12px; }
+    .auto-preview-title { font-size:20px; font-weight:700; color:#1f2937; }
+    .auto-preview-desc { font-size:13px; color:#6b7280; margin-top:6px; line-height:1.7; }
+    .auto-preview { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:12px; }
+    .auto-preview .muted { text-align:center; padding:20px 0; }
+    .auto-refresh-btn { background:#4c6ef5; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; }
+    .auto-refresh-btn:disabled { opacity:0.6; cursor:not-allowed; }
+    .actions { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+    button { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 600; cursor:pointer; }
+    .btn-primary { background: #4c6ef5; color:#fff; }
+    .btn-secondary { background:#20c997; color:#fff; }
+    .btn-light { background:#f1f3f5; color:#333; }
+    .msg { display:none; margin-top: 10px; padding:8px 10px; border-radius:8px; font-size:13px; }
+    .msg.error { background:#fff5f5; color:#c92a2a; border:1px solid #ffe3e3; }
+    .msg.success { background:#f4fce3; color:#2b8a3e; border:1px solid #e9fac8; }
+    .muted { color:#868e96; font-size:12px; }
     .icon { width: 16px; height: 16px; margin-right: 4px; vertical-align: -1px; font-size: 16px; }
 
     /* 手机端统一：左右12px、底部24px、顶部50px */
@@ -137,15 +140,25 @@
     /* PNG 导出同步说明留白：下方间距加长 */
     #preview.export-png .preview-notes { margin: 12px 0 18px !important; }
     /* 头像网格：两排共14个，7列布局 */
-    .avatar-grid { margin-top: 16px; margin-bottom: 8px; display: grid; grid-template-columns: repeat(7, 1fr); column-gap: 6px; row-gap: 8px; }
-    .avatar-item { position: relative; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; background: #fff; padding: 0; display: block; text-decoration: none; color: inherit; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.2s ease; }
-    .avatar-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .avatar-item img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 12px; background-color: #fff; }
-    .avatar-name { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); padding: 2px 8px; font-size: 12px; line-height: 1.4; color: #fff; background: rgba(0,0,0,0.5); border-radius: 12px; white-space: nowrap; backdrop-filter: blur(4px); }
+    .avatar-grid { margin-top: 12px; margin-bottom: 4px; display: grid; grid-template-columns: repeat(7, 1fr); column-gap: 4px; row-gap: 8px; }
+    .avatar-item { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, #7c4dff, #b28cff, #4c6ef5); padding: 1px; display: block; text-decoration: none; color: inherit; cursor: pointer; }
+    .avatar-item img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 9px; background-color: #fff; }
+    .avatar-name { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); padding: 2px 6px; font-size: 12px; line-height: 1.4; color: #fff; background: rgba(0,0,0,0.38); border-radius: 6px; white-space: nowrap; }
+    .avatar-section { background:#fff; border:1px solid #e8edf5; border-radius:22px; box-shadow:0 12px 36px rgba(15,23,42,0.05); padding:18px 16px 14px; margin-bottom:16px; }
+    .section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:8px; }
+    .section-title { font-size:20px; font-weight:700; color:#1f2937; margin:0; }
+    .section-desc { font-size:13px; color:#6b7280; line-height:1.7; margin-top:6px; }
+    .section-link { color:#4c6ef5; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; }
+    .manual-tools { margin-top:16px; border:1px solid #e8edf5; border-radius:18px; background:#fff; box-shadow:0 10px 30px rgba(15,23,42,0.04); }
+    .manual-tools summary { list-style:none; cursor:pointer; padding:14px 16px; font-size:14px; font-weight:700; color:#334155; display:flex; align-items:center; justify-content:space-between; }
+    .manual-tools summary::-webkit-details-marker { display:none; }
+    .manual-tools summary::after { content:"展开"; font-size:12px; color:#64748b; font-weight:600; }
+    .manual-tools[open] summary::after { content:"收起"; }
+    .manual-tools-body { padding:0 0 4px; }
     /* 手机端同步样式：日期区间与说明留白在小屏一致 */
     @media (max-width: 640px){
-      .range-bar { margin: 0px 0 8px !important; text-align: center !important; }
-      #preview.export-png .range-bar { margin-top: 0px !important; margin-bottom: 8px !important; }
+      .range-bar { margin: 12px 0 !important; text-align: center !important; }
+      #preview.export-png .range-bar { margin-top: 24px !important; margin-bottom: 12px !important; }
       .preview-notes { margin: 12px 0 18px !important; }
       #preview.export-png .preview-notes { margin-bottom: 32px !important; }
       /* 手机端额外加大左边距，保证 emoji 不压到文本 */
@@ -154,11 +167,17 @@
       #preview.export-png .growth-cell .flame-left { left: 4px; }
       /* 手机端头像姓名：缩小字号，不换行显示并做超长省略 */
       .avatar-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 12px); }
+      .auto-card { padding:18px 16px; border-radius:20px; }
+      .auto-card-title { font-size:24px; }
+      .auto-meta { grid-template-columns:1fr; }
+      .auto-meta-value.featured { font-size:32px; }
+      .auto-preview-wrap, .avatar-section { padding:16px 12px 12px; border-radius:18px; }
+      .auto-preview-head, .section-head { flex-direction:column; align-items:flex-start; }
+      .auto-actions { justify-content:flex-start; }
     }
     /* 页脚 LOGO：居中显示，移动端与桌面端自适应宽度 */
-    .footer-logo { margin-top: 32px; margin-bottom: 16px; text-align: center; }
-    .footer-logo img { display: block; margin: 0 auto; width: min(420px, 86vw); height: auto; max-width: 100%; opacity: 0.8; transition: opacity 0.2s; }
-    .footer-logo img:hover { opacity: 1; }
+    .footer-logo { margin-top: 16px; margin-bottom: 8px; text-align: center; }
+    .footer-logo img { display: block; margin: 0 auto; width: min(420px, 86vw); height: auto; max-width: 100%; }
     .footer-logo .logo-fallback { display: none; font-size: 13px; color: #444; opacity: 0.75; }
     @media (max-width: 640px){
       .footer-logo img { width: min(360px, 86vw); }
@@ -169,41 +188,67 @@
   <div class="container">
     <div class="page-header">
       <div class="title-wrap">
+        <div class="auto-badges">
+          <span class="auto-badge">🎀 正式版</span>
+          <span class="auto-badge">每小时自动刷新</span>
+          <span class="auto-badge">成员头像可直接进入个人页</span>
+          <span class="auto-badge">上次刷新：<strong id="autoLastSync">—</strong></span>
+        </div>
         <h1>🎀 高会排行榜</h1>
-        <div class="desc">粘贴当日与前一日的代码文本，系统将解析出 姓名/收藏/点赞/粉丝 数据，按粉丝数降序排名，并生成表头为中文的Excel，同时新增"排名变化"、"距上一名"和"今日涨幅"三列（今日涨幅为与指定日期粉丝数的差值）。</div>
-        <div id="apiStatus" style="margin: 8px 0; padding: 6px 10px; border-radius: 6px; font-size: 12px; display: none;">
+        <div class="desc" style="display:block; color:#616a76; margin-top:14px;">首页仅保留自动刷新场景，打开即查看最新榜单；最新日期与时间置顶展示，成员头像作为高频快捷入口。</div>
+        <div id="apiStatus" style="margin: 12px 0 0; padding: 8px 12px; border-radius: 999px; font-size: 12px; display: none; width: max-content; max-width: 100%;">
           <span id="apiStatusIcon">🔄</span> <span id="apiStatusText">检查API连接状态...</span>
         </div>
-        <div id="avatarGrid" class="avatar-grid" aria-label="成员头像展示"></div>
       </div>
     </div>
-    </div>
 
-    <div class="tab-switcher" role="tablist" aria-label="模式切换">
-      <button type="button" id="tab-auto-btn" class="active" data-tab="auto" aria-selected="true">自动刷新</button>
-      <button type="button" id="tab-manual-btn" data-tab="manual" aria-selected="false">手动模式</button>
-    </div>
-
-    <div id="tab-auto" class="tab-panel active" role="tabpanel" aria-labelledby="tab-auto-btn">
+    <div id="tab-auto" class="tab-panel active" role="tabpanel">
       <div class="auto-card">
-        <div class="auto-card-header" style="justify-content:space-between;">
-          <div class="auto-card-title">自动刷新视图</div>
+        <div class="auto-card-header">
+          <div>
+            <div class="auto-card-title">首页自动刷新榜单</div>
+            <div class="auto-card-desc">首屏只展示自动刷新结果，不再提供手动模式切换。重点突出最新日期与时间，榜单与头像墙保持同屏，方便快速查看与跳转。</div>
+          </div>
           <div class="auto-actions">
             <button type="button" class="auto-refresh-btn" id="autoRefreshBtn" onclick="refreshAutoTab(true)">立即刷新</button>
             <button type="button" class="btn-secondary" onclick="exportAutoImage()">导出图片</button>
           </div>
         </div>
-        <div class="auto-card-desc-row">
-          <div class="auto-card-desc">自动拉取服务器最新榜单数据</div>
-        </div>
         <div class="auto-meta">
-          <span>最新日期：<strong id="autoLatestDate">—</strong></span>
-          <span>对比日期：<strong id="autoPrevDate">—</strong></span>
-          <span>上次刷新：<strong id="autoLastSync">—</strong></span>
-          <span class="auto-status" id="autoStatusText"></span>
+          <div class="auto-meta-card featured">
+            <div class="auto-meta-label">最新榜单时间</div>
+            <div class="auto-meta-value featured"><span id="autoLatestDate">—</span><span id="autoLatestTime" class="auto-meta-time">—</span></div>
+            <div class="auto-meta-sub strong">对比日期：<span id="autoPrevDate">—</span></div>
+            <div class="auto-meta-sub">首页重点只展示最新日期与最新抓取时间。</div>
+          </div>
+          <div class="auto-meta-card">
+            <div class="auto-meta-label">刷新状态</div>
+            <div class="auto-meta-value">每小时自动刷新</div>
+            <div class="auto-meta-sub strong">数据来源：本地缓存 + 服务器补齐</div>
+            <div class="auto-meta-sub auto-status" id="autoStatusText">正在等待数据...</div>
+          </div>
         </div>
       </div>
-      <div class="actions" style="align-items:center; margin-bottom:8px; margin-top:8px;">
+
+      <div class="avatar-section">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">成员快捷入口</h2>
+            <div class="section-desc">头像墙作为首页核心导航，点击后直接进入 person 页。默认展示最新排名对应成员。</div>
+          </div>
+          <a class="section-link" href="person.html">查看 person 页</a>
+        </div>
+        <div id="avatarGrid" class="avatar-grid" aria-label="成员头像展示"></div>
+      </div>
+
+      <div class="auto-preview-wrap">
+      <div class="auto-preview-head">
+        <div>
+          <div class="auto-preview-title">今日榜单</div>
+          <div class="auto-preview-desc">表格标题与数据统一居中展示，默认仅突出核心列；本周、本月涨幅等扩展列按需开启。</div>
+        </div>
+      </div>
+      <div class="actions" style="align-items:center; margin-bottom:12px;">
         <label style="display:flex; align-items:center; gap:6px;">
           <input type="checkbox" id="autoToggleCollect" onchange="refreshAutoTableDisplay()" /> 收藏数
         </label>
@@ -223,9 +268,12 @@
       <div id="autoPreview" class="auto-preview">
         <div class="muted">正在等待数据...</div>
       </div>
+      </div>
     </div>
 
-    <div id="tab-manual" class="tab-panel" role="tabpanel" aria-labelledby="tab-manual-btn">
+    <details id="manualTools" class="manual-tools">
+    <summary>低频数据工具</summary>
+    <div class="manual-tools-body">
     <div class="grid">
       <div class="card">
         <label>当日日期</label>
@@ -309,6 +357,9 @@
       </div>
       <span id="lastSyncTime" style="font-size:12px; color:var(--text-muted);">最后同步时间：—</span>
     </div>
+
+    </div>
+    </details>
 
     <!-- 页脚LOGO（图片加载失败时显示回退文本） -->
     <div class="footer-logo" role="contentinfo" aria-label="站点Logo">
@@ -604,7 +655,7 @@ try{
   document.head.appendChild(style);
 }catch(e){}
 // API 基址：使用 Pages Functions 代理（会自动添加 CORS 头）
-const API_BASE = 'https://api.dailygh4.com';
+const API_BASE = '';
 let currentTab = 'auto';
 let autoTabState = { loading: false, lastFetched: 0 };
 
@@ -643,9 +694,8 @@ function initTabSwitcher(){
       // 这样有缓存时可以立即显示，后台再异步更新
       activateTab('auto', { force: false, suppressScroll: true });
     };
-
+    
     // 减少延迟：从 800-1000ms 降至 100ms，让用户更快看到内容
-    // 注意：移动端activateAutoTab内部会检测并直接返回，不会触发自动刷新
     if (window.requestIdleCallback) {
       requestIdleCallback(activateAutoTab, { timeout: 100 });
     } else {
@@ -710,6 +760,25 @@ function updateAutoStatus(state, message){
   }
 }
 
+function updateAutoHeroMeta(meta){
+  const latestDateEl = document.getElementById('autoLatestDate');
+  const latestTimeEl = document.getElementById('autoLatestTime');
+  const prevDateEl = document.getElementById('autoPrevDate');
+  const lastSyncEl = document.getElementById('autoLastSync');
+  const latestDisplay = meta?.latestIso ? formatDateTimeForDisplay(meta.latestIso) : (meta?.latestDate || '—');
+  const prevDisplay = meta?.prevIso ? formatDateTimeForDisplay(meta.prevIso) : (meta?.prevDate || '—');
+  const latestParts = String(latestDisplay || '—').split(' ');
+  const latestDateText = latestParts[0] || '—';
+  const latestTimeText = latestParts[1] || '—';
+
+  if(latestDateEl) latestDateEl.textContent = latestDateText;
+  if(latestTimeEl) latestTimeEl.textContent = latestTimeText;
+  if(prevDateEl) prevDateEl.textContent = prevDisplay || '—';
+  if(lastSyncEl){
+    lastSyncEl.textContent = meta?.lastSync ? new Date(meta.lastSync).toLocaleString('zh-CN',{ hour12:false }) : '—';
+  }
+}
+
 function syncPayloadToLocal(payload){
   if(!payload || typeof payload !== 'object') return;
   const rawMap = payload.memberRaw || {};
@@ -750,11 +819,8 @@ function formatNumberDisplay(val, opts){
 // 自动模式的渲染数据缓存（用于复选框切换时重新渲染）
 let lastAutoRows = [];
 let lastAutoMeta = {};
-let autoTableCurrentPage = 1; // 当前页码
 
-// 分页渲染：只渲染可视区域数据
-function renderAutoTable(rows, meta, resetPage = false){
-  if(resetPage) autoTableCurrentPage = 1;
+function renderAutoTable(rows, meta){
   const container = document.getElementById('autoPreview');
   if(!container){ return; }
   
@@ -781,42 +847,20 @@ function renderAutoTable(rows, meta, resetPage = false){
   const flameThreshold = 3000;
   
   const rangeHtml = `<div class="range-bar">日期区间：${prevDisplay || '—'} ~ ${latestDisplay || '—'}</div>`;
-
-  // 分页配置：移动端每页30条，电脑端每页50条
-  const itemsPerPage = window.__isMobile ? 30 : 50;
-  const totalItems = rows.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  // 确保页码在有效范围内
-  if(autoTableCurrentPage > totalPages) autoTableCurrentPage = totalPages;
-  if(autoTableCurrentPage < 1) autoTableCurrentPage = 1;
-
-  const startIndex = (autoTableCurrentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const currentPageRows = rows.slice(startIndex, endIndex);
-
-  // 分页控件HTML
-  const paginationHtml = totalPages > 1 ? `
-    <div class="pagination" style="display:flex; justify-content:center; align-items:center; gap:12px; margin:12px 0; font-size:14px;">
-      <button onclick="changeAutoTablePage(${autoTableCurrentPage - 1})" ${autoTableCurrentPage <= 1 ? 'disabled' : ''} style="padding:6px 12px; border:1px solid #ddd; border-radius:4px; background:${autoTableCurrentPage <= 1 ? '#f5f5f5' : '#fff'}; cursor:${autoTableCurrentPage <= 1 ? 'not-allowed' : 'pointer'};">上一页</button>
-      <span>第 ${autoTableCurrentPage} / ${totalPages} 页 (共${totalItems}条)</span>
-      <button onclick="changeAutoTablePage(${autoTableCurrentPage + 1})" ${autoTableCurrentPage >= totalPages ? 'disabled' : ''} style="padding:6px 12px; border:1px solid #ddd; border-radius:4px; background:${autoTableCurrentPage >= totalPages ? '#f5f5f5' : '#fff'}; cursor:${autoTableCurrentPage >= totalPages ? 'not-allowed' : 'pointer'};">下一页</button>
-    </div>
-  ` : '';
-
+  
   // 动态构建表头（与手动模式一致）
   const headerCols = ['排名','姓名'];
-  if (showFans) headerCols.push('粉丝数');
   if (showCollect) headerCols.push('收藏数');
   if (showLike) headerCols.push('点赞数');
+  if (showFans) headerCols.push('粉丝数');
   headerCols.push('距上一名','今日涨幅');
   if (showWeekGrowth) headerCols.push('本周涨幅');
   if (showMonthGrowth) headerCols.push('本月涨幅');
   headerCols.push('排名变化');
-
+  
   let html = '<table><thead><tr>' + headerCols.map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
-
-  for(const r of currentPageRows){
+  
+  for(const r of rows){
     // 过滤掉张三和李四的数据
     const name = r.姓名 || r.realName || '';
     if(name === '张三' || name === '李四') continue;
@@ -838,18 +882,18 @@ function renderAutoTable(rows, meta, resetPage = false){
     const cells = [];
     cells.push(`<td>${r.排名}</td>`);
     cells.push(`<td>${r.姓名}</td>`);
-    
-    if (showFans) {
-      const fansCellStyle = `background-image: linear-gradient(to right, #FBBF24, #FCD34D); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
-      cells.push(`<td style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
-    }
     if (showCollect) cells.push(`<td>${r.收藏数 || ''}</td>`);
     if (showLike) cells.push(`<td>${r.点赞数 || ''}</td>`);
+    
+    if (showFans) {
+      const fansCellStyle = `background-image: linear-gradient(to right, #ff9500, #ffe082ed); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
+      cells.push(`<td style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
+    }
     
     cells.push(`<td>${diffPrevText}</td>`);
     
     // 今日涨幅（带火焰）
-    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${growthText}${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}</span></td>`);
+    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}${growthText}</span></td>`);
     
     // 本周涨幅
     if (showWeekGrowth) {
@@ -868,39 +912,24 @@ function renderAutoTable(rows, meta, resetPage = false){
     }
     
     cells.push(`<td><span class="${rankChangeCls}">${rankChangeText}</span></td>`);
-    html += `<tr${isEven ? ' class="zebra-even"' : ''}>${cells.join('')}</tr>`;
+    html += `<tr>${cells.join('')}</tr>`;
   }
   
   html += '</tbody></table>';
-
+  
   // 底部说明
   const noteHtml = `
     <div class="preview-notes" style="margin:12px 0 18px; padding-left:1ch; color:#606c76; font-size:12px; line-height:1.7;">
       <div><strong>说明：</strong></div>
       <div>1、今日涨幅：今日粉丝数 - 昨日粉丝数</div>
-      <div>2、本周涨幅：今日粉丝数 - 上周日粉丝数</div>
-      <div>3、本月涨幅：今日粉丝数 - 上月最后一天粉丝数</div>
+      <div>2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）</div>
+      <div>3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数</div>
       <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
-      <div>5、数据从 2025/10/10开始统计</div>
+      <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
     </div>`;
   
-  container.innerHTML = rangeHtml + paginationHtml + html + paginationHtml + noteHtml;
+  container.innerHTML = rangeHtml + html + noteHtml;
   try{ renderAvatarGrid(rows); }catch(_){}
-}
-
-// 分页切换函数
-function changeAutoTablePage(newPage){
-  if(newPage < 1) return;
-  const itemsPerPage = window.__isMobile ? 30 : 50;
-  const totalPages = Math.ceil(lastAutoRows.length / itemsPerPage);
-  if(newPage > totalPages) return;
-
-  autoTableCurrentPage = newPage;
-  renderAutoTable(lastAutoRows, lastAutoMeta);
-
-  // 滚动到表格顶部
-  const container = document.getElementById('autoPreview');
-  if(container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // 复选框切换时重新渲染（不重新拉取数据）
@@ -910,103 +939,15 @@ function refreshAutoTableDisplay(){
   }
 }
 
-// 创建完整的导出表格（不分页，包含所有数据）
-function createExportTable(rows, meta){
-  // 读取复选框状态
-  const showCollect = document.getElementById('autoToggleCollect')?.checked || false;
-  const showLike = document.getElementById('autoToggleLike')?.checked || false;
-  const showFans = document.getElementById('autoToggleFans')?.checked !== false;
-  const showWeekGrowth = document.getElementById('autoToggleWeekGrowth')?.checked || false;
-  const showMonthGrowth = document.getElementById('autoToggleMonthGrowth')?.checked || false;
-  
-  // 计算最大粉丝数用于进度条
-  const maxFans = Math.max(...rows.map(r => Number(r.粉丝数||0)).filter(n => n > 0), 1);
-  const flameThreshold = 3000; // 火焰图标阈值
-  
-  // 动态构建表头
-  const headerCols = ['排名','姓名'];
-  if (showFans) headerCols.push('粉丝数');
-  if (showCollect) headerCols.push('收藏数');
-  if (showLike) headerCols.push('点赞数');
-  headerCols.push('距上一名','今日涨幅');
-  if (showWeekGrowth) headerCols.push('本周涨幅');
-  if (showMonthGrowth) headerCols.push('本月涨幅');
-  headerCols.push('排名变化');
-
-  let html = '<table style="width:100%; border-collapse:collapse; font-size:14px;"><thead><tr>' + 
-    headerCols.map(h => `<th style="padding:10px 8px; background:#F1F5F9; color:#334155; font-weight:600; text-align:center; border:1px solid #E2E8F0;">${h}</th>`).join('') + 
-    '</tr></thead><tbody>';
-
-  for(const r of rows){
-    // 过滤掉张三和李四的数据
-    const name = r.姓名 || r.realName || '';
-    if(name === '张三' || name === '李四') continue;
-    const isEven = (Number(r.排名||0) % 2 === 0);
-    const fans = Number(r.粉丝数||0);
-    const pct = maxFans > 0 ? Math.round(fans / maxFans * 100) : 0;
-    
-    const growthRaw = (r.涨幅 === '' || r.涨幅 == null) ? null : Number(r.涨幅);
-    const growthText = (growthRaw == null) ? '' : (growthRaw === 0 ? '-' : (growthRaw > 0 ? `+${growthRaw}` : `${growthRaw}`));
-    const growthColor = (growthRaw == null || growthRaw === 0) ? '#334155' : (growthRaw > 0 ? '#10B981' : '#EF4444');
-    const showFlame = (growthRaw != null && growthRaw > flameThreshold);
-    
-    const rankChangeText = r.排名变化 === '持平' ? '-' : (r.排名变化 || '');
-    const rankChangeColor = rankChangeText.startsWith('上升') ? '#10B981' : (rankChangeText.startsWith('下降') ? '#EF4444' : '#334155');
-    
-    const diffPrevRaw = (r['与前一名差值'] === '' || r['与前一名差值'] == null) ? null : Number(r['与前一名差值']);
-    const diffPrevText = (diffPrevRaw == null) ? '' : (diffPrevRaw === 0 ? '-' : `${diffPrevRaw}`);
-    
-    const bgColor = isEven ? '#ffffff' : '#F8FAFC';
-    const cells = [];
-    
-    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${r.排名}</td>`);
-    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${r.姓名}</td>`);
-    
-    if (showFans) {
-      const fansCellStyle = `background: linear-gradient(to right, #FBBF24 ${pct}%, transparent ${pct}%); padding:8px; text-align:center; border:1px solid #E2E8F0;`;
-      cells.push(`<td style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
-    }
-    if (showCollect) cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${r.收藏数 || ''}</td>`);
-    if (showLike) cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${r.点赞数 || ''}</td>`);
-    
-    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor};">${diffPrevText}</td>`);
-    
-    // 今日涨幅
-    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor}; color:${growthColor}; font-weight:600;">${growthText}${showFlame ? ' 🔥' : ''}</td>`);
-    
-    // 本周涨幅
-    if (showWeekGrowth) {
-      const wgRaw = (r['本周涨幅'] === '' || r['本周涨幅'] == null) ? null : Number(r['本周涨幅']);
-      const wgText = (wgRaw == null) ? '' : (wgRaw === 0 ? '-' : (wgRaw > 0 ? `+${wgRaw}` : `${wgRaw}`));
-      const wgColor = (wgRaw == null || wgRaw === 0) ? '#334155' : (wgRaw > 0 ? '#10B981' : '#EF4444');
-      cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor}; color:${wgColor};">${wgText}</td>`);
-    }
-    
-    // 本月涨幅
-    if (showMonthGrowth) {
-      const mgRaw = (r['本月涨幅'] === '' || r['本月涨幅'] == null) ? null : Number(r['本月涨幅']);
-      const mgText = (mgRaw == null) ? '' : (mgRaw === 0 ? '-' : (mgRaw > 0 ? `+${mgRaw}` : `${mgRaw}`));
-      const mgColor = (mgRaw == null || mgRaw === 0) ? '#334155' : (mgRaw > 0 ? '#10B981' : '#EF4444');
-      cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor}; color:${mgColor};">${mgText}</td>`);
-    }
-    
-    cells.push(`<td style="padding:8px; text-align:center; border:1px solid #E2E8F0; background:${bgColor}; color:${rankChangeColor};">${rankChangeText}</td>`);
-    html += `<tr>${cells.join('')}</tr>`;
-  }
-  
-  html += '</tbody></table>';
-  
-  // 添加标题
-  const date = meta?.latestDate || new Date().toISOString().split('T')[0];
-  const titleHtml = `<div style="text-align:center; font-size:18px; font-weight:600; color:#1e293b; padding:16px; background:#F8FAFC; border-bottom:2px solid #E2E8F0;">高会排行榜 - ${date}</div>`;
-  
-  return titleHtml + html;
-}
-
 // 导出自动模式的图片
 async function exportAutoImage(){
   if(!lastAutoRows || !lastAutoRows.length){
     alert('暂无数据可导出');
+    return;
+  }
+  const container = document.getElementById('autoPreview');
+  if(!container){
+    alert('无法找到预览容器');
     return;
   }
   
@@ -1020,7 +961,7 @@ async function exportAutoImage(){
   const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
   
   // 显示加载提示
-  showSuccess('正在准备导出，请稍候...');
+  showSuccess('正在加载导出工具，请稍候...');
   
   try {
     // 按需加载 html2canvas
@@ -1031,39 +972,39 @@ async function exportAutoImage(){
     return;
   }
   
-  showSuccess(isMobile ? '正在生成完整表格图片...' : '正在生成高清完整表格...');
+  showSuccess('正在生成图片，请稍候...');
+  container.classList.add('export-png');
   
-  // 创建临时容器用于导出
-  const exportContainer = document.createElement('div');
-  exportContainer.id = 'export-full-table';
-  exportContainer.style.cssText = 'position:absolute; left:-9999px; top:0; width:1200px; background:#ffffff; padding:20px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.1);';
-  exportContainer.innerHTML = createExportTable(lastAutoRows, lastAutoMeta);
-  document.body.appendChild(exportContainer);
-  
-  // 优化 scale：移动端使用更低的分辨率以提升速度
+  // 优化 scale：根据设备像素比和屏幕大小动态调整
   const devicePixelRatio = window.devicePixelRatio || 1;
   const optimalScale = isMobile 
-    ? 1.0  // 移动端使用 1.0 倍，大幅提升速度
-    : Math.min(devicePixelRatio, 2.0);  // 桌面端最高 2 倍
+    ? Math.min(devicePixelRatio, 1.2)  // 移动端进一步降低
+    : Math.min(devicePixelRatio, 1.5);  // 桌面端也降低
   
-  html2canvas(exportContainer, {
+  html2canvas(container, {
     backgroundColor: '#ffffff',
-    scale: optimalScale,
+    scale: optimalScale, // 优化后的 scale
     logging: false,
     useCORS: true,
     allowTaint: false,
-    foreignObjectRendering: false,
-    removeContainer: false,
-    imageTimeout: 0,
-    width: 1240,
-    height: exportContainer.scrollHeight + 40,
-    windowWidth: 1240,
-    windowHeight: exportContainer.scrollHeight + 40
+    foreignObjectRendering: false, // 禁用 foreignObject 以提高性能
+    removeContainer: false, // 保留容器
+    imageTimeout: 0, // 图片超时设为 0（不等待外部图片）
+    ignoreElements: function(element) {
+      // 忽略不可见元素以提高性能
+      return element.style.display === 'none' || element.style.visibility === 'hidden';
+    },
+    onclone: function(clonedDoc) {
+      // 确保克隆的文档中所有样式都正确应用
+      const clonedContainer = clonedDoc.getElementById('autoPreview');
+      if(clonedContainer) {
+        clonedContainer.style.transform = 'none';
+        clonedContainer.style.position = 'relative';
+      }
+    }
   }).catch(err => {
     if(btn) btn.disabled = false;
-    // 清理临时容器
-    const tempContainer = document.getElementById('export-full-table');
-    if(tempContainer) tempContainer.remove();
+    container.classList.remove('export-png');
     console.error('html2canvas 错误:', err);
     if(isWeChat) {
       showError('图片生成失败，请重试。错误：' + (err.message || '未知错误'));
@@ -1072,100 +1013,164 @@ async function exportAutoImage(){
     }
   }).then(canvas => {
     if(btn) btn.disabled = false;
-    // 清理临时容器
-    const tempContainer = document.getElementById('export-full-table');
-    if(tempContainer) tempContainer.remove();
     if(!canvas) return;
+    container.classList.remove('export-png');
     
     const date = lastAutoMeta?.latestDate || new Date().toISOString().split('T')[0];
     const fileName = `高会排行榜-${date}.png`;
     const dataUrl = canvas.toDataURL('image/png');
     
-    // 所有浏览器：弹窗展示高清图片
-    try {
-      // 移除之前可能存在的弹窗
-      const existingModal = document.getElementById('export-image-modal');
-      if(existingModal) {
-        existingModal.remove();
-      }
-      
-      // 创建弹窗容器
-      const modal = document.createElement('div');
-      modal.id = 'export-image-modal';
-      modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
-      
-      // 创建图片元素
-      const img = document.createElement('img');
-      img.src = dataUrl;
-      img.style.cssText = 'max-width:100%; max-height:75vh; height:auto; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5); display:block; background:#fff;';
-      img.alt = fileName;
-      
-      // 图片加载完成提示
-      img.onload = function() {
-        console.log('导出图片：图片加载成功');
-      };
-      img.onerror = function(e) {
-        console.error('导出图片：图片加载失败', e);
-        showError('图片生成失败，请重试');
-        modal.remove();
-      };
-      
-      // 创建操作按钮区域
-      const btnArea = document.createElement('div');
-      btnArea.style.cssText = 'display:flex; gap:12px; margin-top:20px; flex-wrap:wrap; justify-content:center;';
-      
-      // 下载按钮
-      const downloadBtn = document.createElement('button');
-      downloadBtn.textContent = '💾 下载图片';
-      downloadBtn.style.cssText = 'padding:12px 24px; font-size:16px; background:linear-gradient(135deg, #6366F1 0%, #4c6ef5 100%); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:500; box-shadow:0 4px 6px -1px rgba(76, 110, 245, 0.2);';
-      downloadBtn.onclick = function() {
-        const link = document.createElement('a');
-        link.download = fileName;
-        link.href = dataUrl;
-        link.click();
-        showSuccess('图片已下载');
-      };
-      
-      // 关闭按钮
-      const closeBtn = document.createElement('button');
-      closeBtn.textContent = '✕ 关闭';
-      closeBtn.style.cssText = 'padding:12px 24px; font-size:16px; background:#F1F5F9; color:#334155; border:1px solid #E2E8F0; border-radius:8px; cursor:pointer; font-weight:500;';
-      closeBtn.onclick = function() {
-        modal.remove();
-        document.body.style.overflow = '';
-      };
-      
-      // 提示文字
-      const tip = document.createElement('div');
-      tip.textContent = '💡 提示：可右键图片另存为，或点击下载按钮保存';
-      tip.style.cssText = 'color:#fff; font-size:14px; margin-top:16px; opacity:0.8;';
-      
-      btnArea.appendChild(downloadBtn);
-      btnArea.appendChild(closeBtn);
-      
-      modal.appendChild(img);
-      modal.appendChild(btnArea);
-      modal.appendChild(tip);
-      document.body.appendChild(modal);
-      
-      // 点击背景关闭
-      modal.onclick = function(e) {
-        if(e.target === modal) {
-          modal.remove();
-          document.body.style.overflow = '';
+    // 微信浏览器：直接在页面显示图片，让用户长按保存
+    if(isWeChat) {
+      try {
+        // 移除之前可能存在的导出图片容器
+        const existingExport = document.getElementById('wechat-export-image');
+        if(existingExport) {
+          existingExport.remove();
         }
-      };
-      
-      // 防止背景滚动
-      document.body.style.overflow = 'hidden';
-      
-      console.log('导出图片：弹窗已创建，dataUrl长度:', dataUrl.length);
-      return;
-    } catch(e) {
-      console.error('导出图片异常:', e);
-      showError('导出失败：' + (e.message || '未知错误'));
+        
+        // 创建图片显示容器
+        const exportContainer = document.createElement('div');
+        exportContainer.id = 'wechat-export-image';
+        exportContainer.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgb(0 0 0 / 80%); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
+        
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.cssText = 'max-width:100%; max-height:85vh; height:auto; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5); display:block;';
+        img.alt = fileName;
+        img.setAttribute('crossorigin', 'anonymous');
+        
+        // 确保图片加载完成
+        img.onload = function() {
+          console.log('微信导出：图片加载成功');
+        };
+        img.onerror = function(e) {
+          console.error('微信导出：图片加载失败', e);
+          showError('图片生成失败，请重试');
+          exportContainer.remove();
+        };
+        
+        const tip = document.createElement('div');
+        tip.textContent = '长按图片保存到相册';
+        tip.style.cssText = 'color:#fff; font-size:16px; margin-top:20px; padding:12px 24px; background:rgba(76,110,245,0.8); border-radius:24px; font-weight:500;';
+        
+        const closeBtn = document.createElement('div');
+        closeBtn.textContent = '✕ 关闭';
+        closeBtn.style.cssText = 'position:absolute; top:20px; right:20px; color:#fff; font-size:18px; padding:10px 20px; background:rgba(255,255,255,0.3); border-radius:20px; cursor:pointer; user-select:none;';
+        closeBtn.onclick = function() {
+          exportContainer.remove();
+        };
+        closeBtn.ontouchstart = function() {
+          exportContainer.remove();
+        };
+        
+        exportContainer.appendChild(img);
+        exportContainer.appendChild(tip);
+        exportContainer.appendChild(closeBtn);
+        document.body.appendChild(exportContainer);
+        
+        // 点击背景关闭
+        exportContainer.onclick = function(e) {
+          if(e.target === exportContainer) {
+            exportContainer.remove();
+          }
+        };
+        
+        // 防止滚动
+        document.body.style.overflow = 'hidden';
+        exportContainer.onremove = function() {
+          document.body.style.overflow = '';
+        };
+        
+        console.log('微信导出：图片容器已创建，dataUrl长度:', dataUrl.length);
+        return;
+      } catch(e) {
+        console.error('微信导出异常:', e);
+        showError('导出失败：' + (e.message || '未知错误'));
+        container.classList.remove('export-png');
+        return;
+      }
+    }
+    
+    // 移动端使用不同的下载方式
+    if(isMobile) {
+      // 移动端：优先尝试下载，如果失败则打开新窗口显示图片
+      // 先尝试使用 toBlob 和下载链接
+      canvas.toBlob(function(blob) {
+        if(!blob) {
+          alert('导出图片失败，请重试');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        
+        // 尝试创建下载链接
+        try {
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = url;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          
+          // 触发点击（在用户手势事件中调用，应该可以工作）
+          const clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          });
+          link.dispatchEvent(clickEvent);
+          
+          // 延迟清理
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }, 100);
+          
+          // 如果下载失败，打开新窗口显示图片（用户可长按保存）
+          setTimeout(() => {
+            const imgWindow = window.open();
+            if(imgWindow) {
+              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+              imgWindow.document.close();
+              showSuccess('图片已打开，请长按图片保存');
+            } else {
+              // 如果弹窗被阻止，直接显示图片URL
+              showSuccess('请长按下方链接保存图片：<br><a href="' + url + '" download="' + fileName + '" style="color:#4c6ef5; text-decoration:underline;">点击下载图片</a>');
+            }
+          }, 500);
+        } catch(e) {
+          // 如果下载失败，打开新窗口显示图片
+          const imgWindow = window.open();
+          if(imgWindow) {
+            imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+            imgWindow.document.close();
+            showSuccess('图片已打开，请长按图片保存');
+          } else {
+            // 如果弹窗被阻止，使用 data URL
+            const imgWindow = window.open();
+            if(imgWindow) {
+              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${dataUrl}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
+              imgWindow.document.close();
+              showSuccess('图片已打开，请长按图片保存');
+            } else {
+              showError('无法打开图片，请检查浏览器弹窗设置');
+            }
+          }
+        }
+      }, 'image/png');
+    } else {
+      // 桌面端：使用 toDataURL
+    const link = document.createElement('a');
+    const date = lastAutoMeta?.latestDate || new Date().toISOString().split('T')[0];
+    link.download = `高会排行榜-${date}.png`;
+    link.href = canvas.toDataURL('image/png');
+      link.style.display = 'none';
+      document.body.appendChild(link);
+    link.click();
+      document.body.removeChild(link);
+      showSuccess('图片已导出');
     }
   }).catch(err => {
+    container.classList.remove('export-png');
     console.error('导出图片失败:', err);
     alert('导出图片失败：' + (err.message || err) + '\n请尝试刷新页面后重试');
   });
@@ -1181,10 +1186,6 @@ async function refreshAutoTab(force){
     autoTabState.loading = false;
   }
   const btn = document.getElementById('autoRefreshBtn');
-  const latestDateEl = document.getElementById('autoLatestDate');
-  const prevDateEl = document.getElementById('autoPrevDate');
-  const lastSyncEl = document.getElementById('autoLastSync');
-  
   // 智能缓存策略：非强制刷新时，先使用本地缓存快速显示，后台异步更新
   // 强制刷新时，直接从服务器获取最新数据
   
@@ -1219,9 +1220,13 @@ async function refreshAutoTab(force){
             latestIso,
             prevIso
           });
-          if(latestDateEl) latestDateEl.textContent = cachedLatestDate || '—';
-          if(prevDateEl) prevDateEl.textContent = cachedPrevDate || '—';
-          if(lastSyncEl) lastSyncEl.textContent = cacheMeta?.lastUpdate ? new Date(cacheMeta.lastUpdate).toLocaleString('zh-CN',{ hour12:false }) : '—';
+          updateAutoHeroMeta({
+            latestDate: cachedLatestDate,
+            prevDate: cachedPrevDate,
+            latestIso,
+            prevIso,
+            lastSync: cacheMeta?.lastUpdate || null
+          });
           updateAutoStatus('info', '已加载缓存数据，正在后台检查更新...');
         });
         
@@ -1239,8 +1244,8 @@ async function refreshAutoTab(force){
     btn?.setAttribute('disabled','disabled');
     updateAutoStatus('info', force ? '正在从服务器获取最新数据...' : '正在检查更新...');
     
-    // 优化：添加超时控制和指数退避重试机制
-    const fetchWithTimeout = (url, options = {}, timeout = 15000) => {
+    // 优化：添加超时控制，避免长时间等待
+    const fetchWithTimeout = (url, options = {}, timeout = 10000) => {
       return Promise.race([
         fetch(url, options),
         new Promise((_, reject) => 
@@ -1253,22 +1258,6 @@ async function refreshAutoTab(force){
         }
         throw err;
       });
-    };
-    
-    // 新增：指数退避重试机制
-    const fetchWithRetry = async (url, options = {}, maxRetries = 3, baseDelay = 1000) => {
-      for (let i = 0; i < maxRetries; i++) {
-        try {
-          return await fetchWithTimeout(url, options);
-        } catch (err) {
-          console.warn(`[fetchWithRetry] 第 ${i + 1}/${maxRetries} 次请求失败:`, url, err.message);
-          if (i === maxRetries - 1) throw err;
-          // 指数退避：1s, 2s, 4s
-          const delay = baseDelay * Math.pow(2, i);
-          console.log(`[fetchWithRetry] ${delay}ms 后重试...`);
-          await new Promise(r => setTimeout(r, delay));
-        }
-      }
     };
     
     // 优先从 history 接口获取所有日期，找到真正的"最新"日期（确保显示真正的最新数据）
@@ -1298,21 +1287,21 @@ async function refreshAutoTab(force){
     // 并行发起 latest 和 history 请求
     const timestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
     
-    // latest API：快速获取最新数据（优先）- 使用重试机制
-    latestApiPromise = fetchWithRetry(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
+    // latest API：快速获取最新数据（优先）
+    latestApiPromise = fetchWithTimeout(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
       ...cacheOptions,
       method: 'GET'
-    }, 3, 1000).catch(err => {
-      console.warn('[refreshAutoTab] latest API 请求失败（已重试3次）:', err);
+    }, 5000).catch(err => {
+      console.warn('[refreshAutoTab] latest API 请求失败:', err);
       return null;
     });
     
-    // history API：后台获取历史日期列表（不阻塞）- 使用重试机制
-    historyApiPromise = fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${timestamp}`, { 
+    // history API：后台获取历史日期列表（不阻塞）
+    historyApiPromise = fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${timestamp}`, { 
       ...cacheOptions,
       method: 'GET'
-    }, 3, 1000).catch(err => {
-      console.warn('[refreshAutoTab] history API 请求失败（已重试3次）:', err);
+    }, 3000).catch(err => {
+      console.warn('[refreshAutoTab] history API 请求失败:', err);
       return null;
     });
     
@@ -1405,9 +1394,9 @@ async function refreshAutoTab(force){
             }
           }
           
-          // 第二步：并行查询所有需要查询的日期（移动端降速：3个，电脑端：8个）
+          // 第二步：并行查询所有需要查询的日期（最多8个，全部并行查询）
           if(datesToQuery.length > 0){
-            const maxConcurrent = window.__isMobile ? 3 : 8; // 移动端降速，避免网络阻塞
+            const maxConcurrent = 8; // 最多同时查询8个
             const toQueryNow = datesToQuery.slice(0, maxConcurrent);
             // 优化：不再查询剩余日期，只在需要时（计算涨幅时）再查询
             if(datesToQuery.length > maxConcurrent){
@@ -1418,10 +1407,10 @@ async function refreshAutoTab(force){
             
             const queryPromises = toQueryNow.map(checkDate => {
               const dateTimestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
-              return fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(checkDate)}${dateTimestamp}`, { 
+              return fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(checkDate)}${dateTimestamp}`, { 
                 ...cacheOptions,
                 method: 'GET'
-              }, 3, 1000).then(dateHistoryResp => {
+              }, 3000).then(dateHistoryResp => { // 缩短超时：5秒→3秒
                 if(dateHistoryResp.ok){
                   return dateHistoryResp.json().then(dateHistoryPayload => {
                     const checkRows = Array.isArray(dateHistoryPayload.rows) ? dateHistoryPayload.rows : [];
@@ -1531,10 +1520,10 @@ async function refreshAutoTab(force){
     if(!latestDate || !memberData[latestDate] || !memberData[latestDate].length){
       try{
         const timestamp = force ? `&_t=${Date.now()}&_r=${Math.random()}` : '';
-        const resp = await fetchWithRetry(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
+        const resp = await fetchWithTimeout(`${API_BASE}/api/archives/latest?client_id=${encodeURIComponent(clientId)}&raw=1${timestamp}`, { 
           ...cacheOptions,
           method: 'GET'
-        }, 3, 1000);
+        }, 5000); // 优化：添加超时控制：5秒，快速失败
         if(resp.ok){
           const payload = await resp.json();
           syncPayloadToLocal(payload);
@@ -1575,27 +1564,10 @@ async function refreshAutoTab(force){
     
     autoTabState.lastFetched = Date.now();
     
-    // 强化缓存优先策略：如果服务器没有返回有效日期，尝试从本地缓存获取最新日期
     if(!latestDate){
-      console.warn('[refreshAutoTab] 服务器未返回有效日期，尝试从本地缓存获取...');
-      const cachedDates = CacheManager.getCachedDates().sort();
-      if(cachedDates && cachedDates.length > 0){
-        // 使用本地缓存的最新日期
-        latestDate = cachedDates[cachedDates.length - 1];
-        console.log(`[refreshAutoTab] ✅ 使用本地缓存的最新日期: ${latestDate}`);
-        // 从缓存加载数据
-        const cachedRows = getStoredRowsForDate(latestDate);
-        if(cachedRows && cachedRows.length > 0){
-          memberData[latestDate] = cachedRows;
-          console.log(`[refreshAutoTab] ✅ 从本地缓存加载数据，条数: ${cachedRows.length}`);
-        }
-        // 显示提示但继续渲染
-        updateAutoStatus('info', '已使用本地缓存数据（服务器连接失败）');
-      } else {
-        renderAutoTable([], {});
-        updateAutoStatus('error', '服务器未返回有效日期数据，且本地无缓存');
-        return;
-      }
+      renderAutoTable([], {});
+      updateAutoStatus('error', '服务器未返回有效日期数据');
+      return;
     }
     // 优化：只确保必要日期的数据覆盖（最新日期、前一日）
     // 基准日期（本周涨幅、本月涨幅）改为按需查询，不在这里查询
@@ -1612,10 +1584,10 @@ async function refreshAutoTab(force){
     if(!allHistoryDates || allHistoryDates.length === 0){
       // 如果第一次调用失败，才尝试获取（添加超时控制）
       try{
-        const allHistoryResp = await fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${force ? `&_t=${Date.now()}&_r=${Math.random()}` : ''}`, { 
+        const allHistoryResp = await fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}${force ? `&_t=${Date.now()}&_r=${Math.random()}` : ''}`, { 
           ...cacheOptions,
           method: 'GET'
-        }, 3, 1000);
+        }, 3000); // 优化：缩短超时：5秒→3秒，快速失败
         if(allHistoryResp.ok){
           const allHistoryPayload = await allHistoryResp.json();
           allHistoryDates = (allHistoryPayload.dates || Object.keys(allHistoryPayload.memberData || {})).sort();
@@ -1662,20 +1634,20 @@ async function refreshAutoTab(force){
         const timestamp = force ? `&_t=${Date.now()}` : '';
         const timestamp2 = force ? `&_t=${Date.now()}` : '';
         
-        const prevPromise = fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevDate)}${timestamp}`, { 
+        const prevPromise = fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevDate)}${timestamp}`, { 
           ...cacheOptions,
           method: 'GET'
-        }, 3, 1000).catch(err => {
-          console.warn(`[refreshAutoTab] 前一日查询失败（已重试3次）:`, err);
+        }, 3000).catch(err => {
+          console.warn(`[refreshAutoTab] 前一日查询失败:`, err);
           return null;
         });
         
         const prevPrevPromise = (!cachedPrevPrevRows || cachedPrevPrevRows.length === 0 || force) 
-          ? fetchWithRetry(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevPrevDate)}${timestamp2}`, { 
+          ? fetchWithTimeout(`${API_BASE}/api/archives/history?client_id=${encodeURIComponent(clientId)}&date=${encodeURIComponent(prevPrevDate)}${timestamp2}`, { 
               ...cacheOptions,
               method: 'GET'
-            }, 3, 1000).catch(err => {
-              console.warn(`[refreshAutoTab] 前前一日查询失败（已重试3次）:`, err);
+            }, 3000).catch(err => {
+              console.warn(`[refreshAutoTab] 前前一日查询失败:`, err);
               return null;
             })
           : Promise.resolve(null);
@@ -1834,9 +1806,13 @@ async function refreshAutoTab(force){
           latestIso: latestIsoFallback,
           prevIso: prevIsoFallback
       });
-      if(latestDateEl) latestDateEl.textContent = displayDate || '—';
-      if(prevDateEl) prevDateEl.textContent = displayPrevDate || '—';
-      if(lastSyncEl) lastSyncEl.textContent = new Date(autoTabState.lastFetched).toLocaleString('zh-CN',{ hour12:false });
+      updateAutoHeroMeta({
+        latestDate: displayDate,
+        prevDate: displayPrevDate,
+        latestIso: latestIsoFallback,
+        prevIso: prevIsoFallback,
+        lastSync: autoTabState.lastFetched
+      });
       return;
       } else {
         // 有memberData但todayRows为空，说明可能是dedupeLatestRows导致的，重新从memberData提取
@@ -1862,9 +1838,13 @@ async function refreshAutoTab(force){
         latestIso,
         prevIso
       });
-      if(latestDateEl) latestDateEl.textContent = latestDate || '—';
-      if(prevDateEl) prevDateEl.textContent = prevDate || '—';
-      if(lastSyncEl) lastSyncEl.textContent = new Date(autoTabState.lastFetched).toLocaleString('zh-CN',{ hour12:false });
+      updateAutoHeroMeta({
+        latestDate,
+        prevDate,
+        latestIso,
+        prevIso,
+        lastSync: autoTabState.lastFetched
+      });
       updateAutoStatus('success', '已获取最新服务器数据');
     });
   }catch(err){
@@ -2766,12 +2746,11 @@ function renderPreviewTable(rows){
   if(!rows || !rows.length){ container.innerHTML = rangeHtml + '<div class="muted">暂无数据预览</div>'; return; }
   // 计算粉丝数最大值用于数据条宽度
   const maxFans = Math.max(...rows.map(r=>Number(r.粉丝数||0)));
-  // 动态构建表头，顺序：排名 姓名 粉丝数 收藏数 点赞数 距上一名 今日涨幅 本周涨幅 本月涨幅 排名变化
+  // 动态构建表头，顺序：排名 姓名 收藏数 点赞数 粉丝数 距上一名 今日涨幅 本周涨幅 本月涨幅 排名变化
   const headerCols = ['排名','姓名'];
-  headerCols.push('粉丝数');
   if (showCollect) headerCols.push('收藏数');
   if (showLike) headerCols.push('点赞数');
-  headerCols.push('距上一名','今日涨幅');
+  headerCols.push('粉丝数','距上一名','今日涨幅');
   if (showWeekGrowth) headerCols.push('本周涨幅');
   if (showMonthGrowth) headerCols.push('本月涨幅');
   headerCols.push('排名变化');
@@ -2798,13 +2777,14 @@ function renderPreviewTable(rows){
     const cells = [];
     cells.push(`<td>${r.排名}</td>`);
     cells.push(`<td>${r.姓名}</td>`);
-    const fansCellStyle = `background-image: linear-gradient(to right, #FBBF24, #FCD34D); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
-    cells.push(`<td style="${fansCellStyle}">${fans}</td>`);
     if (showCollect) cells.push(`<td>${r.收藏数}</td>`);
     if (showLike) cells.push(`<td>${r.点赞数}</td>`);
+    const fansCellStyleBase = `background-image: linear-gradient(to right, #ff9500, #ffe082ed); background-size: ${pct}% 100%; background-repeat: no-repeat;`;
+    const fansCellStyle = fansCellStyleBase;
+    cells.push(`<td style="${fansCellStyle}">${fans}</td>`);
     cells.push(`<td>${diffPrevText}</td>`);
     // 今日涨幅（带火焰）
-    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${growthText}${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}</span></td>`);
+    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${showFlame ? `<span class="flame-icon flame-left" aria-hidden="true" title="今日涨幅：${growthRaw}">🔥</span>` : ''}${growthText}</span></td>`);
     // 本周涨幅（不回退，无火焰）
     if (showWeekGrowth) {
       const wgRaw = (r['本周涨幅'] === '' || r['本周涨幅'] == null) ? null : Number(r['本周涨幅']);
@@ -2820,7 +2800,7 @@ function renderPreviewTable(rows){
       cells.push(`<td><span class="growth-cell ${mgCls}">${mgText}</span></td>`);
     }
     cells.push(`<td><span class=\"${rankChangeCls}\">${rankChangeText}</span></td>`);
-    html += `<tr${isEven ? ' class="zebra-even"' : ''}>${cells.join('')}</tr>`;
+    html += `<tr>${cells.join('')}</tr>`;
   }
   html += '</tbody></table>';
   // 底部说明（导出PNG时一并包含）
@@ -2828,10 +2808,10 @@ function renderPreviewTable(rows){
     <div class="preview-notes" style="margin:12px 0 18px; padding-left:1ch; color:#606c76; font-size:12px; line-height:1.7;">
       <div><strong>说明：</strong></div>
       <div>1、今日涨幅：今日粉丝数 - 昨日粉丝数</div>
-      <div>2、本周涨幅：今日粉丝数 - 上周日粉丝数</div>
-      <div>3、本月涨幅：今日粉丝数 - 上月最后一天粉丝数</div>
+      <div>2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）</div>
+      <div>3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数</div>
       <div>4、排名变化：与昨日排名对比，正数表示排名上升</div>
-      <div>5、数据从 2025/10/10开始统计</div>
+      <div>5、所有数据从 2025/10/10开始统计，在此之前的不支持查看</div>
     </div>`;
   container.innerHTML = rangeHtml + html + noteHtml;
 }
@@ -2931,12 +2911,6 @@ let showMonthGrowth = false;
 
 // 页面初始化：设置默认日期并尝试自动填充本地数据
 document.addEventListener('DOMContentLoaded', () => {
-  // 全局移动端检测，供多处使用
-  window.__isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if(window.__isMobile){
-    console.log('[init] 检测到移动端设备，将启用移动端优化策略');
-  }
-
   // 立即初始化 UI 元素，让页面快速可交互
   const todayInput = document.getElementById('todayDate');
   const yesterdayInput = document.getElementById('yesterdayDate');
@@ -2977,7 +2951,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   setTimeout(checkApiLater, 500);
 
-  // 定时自动刷新（自动模式）：每5分钟尝试一次
+  // 定时自动刷新（自动模式）：每小时尝试一次
   try {
     if (!window.__autoPullTimer) {
       const isOffline = () => {
@@ -2992,7 +2966,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isOffline()) return;
           refreshAutoTab(true); // 定时刷新时也强制从服务器获取最新数据
         } catch (_) { /* noop */ }
-      }, 300000);
+      }, 3600000);
     }
   } catch (_) { /* noop */ }
 
@@ -3390,10 +3364,9 @@ async function exportExcel(){
   });
   // 与网页表头顺序保持一致
   const headers = ['日期','排序','姓名'];
-  headers.push('粉丝数');
   if (showCollect) headers.push('收藏数');
   if (showLike) headers.push('点赞数');
-  headers.push('距上一名','今日涨幅');
+  headers.push('粉丝数','距上一名','今日涨幅');
   if (showWeekGrowth) headers.push('本周涨幅');
   if (showMonthGrowth) headers.push('本月涨幅');
   headers.push('排序变化');
@@ -3413,10 +3386,10 @@ async function exportExcel(){
     [''],
     [' 说明：'],
     [' 1、今日涨幅：今日粉丝数 - 昨日粉丝数'],
-    [' 2、本周涨幅：今日粉丝数 - 上周日粉丝数'],
-    [' 3、本月涨幅：今日粉丝数 - 上月最后一天粉丝数'],
+    [' 2、本周涨幅：今日粉丝数 - 上周最晚有数据的日期的粉丝数（或上周日）'],
+    [' 3、本月涨幅：今日粉丝数 - 上个月最晚有数据的日期的粉丝数'],
     [' 4、排名变化：与昨日排名对比，正数表示排名上升'],
-    [' 5、数据从 2025/10/10开始统计'],
+    [' 5、所有数据从 2025/10/10开始统计，在此之前的不支持查看'],
   ];
   XLSX.utils.sheet_add_aoa(ws, notes, { origin: -1 });
 
@@ -3792,7 +3765,7 @@ async function ensureDateCoverage(options){
   
   // 优化：限制并行请求数量，避免过多请求
   if(needFetch.length > 0){
-    const maxConcurrent = 3; // 降低并发数避免限流：5→3
+    const maxConcurrent = 5; // 提高并发数：3→5
     const toFetchNow = needFetch.slice(0, maxConcurrent);
     const toFetchLater = needFetch.slice(maxConcurrent);
     
@@ -4219,7 +4192,7 @@ async function exportImage(){
           // 创建图片显示容器
           const exportContainer = document.createElement('div');
           exportContainer.id = 'wechat-export-image';
-          exportContainer.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
+          exportContainer.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgb(0 0 0 / 80%); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
           
           const img = document.createElement('img');
           img.src = dataUrl;
