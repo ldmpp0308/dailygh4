@@ -451,11 +451,12 @@
     }
     .more-members .chk {
       display:flex;
-      align-items:center;
+      flex-direction: column;
+      align-items:stretch;
       justify-content:flex-start;
-      gap: 10px;
-      min-height: 46px;
-      padding: 0 14px;
+      gap: 12px;
+      min-height: 108px;
+      padding: 12px 14px;
       border-radius: 16px;
       border: 1px solid var(--member-accent, #dbe2ff);
       background: var(--member-bg, #f7f9ff);
@@ -465,19 +466,86 @@
       transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
       box-shadow: 0 8px 16px rgba(15, 23, 42, 0.04);
     }
-    .more-members .chk::before {
-      content:"";
+    .more-members .chk::before { content:none; }
+    .more-members .chk.active {
+      background: var(--member-bg-active, var(--member-bg, #eef2ff));
+      box-shadow: 0 12px 22px rgba(82,107,231,0.12);
+      transform: translateY(-1px);
+    }
+    .member-card-head {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 8px;
+      width:100%;
+      min-width:0;
+    }
+    .member-card-title {
+      display:flex;
+      align-items:flex-start;
+      gap: 8px;
+      min-width:0;
+    }
+    .member-card-dot {
       width: 10px;
       height: 10px;
+      margin-top: 4px;
       border-radius: 50%;
       flex-shrink: 0;
       background: var(--member-accent, #8a97ad);
       box-shadow: 0 0 0 4px rgba(255,255,255,0.7);
     }
-    .more-members .chk.active {
-      background: var(--member-bg-active, var(--member-bg, #eef2ff));
-      box-shadow: 0 12px 22px rgba(82,107,231,0.12);
-      transform: translateY(-1px);
+    .member-card-text {
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+      min-width:0;
+    }
+    .member-card-name {
+      font-size: 14px;
+      line-height: 1.2;
+      font-weight: 800;
+      color:#1f2a44;
+      word-break: break-all;
+    }
+    .member-card-nick {
+      font-size: 11px;
+      line-height: 1.2;
+      color:#6a778c;
+      word-break: break-all;
+    }
+    .member-card-stats {
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      width:100%;
+    }
+    .member-card-stat {
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+      padding: 8px 8px 7px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.68);
+      border: 1px solid rgba(255,255,255,0.86);
+      min-width:0;
+    }
+    .member-card-stat-label {
+      font-size: 11px;
+      line-height: 1;
+      color:#70809a;
+    }
+    .member-card-stat-value {
+      font-size: 13px;
+      line-height: 1.15;
+      font-weight: 800;
+      color:#1f2a44;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .more-members .chk.active .member-card-stat {
+      background: rgba(255,255,255,0.82);
     }
     .hide-text, .hide-text * { color: transparent !important; }
     .hide-controls { display: none !important; }
@@ -561,7 +629,11 @@
       .chart-legend-chip { min-height: 32px; padding: 0 10px; }
       .chart-wrap canvas { margin-top: 14px; }
       .more-members { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-      .more-members .chk { min-height: 42px; padding: 0 12px; border-radius: 14px; }
+      .more-members .chk { min-height: 100px; padding: 12px; border-radius: 14px; gap: 10px; }
+      .member-card-stats { gap: 5px; }
+      .member-card-stat { padding: 7px 6px; border-radius: 10px; }
+      .member-card-stat-label { font-size: 10px; }
+      .member-card-stat-value { font-size: 12px; }
       .footer-logo img { width: min(360px, 86vw); }
     }
     @media (max-width: 420px){
@@ -569,6 +641,7 @@
       .metrics-inline .metric-primary { grid-column: auto; }
       .more-members { grid-template-columns: 1fr; }
       .chart-title-row { flex-direction: column; }
+      .member-card-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
   </style>
   <!-- 引入 Chart.js 用于趋势可视化（离线） -->
@@ -903,12 +976,26 @@
     // 将 API 返回的行格式（含 info 嵌套）标准化为页面使用的平铺格式，避免展示为 0
     function normalizeMemberRow(r){
       if(!r || typeof r !== 'object') return null;
-      const info = r.info || {};
+      const data = r.data || {};
+      const info = r.info || data.info || {};
       const name = String(r.realName ?? r.姓名 ?? '').trim();
       if(!name) return null;
       const fans = Number(r.fansNum ?? r.粉丝数 ?? info.fansNum ?? info.粉丝数 ?? 0);
       const like = Number(r.likeNum ?? r.点赞数 ?? info.likeNum ?? info.点赞数 ?? 0);
       const collect = Number(r.collectNum ?? r.收藏数 ?? info.collectNum ?? info.收藏数 ?? 0);
+      const nickName = [
+        r.nickName, r.nickname,
+        data.nickName, data.nickname, data.nick,
+        info.nickName, info.nickname, info.nick
+      ].find(v => String(v ?? '').trim()) || '';
+      const avatarUrl = [
+        r.avatarUrl, r.headPortrait,
+        data.avatarUrl, data.headPortrait,
+        info.avatarUrl, info.headPortrait
+      ].find(v => String(v ?? '').trim()) || '';
+      const userIdRaw = [r.userId, data.userId, info.userId].find(v => v !== null && v !== undefined && String(v).trim() !== '');
+      const birthTsRaw = [r.birthTs, data.birthTs, info.birthTs].find(v => v !== null && v !== undefined && String(v).trim() !== '');
+      const birthTs = birthTsRaw != null && Number.isFinite(Number(birthTsRaw)) ? Number(birthTsRaw) : null;
       return {
         realName: name,
         姓名: name,
@@ -918,7 +1005,12 @@
         点赞数: like,
         collectNum: collect,
         收藏数: collect,
-        startedDateTime: r.startedDateTime ?? null
+        nickName,
+        avatarUrl,
+        headPortrait: avatarUrl,
+        userId: userIdRaw ?? null,
+        birthTs,
+        startedDateTime: r.startedDateTime ?? data.startedDateTime ?? null
       };
     }
 
@@ -1151,14 +1243,24 @@
                   const curLike = Number(cur.likeNum != null ? cur.likeNum : cur.点赞数 || 0);
                   const curCollect = Number(cur.collectNum != null ? cur.collectNum : cur.收藏数 || 0);
                   if(curFans !== fans || curLike !== like || curCollect !== collect){
-                    rows[idx] = { realName: name, fansNum: fans, likeNum: like, collectNum: collect };
+                    rows[idx] = {
+                      ...cur,
+                      realName: name,
+                      姓名: name,
+                      fansNum: fans,
+                      粉丝数: fans,
+                      likeNum: like,
+                      点赞数: like,
+                      collectNum: collect,
+                      收藏数: collect
+                    };
                     updatedForDate += 1; overriddenRecords += 1;
                   }
                 }
                 // 非强制模式：保留本地，不覆盖
                 continue;
               } else {
-                rows.push({ realName: name, fansNum: fans, likeNum: like, collectNum: collect });
+                rows.push({ realName: name, 姓名: name, fansNum: fans, 粉丝数: fans, likeNum: like, 点赞数: like, collectNum: collect, 收藏数: collect });
                 existNames.add(name);
                 addedForDate += 1;
               }
@@ -1851,6 +1953,31 @@
       return series;
     }
 
+    function getLatestStoredRowForName(targetName){
+      const dates = listStoredDates();
+      for(let i = dates.length - 1; i >= 0; i--){
+        const rows = getStoredRowsForDate(dates[i]) || [];
+        const found = rows.find(r => String(r.realName || r.姓名 || '').trim() === targetName);
+        if(found) return { date: dates[i], row: found };
+      }
+      return null;
+    }
+
+    function getMemberSnapshot(targetName){
+      const latestStored = getLatestStoredRowForName(targetName);
+      const row = latestStored ? latestStored.row : null;
+      const series = buildSeriesForName(targetName) || [];
+      const latest = series.length ? series[series.length - 1] : null;
+      const nick = String((row && (row.nickName || row.nickname)) || nicknameFallbacks[targetName] || '').trim();
+      return {
+        fans: latest ? latest.fans : (row ? Number(row.fansNum != null ? row.fansNum : row.粉丝数 || 0) : '—'),
+        like: latest ? latest.like : (row ? Number(row.likeNum != null ? row.likeNum : row.点赞数 || 0) : '—'),
+        collect: latest ? latest.collect : (row ? Number(row.collectNum != null ? row.collectNum : row.收藏数 || 0) : '—'),
+        nick: nick && nick !== targetName ? nick : '',
+        avatarUrl: row ? (row.avatarUrl || row.headPortrait || '') : ''
+      };
+    }
+
     function buildCompareMap(mode){
       const names = Array.from(compareNames);
       const map = new Map();
@@ -1863,7 +1990,17 @@
 
     function init(){
       const params = new URLSearchParams(location.search);
-      const name = decodeURIComponent(params.get('name') || '').trim();
+      const requestedName = decodeURIComponent(params.get('name') || '').trim();
+      let name = requestedName;
+      if(!name || !buildSeriesForName(name).length){
+        const availableNames = listAllMemberNames().filter(n => String(n || '').trim());
+        const rankedNames = availableNames
+          .map(n => ({ name: n, latestFans: latestFansForName(n) }))
+          .filter(item => item.latestFans !== -Infinity)
+          .sort((a,b) => b.latestFans - a.latestFans)
+          .map(item => item.name);
+        name = rankedNames[0] || availableNames[0] || name;
+      }
       const domName = document.getElementById('profileName');
       const domNick = document.getElementById('profileNick');
       const domBirth = document.getElementById('profileBirth');
@@ -2033,9 +2170,32 @@
           const c = colorOf(n);
           const bg = colorWithAlpha(c, 0.18);
           const bd = c;
+          const snapshot = getMemberSnapshot(n);
           return `
           <label class="chk ${compareNames.has(n)?'active':''}" data-name="${n}" style="--member-accent:${bd}; --member-bg:${bg}; --member-bg-active:${colorWithAlpha(c, 0.28)};">
-            <span>${n}</span>
+            <span class="member-card-head">
+              <span class="member-card-title">
+                <span class="member-card-dot"></span>
+                <span class="member-card-text">
+                  <span class="member-card-name">${n}</span>
+                  <span class="member-card-nick">${snapshot.nick || '最新成员快照'}</span>
+                </span>
+              </span>
+            </span>
+            <span class="member-card-stats">
+              <span class="member-card-stat">
+                <span class="member-card-stat-label">粉丝</span>
+                <span class="member-card-stat-value">${formatMetricValue(snapshot.fans)}</span>
+              </span>
+              <span class="member-card-stat">
+                <span class="member-card-stat-label">点赞</span>
+                <span class="member-card-stat-value">${formatMetricValue(snapshot.like)}</span>
+              </span>
+              <span class="member-card-stat">
+                <span class="member-card-stat-label">收藏</span>
+                <span class="member-card-stat-value">${formatMetricValue(snapshot.collect)}</span>
+              </span>
+            </span>
           </label>
           `;
         }).join('');
