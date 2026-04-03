@@ -1862,6 +1862,40 @@
         }catch(e){ /* 按需拉取失败 */ }
       }
       let hourlyMap = buildHourlyMapForDate(selectedDate);
+      const mainHourly = hourlyMap.get(currentName);
+      const needDateFallback = !hourlyMap.size || !mainHourly || !mainHourly.size;
+      if(needDateFallback && hasRawLocal){
+        try{
+          const rawObj = JSON.parse(hasRawLocal);
+          const entries = rawObj?.log?.entries;
+          if(Array.isArray(entries) && entries.length){
+            const foundDates = Array.from(new Set(
+              entries
+                .map(entry => {
+                  const t = entry?.startedDateTime || entry?.request?.startedDateTime || entry?.response?.startedDateTime;
+                  if(!t) return '';
+                  const dt = new Date(t);
+                  if(Number.isNaN(dt.getTime())) return '';
+                  const y = dt.getFullYear();
+                  const m = String(dt.getMonth() + 1).padStart(2, '0');
+                  const d = String(dt.getDate()).padStart(2, '0');
+                  return `${y}-${m}-${d}`;
+                })
+                .filter(Boolean)
+            )).sort();
+            if(foundDates.length){
+              const targetDate = foundDates.find(d => d === selectedDate) || foundDates[foundDates.length - 1];
+              if(targetDate && targetDate !== selectedDate){
+                const targetHourlyMap = buildHourlyMapForDate(targetDate);
+                const targetMainHourly = targetHourlyMap.get(currentName);
+                if(targetHourlyMap.size && targetMainHourly && targetMainHourly.size){
+                  hourlyMap = targetHourlyMap;
+                }
+              }
+            }
+          }
+        }catch(e){}
+      }
       const hours = new Set();
       const addHours = (nm)=>{ 
         const mm = hourlyMap.get(nm); 
