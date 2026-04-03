@@ -1542,6 +1542,40 @@
       return Array.from(map.values()).sort((a,b)=> new Date(a.date) - new Date(b.date));
     }
 
+    function buildHourlyMapFromMemberData(dateStr){
+      if(!dateStr) return new Map();
+      const rows = getStoredRowsForDate(dateStr) || [];
+      if(!rows.length) return new Map();
+      const map = new Map();
+      const nextDay = new Date(`${dateStr}T00:00:00Z`);
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+      const nextDayStr = nextDay.toISOString().slice(0, 10);
+      for(const row of rows){
+        if(!row) continue;
+        const name = String(row.realName || row.姓名 || '').trim();
+        if(!name || name === '张三' || name === '李四') continue;
+        let startedDateTime = row.startedDateTime || row.timestamp || row.time || row.dateTime || '';
+        if(!startedDateTime) startedDateTime = `${dateStr}T00:00:00Z`;
+        const matched = String(startedDateTime).match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+        if(!matched) continue;
+        const dsUTC = matched[1];
+        const hour = matched[2];
+        const minute = matched[3];
+        const second = matched[4] || '00';
+        const isNextDay00 = (dsUTC === nextDayStr && hour === '00' && minute === '00' && second === '00');
+        if(dsUTC !== dateStr && !isNextDay00) continue;
+        const hh = isNextDay00 ? '24:00' : `${hour}:${minute}`;
+        const fans = Number(row.fansNum != null ? row.fansNum : (row.粉丝数 != null ? row.粉丝数 : 0));
+        const like = Number(row.likeNum != null ? row.likeNum : (row.点赞数 != null ? row.点赞数 : 0));
+        const collect = Number(row.collectNum != null ? row.collectNum : (row.收藏数 != null ? row.收藏数 : 0));
+        const ts = Date.parse(String(startedDateTime)) || Date.now();
+        if(!map.has(name)) map.set(name, new Map());
+        const prev = map.get(name).get(hh);
+        if(!prev || ts >= (prev.ts || 0)) map.get(name).set(hh, { fans, like, collect, ts });
+      }
+      return map;
+    }
+
     // 构建指定日期的小时级数据（解析 HAR 原始日志）
     function buildHourlyMapForDate(dateStr){
       if(!dateStr) {
@@ -1551,12 +1585,18 @@
       let raw = '';
       try{ raw = localStorage.getItem(storageRawKey(dateStr)) || ''; }catch(e){ raw = ''; }
       if(!raw || !raw.trim()) {
+        const fallbackMap = buildHourlyMapFromMemberData(dateStr);
+        if(fallbackMap.size) return fallbackMap;
         console.warn(`[buildHourlyMapForDate] No memberRaw data for ${dateStr}, key: ${storageRawKey(dateStr)}`);
         return new Map();
       }
       let obj = null;
       try{ obj = JSON.parse(raw); }
       catch(e){ const m = String(raw).match(/\{[\s\S]*\}/); if(m){ try{ obj = JSON.parse(m[0]); }catch(e2){ obj = null; } } }
+      if(!obj){
+        const fallbackMap = buildHourlyMapFromMemberData(dateStr);
+        if(fallbackMap.size) return fallbackMap;
+      }
       const map = new Map(); // name -> Map(hourStr -> {fans, like, collect, ts})
       try{
         const entries = obj?.log?.entries;
@@ -1590,7 +1630,14 @@
           const name = String(data?.realName || data?.姓名 || '').trim();
           if(name){ const m = new Map(); m.set('00:00', { fans: Number(info?.fansNum||0), like: Number(info?.likeNum||0), collect: Number(info?.collectNum||0), ts: Date.now() }); map.set(name, m); }
         }
-      }catch(e){ return new Map(); }
+      }catch(e){
+        const fallbackMap = buildHourlyMapFromMemberData(dateStr);
+        return fallbackMap.size ? fallbackMap : new Map();
+      }
+      if(!map.size){
+        const fallbackMap = buildHourlyMapFromMemberData(dateStr);
+        if(fallbackMap.size) return fallbackMap;
+      }
       return map;
     }
 
