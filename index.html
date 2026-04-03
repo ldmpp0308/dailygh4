@@ -73,14 +73,14 @@
     .auto-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.18); font-size:11px; color:#fff; backdrop-filter:blur(10px); }
     .page-header .auto-badge { background:#edf3ff; border:1px solid #dbe6ff; color:#53627c; box-shadow:none; backdrop-filter:none; }
     .page-header .auto-badge strong { color:#2c3d63; }
-    .auto-meta { display:grid; grid-template-columns:minmax(0, 1.6fr) minmax(260px, 1fr); gap:12px; align-items:stretch; }
-    .auto-meta-card { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:14px 16px 13px; backdrop-filter:blur(10px); display:grid; grid-template-rows:auto minmax(38px, 1fr) auto; align-items:start; min-height:104px; }
-    .auto-meta-card.featured { padding:15px 16px; }
+    .auto-meta { display:grid; grid-template-columns:minmax(0, 1.6fr) minmax(250px, 1fr); gap:12px; align-items:stretch; }
+    .auto-meta-card { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:13px 16px 12px; backdrop-filter:blur(10px); display:grid; grid-template-rows:auto minmax(42px, 1fr) auto; row-gap:4px; align-items:start; min-height:106px; }
+    .auto-meta-card > * { min-width:0; }
     .auto-meta-label { font-size:12px; color:rgba(255,255,255,0.74); }
-    .auto-meta-value { margin-top:6px; font-size:27px; font-weight:800; color:#fff; line-height:1.08; }
-    .auto-meta-value.featured { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; font-size:38px; }
-    .auto-meta-time { font-size:18px; font-weight:700; color:rgba(255,255,255,0.84); }
-    .auto-meta-sub { margin-top:5px; font-size:12px; color:rgba(255,255,255,0.72); line-height:1.3; }
+    .auto-meta-value { display:flex; align-items:center; margin-top:0; font-size:clamp(22px, 2.2vw, 27px); font-weight:800; color:#fff; line-height:1.08; min-height:0; }
+    .auto-meta-value.featured { align-items:baseline; gap:8px; flex-wrap:wrap; font-size:clamp(28px, 3.2vw, 36px); }
+    .auto-meta-time { font-size:clamp(16px, 1.7vw, 18px); font-weight:700; color:rgba(255,255,255,0.84); }
+    .auto-meta-sub { margin-top:0; font-size:12px; color:rgba(255,255,255,0.72); line-height:1.3; }
     .auto-meta-sub.strong { font-size:13px; color:rgba(255,255,255,0.86); }
     .auto-status { font-weight:600; }
     .auto-status.success { color:#d7f8df; }
@@ -136,14 +136,18 @@
     .section-link { color:#4c6ef5; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; padding:6px 10px; border-radius:999px; background:#eef2ff; }
     .auto-preview table { table-layout:fixed; border-radius:14px; overflow:hidden; }
     .auto-preview th, .auto-preview td { padding:9px 4px; font-size:13px; overflow:hidden; text-overflow:ellipsis; }
-    .auto-preview th:nth-child(1), .auto-preview td:nth-child(1) { width:40px; }
-    .auto-preview th:nth-child(2), .auto-preview td:nth-child(2) { width:72px; text-align:left; padding-left:7px; }
-    .auto-preview th:nth-child(3), .auto-preview td:nth-child(3) { width:66px; }
-    .auto-preview th:nth-last-child(3), .auto-preview td:nth-last-child(3) { width:56px; }
-    .auto-preview th:nth-last-child(2), .auto-preview td:nth-last-child(2) { width:56px; }
-    .auto-preview th:last-child, .auto-preview td:last-child { width:46px; }
-    .auto-preview td:nth-child(1) { font-weight:700; color:#334155; }
-    .auto-preview tbody td:nth-child(2) { font-weight:600; color:#1e293b; }
+    .auto-preview th.col-rank, .auto-preview td.col-rank { width:36px; }
+    .auto-preview th.col-name, .auto-preview td.col-name { width:62px; text-align:left; padding-left:6px; }
+    .auto-preview th.col-collect, .auto-preview td.col-collect,
+    .auto-preview th.col-like, .auto-preview td.col-like,
+    .auto-preview th.col-fans, .auto-preview td.col-fans { width:56px; }
+    .auto-preview th.col-diff, .auto-preview td.col-diff,
+    .auto-preview th.col-growth, .auto-preview td.col-growth,
+    .auto-preview th.col-week-growth, .auto-preview td.col-week-growth,
+    .auto-preview th.col-month-growth, .auto-preview td.col-month-growth { width:48px; }
+    .auto-preview th.col-rank-change, .auto-preview td.col-rank-change { width:60px; }
+    .auto-preview td.col-rank { font-weight:700; color:#334155; }
+    .auto-preview tbody td.col-name { font-weight:600; color:#1e293b; }
     .growth-cell { font-weight:700; }
     /* 手机端同步样式：日期区间与说明留白在小屏一致 */
     @media (max-width: 640px){
@@ -161,12 +165,12 @@
       .auto-card-title-row { gap:6px; align-items:baseline; }
       .auto-card-title { font-size:21px; }
       .auto-inline-status { font-size:11px; }
-      .auto-meta { grid-template-columns:minmax(0, 1.3fr) minmax(0, 0.9fr); gap:9px; }
-      .auto-meta-card { padding:10px 11px 9px; border-radius:15px; min-width:0; grid-template-rows:auto minmax(28px, 1fr) auto; min-height:88px; }
-      .auto-meta-value { font-size:18px; margin-top:4px; }
-      .auto-meta-value.featured { font-size:20px; gap:5px; }
-      .auto-meta-time { font-size:14px; }
-      .auto-meta-sub { font-size:11px; margin-top:3px; }
+      .auto-meta { grid-template-columns:minmax(0, 1.28fr) minmax(0, 0.92fr); gap:9px; }
+      .auto-meta-card { padding:10px 11px 9px; border-radius:15px; min-width:0; grid-template-rows:auto minmax(34px, 1fr) auto; row-gap:3px; min-height:92px; }
+      .auto-meta-value { font-size:17px; }
+      .auto-meta-value.featured { font-size:18px; gap:4px; }
+      .auto-meta-time { font-size:13px; }
+      .auto-meta-sub { font-size:10px; }
       .auto-preview-wrap, .avatar-section { padding:12px 10px 10px; border-radius:16px; }
       .auto-preview-head, .section-head { flex-direction:row; align-items:center; }
       .auto-actions { width:auto; justify-content:flex-end; gap:8px; }
@@ -179,18 +183,22 @@
       .avatar-item { border-radius:12px; }
       .avatar-item img { border-radius:11px; }
       th, td { padding:8px 4px; font-size:12px; }
-      .auto-preview th, .auto-preview td { padding:8px 3px; font-size:12px; }
-      .auto-preview th:nth-child(1), .auto-preview td:nth-child(1) { width:32px; }
-      .auto-preview th:nth-child(2), .auto-preview td:nth-child(2) { width:64px; padding-left:6px; }
-      .auto-preview th:nth-child(3), .auto-preview td:nth-child(3) { width:62px; }
-      .auto-preview th:nth-last-child(3), .auto-preview td:nth-last-child(3) { width:52px; }
-      .auto-preview th:nth-last-child(2), .auto-preview td:nth-last-child(2) { width:50px; }
-      .auto-preview th:last-child, .auto-preview td:last-child { width:38px; }
+      .auto-preview th, .auto-preview td { padding:8px 2px; font-size:11px; }
+      .auto-preview th.col-rank, .auto-preview td.col-rank { width:30px; }
+      .auto-preview th.col-name, .auto-preview td.col-name { width:56px; padding-left:5px; }
+      .auto-preview th.col-collect, .auto-preview td.col-collect,
+      .auto-preview th.col-like, .auto-preview td.col-like,
+      .auto-preview th.col-fans, .auto-preview td.col-fans { width:48px; }
+      .auto-preview th.col-diff, .auto-preview td.col-diff,
+      .auto-preview th.col-growth, .auto-preview td.col-growth,
+      .auto-preview th.col-week-growth, .auto-preview td.col-week-growth,
+      .auto-preview th.col-month-growth, .auto-preview td.col-month-growth { width:42px; }
+      .auto-preview th.col-rank-change, .auto-preview td.col-rank-change { width:54px; }
     }
     @media (max-width: 420px){
       .auto-card-title { font-size:20px; }
-      .auto-meta-value.featured { font-size:20px; }
-      .auto-meta-time { font-size:13px; }
+      .auto-meta-value.featured { font-size:17px; }
+      .auto-meta-time { font-size:12px; }
       .auto-actions button { padding:7px 8px; font-size:12px; }
       .auto-filter-bar label { font-size:10px; }
     }
@@ -722,9 +730,9 @@ function formatHourForPreviewTitle(tsStr){
   if(!base) return '—';
   const [datePart, timePart = '00:00'] = String(base).split(' ');
   const [year, month, day] = String(datePart).split('-').map(v => Number(v));
-  const hour = String(timePart).split(':')[0] || '00';
+  const [hour = '00', minute = '00'] = String(timePart).split(':');
   if(!year || !month || !day) return base;
-  return `${year}年${month}月${day}日${Number(hour)}点`;
+  return `${year}年${month}月${day}日 ${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
 }
 
 function compactRankChangeText(value){
@@ -803,16 +811,22 @@ function renderAutoTable(rows, meta){
   const maxFans = Math.max(...rows.map(r=>Number(r.粉丝数||0)));
   
   // 动态构建表头（与手动模式一致）
-  const headerCols = ['排名','姓名'];
-  if (showCollect) headerCols.push('收藏数');
-  if (showLike) headerCols.push('点赞数');
-  if (showFans) headerCols.push('粉丝数');
-  headerCols.push('距上一名','今日涨幅');
-  if (showWeekGrowth) headerCols.push('本周涨幅');
-  if (showMonthGrowth) headerCols.push('本月涨幅');
-  headerCols.push('排名变化');
+  const headerCols = [
+    { label:'排名', className:'col-rank' },
+    { label:'姓名', className:'col-name' }
+  ];
+  if (showCollect) headerCols.push({ label:'收藏数', className:'col-collect' });
+  if (showLike) headerCols.push({ label:'点赞数', className:'col-like' });
+  if (showFans) headerCols.push({ label:'粉丝数', className:'col-fans' });
+  headerCols.push(
+    { label:'距上一名', className:'col-diff' },
+    { label:'今日涨幅', className:'col-growth' }
+  );
+  if (showWeekGrowth) headerCols.push({ label:'本周涨幅', className:'col-week-growth' });
+  if (showMonthGrowth) headerCols.push({ label:'本月涨幅', className:'col-month-growth' });
+  headerCols.push({ label:'排名变化', className:'col-rank-change' });
   
-  let html = '<table><thead><tr>' + headerCols.map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  let html = '<table class="auto-rank-table"><thead><tr>' + headerCols.map(col=>`<th class="${col.className}">${col.label}</th>`).join('') + '</tr></thead><tbody>';
   
   for(const r of rows){
     // 过滤掉张三和李四的数据
@@ -832,27 +846,26 @@ function renderAutoTable(rows, meta){
     const diffPrevText = (diffPrevRaw == null) ? '' : (diffPrevRaw === 0 ? '-' : `${diffPrevRaw}`);
     
     const cells = [];
-    cells.push(`<td>${r.排名}</td>`);
-    cells.push(`<td>${r.姓名}</td>`);
-    if (showCollect) cells.push(`<td>${r.收藏数 || ''}</td>`);
-    if (showLike) cells.push(`<td>${r.点赞数 || ''}</td>`);
+    cells.push(`<td class="col-rank">${r.排名}</td>`);
+    cells.push(`<td class="col-name">${r.姓名}</td>`);
+    if (showCollect) cells.push(`<td class="col-collect">${r.收藏数 || ''}</td>`);
+    if (showLike) cells.push(`<td class="col-like">${r.点赞数 || ''}</td>`);
     
     if (showFans) {
       const fansCellStyle = `background-image: linear-gradient(to right, rgba(93,116,244,0.18), rgba(93,116,244,0.05)); background-size: ${pct}% 72%; background-position:left center; background-repeat:no-repeat;`;
-      cells.push(`<td style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
+      cells.push(`<td class="col-fans" style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
     }
     
-    cells.push(`<td>${diffPrevText}</td>`);
+    cells.push(`<td class="col-diff">${diffPrevText}</td>`);
     
-    // 今日涨幅（带火焰）
-    cells.push(`<td style="text-align: center;"><span class="growth-cell ${growthCls}">${growthText}</span></td>`);
+    cells.push(`<td class="col-growth"><span class="growth-cell ${growthCls}">${growthText}</span></td>`);
     
     // 本周涨幅
     if (showWeekGrowth) {
       const wgRaw = (r['本周涨幅'] === '' || r['本周涨幅'] == null) ? null : Number(r['本周涨幅']);
       const wgText = (wgRaw == null) ? '' : (wgRaw === 0 ? '-' : (wgRaw > 0 ? `+${wgRaw}` : `${wgRaw}`));
       const wgCls = (wgRaw == null || wgRaw === 0) ? '' : (wgRaw > 0 ? 'num-pos' : 'num-neg');
-      cells.push(`<td><span class="growth-cell ${wgCls}">${wgText}</span></td>`);
+      cells.push(`<td class="col-week-growth"><span class="growth-cell ${wgCls}">${wgText}</span></td>`);
     }
     
     // 本月涨幅
@@ -860,10 +873,10 @@ function renderAutoTable(rows, meta){
       const mgRaw = (r['本月涨幅'] === '' || r['本月涨幅'] == null) ? null : Number(r['本月涨幅']);
       const mgText = (mgRaw == null) ? '' : (mgRaw === 0 ? '-' : (mgRaw > 0 ? `+${mgRaw}` : `${mgRaw}`));
       const mgCls = (mgRaw == null || mgRaw === 0) ? '' : (mgRaw > 0 ? 'num-pos' : 'num-neg');
-      cells.push(`<td><span class="growth-cell ${mgCls}">${mgText}</span></td>`);
+      cells.push(`<td class="col-month-growth"><span class="growth-cell ${mgCls}">${mgText}</span></td>`);
     }
     
-    cells.push(`<td><span class="${rankChangeCls}">${rankChangeText}</span></td>`);
+    cells.push(`<td class="col-rank-change"><span class="${rankChangeCls}">${rankChangeText}</span></td>`);
     html += `<tr>${cells.join('')}</tr>`;
   }
   
