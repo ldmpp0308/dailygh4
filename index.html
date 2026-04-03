@@ -61,7 +61,7 @@
     /* 统一保留的样式，去除重复的 table/th,td 定义 */
     .tab-panel { display:none; margin-top: -4px; }
     .tab-panel.active { display:block; }
-    .auto-card { background:linear-gradient(135deg, #7066f8 0%, #5c74f4 52%, #4d86ef 100%); border:none; border-radius:20px; padding:16px; margin-bottom:14px; display:flex; flex-direction:column; gap:12px; color:#fff; box-shadow:0 18px 36px rgba(84,103,241,0.18); }
+    .auto-card { background:linear-gradient(135deg, #7066f8 0%, #5c74f4 52%, #4d86ef 100%); border:none; border-radius:20px; padding:14px 16px 13px; margin-bottom:14px; display:flex; flex-direction:column; gap:10px; color:#fff; box-shadow:0 18px 36px rgba(84,103,241,0.18); }
     .auto-card-header { display:flex; align-items:center; justify-content:space-between; gap:16px; }
     .auto-card-header > div:first-child { min-width:0; }
     .auto-card-title-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -73,14 +73,14 @@
     .auto-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.18); font-size:11px; color:#fff; backdrop-filter:blur(10px); }
     .page-header .auto-badge { background:#edf3ff; border:1px solid #dbe6ff; color:#53627c; box-shadow:none; backdrop-filter:none; }
     .page-header .auto-badge strong { color:#2c3d63; }
-    .auto-meta { display:grid; grid-template-columns:minmax(0, 1.6fr) minmax(250px, 1fr); gap:12px; align-items:stretch; }
-    .auto-meta-card { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:13px 16px 12px; backdrop-filter:blur(10px); display:grid; grid-template-rows:auto minmax(42px, 1fr) auto; row-gap:4px; align-items:start; min-height:106px; }
+    .auto-meta { display:grid; grid-template-columns:minmax(0, 1.6fr) minmax(250px, 1fr); gap:10px; align-items:stretch; }
+    .auto-meta-card { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:10px 16px 8px; backdrop-filter:blur(10px); display:grid; grid-template-rows:minmax(16px, auto) minmax(36px, 1fr) minmax(16px, auto); row-gap:2px; align-items:start; min-height:92px; }
     .auto-meta-card > * { min-width:0; }
-    .auto-meta-label { font-size:12px; color:rgba(255,255,255,0.74); }
-    .auto-meta-value { display:flex; align-items:center; margin-top:0; font-size:clamp(22px, 2.2vw, 27px); font-weight:800; color:#fff; line-height:1.08; min-height:0; }
-    .auto-meta-value.featured { align-items:baseline; gap:8px; flex-wrap:wrap; font-size:clamp(28px, 3.2vw, 36px); }
-    .auto-meta-time { font-size:clamp(16px, 1.7vw, 18px); font-weight:700; color:rgba(255,255,255,0.84); }
-    .auto-meta-sub { margin-top:0; font-size:12px; color:rgba(255,255,255,0.72); line-height:1.3; }
+    .auto-meta-label { font-size:12px; color:rgba(255,255,255,0.74); line-height:1.1; }
+    .auto-meta-value { display:flex; align-items:center; margin-top:0; font-size:clamp(22px, 2.2vw, 27px); font-weight:800; color:#fff; line-height:1; min-height:0; }
+    .auto-meta-value.featured { align-items:baseline; gap:8px; flex-wrap:wrap; font-size:clamp(28px, 3.1vw, 35px); }
+    .auto-meta-time { font-size:clamp(16px, 1.7vw, 18px); font-weight:700; color:rgba(255,255,255,0.84); line-height:1; }
+    .auto-meta-sub { margin-top:0; font-size:12px; color:rgba(255,255,255,0.72); line-height:1.15; }
     .auto-meta-sub.strong { font-size:13px; color:rgba(255,255,255,0.86); }
     .auto-status { font-weight:600; }
     .auto-status.success { color:#d7f8df; }
@@ -134,7 +134,7 @@
     .section-meta { font-size:11px; color:#64748b; line-height:1.4; }
     .section-desc { font-size:12px; color:#6b7280; line-height:1.5; margin-top:4px; }
     .section-link { color:#4c6ef5; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; padding:6px 10px; border-radius:999px; background:#eef2ff; }
-    .auto-preview table { table-layout:fixed; border-radius:14px; overflow:hidden; }
+    .auto-preview table { table-layout:fixed; border-radius:14px; overflow:hidden; font-variant-numeric:tabular-nums; }
     .auto-preview th, .auto-preview td { padding:9px 4px; font-size:13px; overflow:hidden; text-overflow:ellipsis; }
     .auto-preview th.col-rank, .auto-preview td.col-rank { width:36px; }
     .auto-preview th.col-name, .auto-preview td.col-name { width:62px; text-align:left; padding-left:6px; }
@@ -148,6 +148,22 @@
     .auto-preview th.col-rank-change, .auto-preview td.col-rank-change { width:60px; }
     .auto-preview td.col-rank { font-weight:700; color:#334155; }
     .auto-preview tbody td.col-name { font-weight:600; color:#1e293b; }
+    .auto-rank-table thead th { font-size:12px; letter-spacing:.01em; }
+    .auto-rank-table tbody tr:nth-child(odd) td { background:rgba(255,255,255,0.78); }
+    .auto-rank-table tbody tr:nth-child(even) td { background:rgba(244,247,255,0.98); }
+    .auto-rank-table tbody td { border-bottom-color:#e6edf8; }
+    .rank-chip { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 6px; border-radius:999px; background:#eef2ff; color:#334155; font-weight:800; font-size:12px; }
+    .rank-chip.top-1 { background:linear-gradient(135deg, #ffe8a3, #ffd166); color:#7a4b00; }
+    .rank-chip.top-2 { background:linear-gradient(135deg, #eef2f7, #d6dee8); color:#475569; }
+    .rank-chip.top-3 { background:linear-gradient(135deg, #f8dcc6, #e9b98f); color:#7c4822; }
+    .auto-preview td.col-fans { position:relative; font-weight:700; color:#24324a; }
+    .auto-preview td.col-fans::before { content:''; position:absolute; left:2px; top:50%; transform:translateY(-50%); width:var(--fans-pct, 0%); height:72%; border-radius:10px; background:linear-gradient(90deg, rgba(93,116,244,0.20), rgba(93,116,244,0.06)); z-index:0; }
+    .auto-preview td.col-fans > span { position:relative; z-index:1; }
+    .trend-badge { display:inline-flex; align-items:center; justify-content:center; min-width:44px; max-width:100%; padding:4px 6px; border-radius:999px; font-size:12px; line-height:1; font-weight:700; box-sizing:border-box; }
+    .trend-up { background:rgba(229,92,59,0.10); color:#d4573b; }
+    .trend-down { background:rgba(31,157,104,0.10); color:#1f9d68; }
+    .trend-flat { background:rgba(148,163,184,0.10); color:#475569; }
+    .rank-change-badge { min-width:38px; }
     .growth-cell { font-weight:700; }
     /* 手机端同步样式：日期区间与说明留白在小屏一致 */
     @media (max-width: 640px){
@@ -160,17 +176,17 @@
       .auto-badges { gap:6px; overflow-x:auto; flex-wrap:nowrap; padding-bottom:2px; }
       .auto-badge { padding:5px 9px; font-size:10px; white-space:nowrap; }
       .desc, .auto-card-desc, .section-desc, .auto-preview-desc { display:none !important; }
-      .auto-card { padding:13px 12px; border-radius:18px; gap:9px; }
+      .auto-card { padding:11px 12px 10px; border-radius:18px; gap:8px; }
       .auto-card-header { gap:10px; flex-wrap:nowrap; align-items:center; }
       .auto-card-title-row { gap:6px; align-items:baseline; }
       .auto-card-title { font-size:21px; }
       .auto-inline-status { font-size:11px; }
-      .auto-meta { grid-template-columns:minmax(0, 1.28fr) minmax(0, 0.92fr); gap:9px; }
-      .auto-meta-card { padding:10px 11px 9px; border-radius:15px; min-width:0; grid-template-rows:auto minmax(34px, 1fr) auto; row-gap:3px; min-height:92px; }
-      .auto-meta-value { font-size:17px; }
+      .auto-meta { grid-template-columns:minmax(0, 1.28fr) minmax(0, 0.92fr); gap:8px; }
+      .auto-meta-card { padding:8px 11px 7px; border-radius:15px; min-width:0; grid-template-rows:minmax(14px, auto) minmax(30px, 1fr) minmax(14px, auto); row-gap:2px; min-height:80px; }
+      .auto-meta-value { font-size:16px; }
       .auto-meta-value.featured { font-size:18px; gap:4px; }
-      .auto-meta-time { font-size:13px; }
-      .auto-meta-sub { font-size:10px; }
+      .auto-meta-time { font-size:12px; }
+      .auto-meta-sub { font-size:10px; line-height:1.1; }
       .auto-preview-wrap, .avatar-section { padding:12px 10px 10px; border-radius:16px; }
       .auto-preview-head, .section-head { flex-direction:row; align-items:center; }
       .auto-actions { width:auto; justify-content:flex-end; gap:8px; }
@@ -193,7 +209,10 @@
       .auto-preview th.col-growth, .auto-preview td.col-growth,
       .auto-preview th.col-week-growth, .auto-preview td.col-week-growth,
       .auto-preview th.col-month-growth, .auto-preview td.col-month-growth { width:42px; }
-      .auto-preview th.col-rank-change, .auto-preview td.col-rank-change { width:54px; }
+      .auto-preview th.col-rank-change, .auto-preview td.col-rank-change { width:56px; }
+      .rank-chip { min-width:22px; height:22px; padding:0 5px; font-size:11px; }
+      .trend-badge { min-width:40px; padding:3px 5px; font-size:11px; }
+      .rank-change-badge { min-width:34px; }
     }
     @media (max-width: 420px){
       .auto-card-title { font-size:20px; }
@@ -832,51 +851,51 @@ function renderAutoTable(rows, meta){
     // 过滤掉张三和李四的数据
     const name = r.姓名 || r.realName || '';
     if(name === '张三' || name === '李四') continue;
-    const isEven = (Number(r.排名||0) % 2 === 0);
     const fans = Number(r.粉丝数||0);
     const pct = maxFans > 0 ? Math.round(fans / maxFans * 100) : 0;
     
     const growthRaw = (r.涨幅 === '' || r.涨幅 == null) ? null : Number(r.涨幅);
     const growthText = (growthRaw == null) ? '' : (growthRaw === 0 ? '-' : (growthRaw > 0 ? `+${growthRaw}` : `${growthRaw}`));
-    const growthCls = (growthRaw == null || growthRaw === 0) ? '' : (growthRaw > 0 ? 'num-pos' : 'num-neg');
+    const growthToneCls = (growthRaw == null || growthRaw === 0) ? 'trend-flat' : (growthRaw > 0 ? 'trend-up' : 'trend-down');
     const rankChangeText = compactRankChangeText(r.排名变化);
-    const rankChangeCls = rankChangeText.startsWith('↑') ? 'num-pos' : (rankChangeText.startsWith('↓') ? 'num-neg' : '');
+    const rankChangeToneCls = rankChangeText.startsWith('↑') ? 'trend-up' : (rankChangeText.startsWith('↓') ? 'trend-down' : 'trend-flat');
     
     const diffPrevRaw = (r['与前一名差值'] === '' || r['与前一名差值'] == null) ? null : Number(r['与前一名差值']);
     const diffPrevText = (diffPrevRaw == null) ? '' : (diffPrevRaw === 0 ? '-' : `${diffPrevRaw}`);
+    const rankNum = Number(r.排名 || 0);
+    const rankChipCls = rankNum > 0 && rankNum <= 3 ? `rank-chip top-${rankNum}` : 'rank-chip';
     
     const cells = [];
-    cells.push(`<td class="col-rank">${r.排名}</td>`);
+    cells.push(`<td class="col-rank"><span class="${rankChipCls}">${r.排名}</span></td>`);
     cells.push(`<td class="col-name">${r.姓名}</td>`);
     if (showCollect) cells.push(`<td class="col-collect">${r.收藏数 || ''}</td>`);
     if (showLike) cells.push(`<td class="col-like">${r.点赞数 || ''}</td>`);
     
     if (showFans) {
-      const fansCellStyle = `background-image: linear-gradient(to right, rgba(93,116,244,0.18), rgba(93,116,244,0.05)); background-size: ${pct}% 72%; background-position:left center; background-repeat:no-repeat;`;
-      cells.push(`<td class="col-fans" style="${fansCellStyle}">${fans.toLocaleString('zh-CN')}</td>`);
+      cells.push(`<td class="col-fans" style="--fans-pct:${pct}%"><span>${fans.toLocaleString('zh-CN')}</span></td>`);
     }
     
     cells.push(`<td class="col-diff">${diffPrevText}</td>`);
     
-    cells.push(`<td class="col-growth"><span class="growth-cell ${growthCls}">${growthText}</span></td>`);
+    cells.push(`<td class="col-growth"><span class="growth-cell trend-badge ${growthToneCls}">${growthText}</span></td>`);
     
     // 本周涨幅
     if (showWeekGrowth) {
       const wgRaw = (r['本周涨幅'] === '' || r['本周涨幅'] == null) ? null : Number(r['本周涨幅']);
       const wgText = (wgRaw == null) ? '' : (wgRaw === 0 ? '-' : (wgRaw > 0 ? `+${wgRaw}` : `${wgRaw}`));
-      const wgCls = (wgRaw == null || wgRaw === 0) ? '' : (wgRaw > 0 ? 'num-pos' : 'num-neg');
-      cells.push(`<td class="col-week-growth"><span class="growth-cell ${wgCls}">${wgText}</span></td>`);
+      const wgToneCls = (wgRaw == null || wgRaw === 0) ? 'trend-flat' : (wgRaw > 0 ? 'trend-up' : 'trend-down');
+      cells.push(`<td class="col-week-growth"><span class="growth-cell trend-badge ${wgToneCls}">${wgText}</span></td>`);
     }
     
     // 本月涨幅
     if (showMonthGrowth) {
       const mgRaw = (r['本月涨幅'] === '' || r['本月涨幅'] == null) ? null : Number(r['本月涨幅']);
       const mgText = (mgRaw == null) ? '' : (mgRaw === 0 ? '-' : (mgRaw > 0 ? `+${mgRaw}` : `${mgRaw}`));
-      const mgCls = (mgRaw == null || mgRaw === 0) ? '' : (mgRaw > 0 ? 'num-pos' : 'num-neg');
-      cells.push(`<td class="col-month-growth"><span class="growth-cell ${mgCls}">${mgText}</span></td>`);
+      const mgToneCls = (mgRaw == null || mgRaw === 0) ? 'trend-flat' : (mgRaw > 0 ? 'trend-up' : 'trend-down');
+      cells.push(`<td class="col-month-growth"><span class="growth-cell trend-badge ${mgToneCls}">${mgText}</span></td>`);
     }
     
-    cells.push(`<td class="col-rank-change"><span class="${rankChangeCls}">${rankChangeText}</span></td>`);
+    cells.push(`<td class="col-rank-change"><span class="trend-badge rank-change-badge ${rankChangeToneCls}">${rankChangeText}</span></td>`);
     html += `<tr>${cells.join('')}</tr>`;
   }
   
