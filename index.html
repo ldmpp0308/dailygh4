@@ -59,16 +59,12 @@
     /* 导出 PNG 时：日期区间整体居中，上下留白间距一致 */
     #preview.export-png .range-bar { margin: 8px 0 !important; text-align: center !important; }
     /* 统一保留的样式，去除重复的 table/th,td 定义 */
-    .tab-switcher { display:flex; gap:8px; margin: 10px 0 20px; background:#f3f5fb; padding:4px; border-radius:10px; }
-    .tab-switcher button { flex:1; border:none; background:transparent; padding:10px 14px; border-radius:8px; font-size:15.5px; font-weight:600; color:#475569; cursor:pointer; transition:background .2s ease, color .2s ease; }
-    .tab-switcher button.active { background:#ffffff; color:#1e293b; box-shadow:0 6px 18px rgba(76,110,245,0.12); }
     .tab-panel { display:none; margin-top: -4px; }
     .tab-panel.active { display:block; }
-    .home-section { background:#fff; border:1px solid #e8edf5; border-radius:22px; box-shadow:0 16px 40px rgba(76,110,245,0.08); margin-bottom:16px; overflow:hidden; }
-    .auto-card { background:linear-gradient(135deg, rgba(108,99,255,0.96), rgba(76,110,245,0.94)); border:none; border-radius:22px; padding:22px; margin-bottom:16px; display:flex; flex-direction:column; gap:18px; color:#fff; box-shadow:0 24px 48px rgba(76,110,245,0.16); }
+    .auto-card { background:linear-gradient(135deg, rgba(108,99,255,0.96), rgba(76,110,245,0.94)); border:none; border-radius:22px; padding:18px; margin-bottom:14px; display:flex; flex-direction:column; gap:14px; color:#fff; box-shadow:0 24px 48px rgba(76,110,245,0.16); }
     .auto-card-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px; }
-    .auto-card-title { font-size:30px; font-weight:700; color:#fff; letter-spacing:.5px; line-height:1.2; }
-    .auto-card-desc { font-size:14px; color:rgba(255,255,255,0.82); margin-top:8px; line-height:1.75; max-width:720px; }
+    .auto-card-title { font-size:28px; font-weight:700; color:#fff; letter-spacing:.5px; line-height:1.2; }
+    .auto-card-desc { font-size:13px; color:rgba(255,255,255,0.82); margin-top:6px; line-height:1.6; max-width:720px; }
     .auto-badges { display:flex; gap:10px; flex-wrap:wrap; }
     .auto-badge { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.18); font-size:12px; color:#fff; backdrop-filter:blur(10px); }
     .auto-meta { display:grid; grid-template-columns:minmax(0, 1.6fr) minmax(260px, 1fr); gap:14px; }
@@ -78,22 +74,25 @@
     .auto-meta-value { margin-top:10px; font-size:28px; font-weight:800; color:#fff; line-height:1.1; }
     .auto-meta-value.featured { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:40px; }
     .auto-meta-time { font-size:18px; font-weight:700; color:rgba(255,255,255,0.84); }
-    .auto-meta-sub { margin-top:8px; font-size:12px; color:rgba(255,255,255,0.74); line-height:1.6; }
+    .auto-meta-sub { margin-top:8px; font-size:12px; color:rgba(255,255,255,0.74); line-height:1.5; }
     .auto-meta-sub.strong { font-size:13px; color:rgba(255,255,255,0.86); }
     .auto-status { font-weight:600; }
     .auto-status.success { color:#d7f8df; }
     .auto-status.error { color:#ffe0e0; }
     .auto-status.info { color:#d8e7ff; }
     .auto-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .auto-secondary-btn { background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.2); }
     .auto-preview-wrap { background:#fff; border:1px solid #e8edf5; border-radius:22px; padding:18px 16px 16px; box-shadow:0 12px 36px rgba(15,23,42,0.05); }
-    .auto-preview-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:12px; }
+    .auto-preview-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
     .auto-preview-title { font-size:20px; font-weight:700; color:#1f2937; }
-    .auto-preview-desc { font-size:13px; color:#6b7280; margin-top:6px; line-height:1.7; }
-    .auto-preview { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:12px; }
+    .auto-preview-desc { font-size:12px; color:#6b7280; margin-top:4px; line-height:1.5; }
+    .auto-preview { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:12px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .auto-preview .muted { text-align:center; padding:20px 0; }
     .auto-refresh-btn { background:#4c6ef5; color:#fff; border:none; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; }
     .auto-refresh-btn:disabled { opacity:0.6; cursor:not-allowed; }
     .actions { display:flex; gap:10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+    .auto-filter-bar { gap:8px; margin-top:0; margin-bottom:12px; justify-content:flex-start; }
+    .auto-filter-bar label { display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border-radius:999px; border:1px solid #e5e7eb; background:#f8fafc; font-size:12px; color:#334155; white-space:nowrap; }
     button { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 600; cursor:pointer; }
     .btn-primary { background: #4c6ef5; color:#fff; }
     .btn-secondary { background:#20c997; color:#fff; }
@@ -147,16 +146,14 @@
     .avatar-section { background:#fff; border:1px solid #e8edf5; border-radius:22px; box-shadow:0 12px 36px rgba(15,23,42,0.05); padding:18px 16px 14px; margin-bottom:16px; }
     .section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:8px; }
     .section-title { font-size:20px; font-weight:700; color:#1f2937; margin:0; }
-    .section-desc { font-size:13px; color:#6b7280; line-height:1.7; margin-top:6px; }
-    .section-link { color:#4c6ef5; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; }
-    .manual-tools { margin-top:16px; border:1px solid #e8edf5; border-radius:18px; background:#fff; box-shadow:0 10px 30px rgba(15,23,42,0.04); }
-    .manual-tools summary { list-style:none; cursor:pointer; padding:14px 16px; font-size:14px; font-weight:700; color:#334155; display:flex; align-items:center; justify-content:space-between; }
-    .manual-tools summary::-webkit-details-marker { display:none; }
-    .manual-tools summary::after { content:"展开"; font-size:12px; color:#64748b; font-weight:600; }
-    .manual-tools[open] summary::after { content:"收起"; }
-    .manual-tools-body { padding:0 0 4px; }
+    .section-desc { font-size:12px; color:#6b7280; line-height:1.5; margin-top:4px; }
+    .section-link { color:#4c6ef5; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; padding:6px 10px; border-radius:999px; background:#eef2ff; }
     /* 手机端同步样式：日期区间与说明留白在小屏一致 */
     @media (max-width: 640px){
+      .container { max-width:none; border-radius:0; box-shadow:none; padding:44px 10px 20px; }
+      .page-header { padding-bottom:10px; }
+      h1 { font-size:22px; }
+      .title-wrap h1::after { width:56px; bottom:-6px; }
       .range-bar { margin: 12px 0 !important; text-align: center !important; }
       #preview.export-png .range-bar { margin-top: 24px !important; margin-bottom: 12px !important; }
       .preview-notes { margin: 12px 0 18px !important; }
@@ -167,13 +164,33 @@
       #preview.export-png .growth-cell .flame-left { left: 4px; }
       /* 手机端头像姓名：缩小字号，不换行显示并做超长省略 */
       .avatar-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 12px); }
-      .auto-card { padding:18px 16px; border-radius:20px; }
-      .auto-card-title { font-size:24px; }
+      .auto-badges { gap:6px; overflow-x:auto; flex-wrap:nowrap; padding-bottom:2px; }
+      .auto-badge { padding:7px 10px; font-size:11px; white-space:nowrap; }
+      .desc, .auto-card-desc, .section-desc, .auto-preview-desc { display:none !important; }
+      .auto-card { padding:16px 14px; border-radius:18px; gap:14px; }
+      .auto-card-header { gap:12px; }
+      .auto-card-title { font-size:22px; }
       .auto-meta { grid-template-columns:1fr; }
-      .auto-meta-value.featured { font-size:32px; }
-      .auto-preview-wrap, .avatar-section { padding:16px 12px 12px; border-radius:18px; }
+      .auto-meta-card { padding:14px 14px; border-radius:16px; }
+      .auto-meta-value { font-size:22px; }
+      .auto-meta-value.featured { font-size:30px; }
+      .auto-meta-time { font-size:16px; }
+      .auto-preview-wrap, .avatar-section { padding:14px 10px 10px; border-radius:16px; }
       .auto-preview-head, .section-head { flex-direction:column; align-items:flex-start; }
-      .auto-actions { justify-content:flex-start; }
+      .auto-actions { width:100%; justify-content:flex-start; }
+      .auto-actions button { flex:1; min-width:0; }
+      .auto-secondary-btn { display:none; }
+      .actions { gap:8px; justify-content:flex-start; }
+      .auto-filter-bar { flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px; }
+      .auto-filter-bar label { flex:0 0 auto; }
+      .avatar-grid { grid-template-columns:repeat(4, 1fr); gap:8px; }
+      .avatar-item { border-radius:12px; }
+      .avatar-item img { border-radius:11px; }
+      th, td { padding:6px 8px; font-size:12px; }
+    }
+    @media (max-width: 420px){
+      .avatar-grid { grid-template-columns:repeat(3, 1fr); }
+      .auto-actions { width:100%; }
     }
     /* 页脚 LOGO：居中显示，移动端与桌面端自适应宽度 */
     .footer-logo { margin-top: 16px; margin-bottom: 8px; text-align: center; }
@@ -189,13 +206,10 @@
     <div class="page-header">
       <div class="title-wrap">
         <div class="auto-badges">
-          <span class="auto-badge">🎀 正式版</span>
           <span class="auto-badge">每小时自动刷新</span>
-          <span class="auto-badge">成员头像可直接进入个人页</span>
           <span class="auto-badge">上次刷新：<strong id="autoLastSync">—</strong></span>
         </div>
         <h1>🎀 高会排行榜</h1>
-        <div class="desc" style="display:block; color:#616a76; margin-top:14px;">首页仅保留自动刷新场景，打开即查看最新榜单；最新日期与时间置顶展示，成员头像作为高频快捷入口。</div>
         <div id="apiStatus" style="margin: 12px 0 0; padding: 8px 12px; border-radius: 999px; font-size: 12px; display: none; width: max-content; max-width: 100%;">
           <span id="apiStatusIcon">🔄</span> <span id="apiStatusText">检查API连接状态...</span>
         </div>
@@ -206,12 +220,11 @@
       <div class="auto-card">
         <div class="auto-card-header">
           <div>
-            <div class="auto-card-title">首页自动刷新榜单</div>
-            <div class="auto-card-desc">首屏只展示自动刷新结果，不再提供手动模式切换。重点突出最新日期与时间，榜单与头像墙保持同屏，方便快速查看与跳转。</div>
+            <div class="auto-card-title">实时榜单</div>
           </div>
           <div class="auto-actions">
             <button type="button" class="auto-refresh-btn" id="autoRefreshBtn" onclick="refreshAutoTab(true)">立即刷新</button>
-            <button type="button" class="btn-secondary" onclick="exportAutoImage()">导出图片</button>
+            <button type="button" class="btn-secondary auto-secondary-btn" onclick="exportAutoImage()">导出图片</button>
           </div>
         </div>
         <div class="auto-meta">
@@ -219,12 +232,10 @@
             <div class="auto-meta-label">最新榜单时间</div>
             <div class="auto-meta-value featured"><span id="autoLatestDate">—</span><span id="autoLatestTime" class="auto-meta-time">—</span></div>
             <div class="auto-meta-sub strong">对比日期：<span id="autoPrevDate">—</span></div>
-            <div class="auto-meta-sub">首页重点只展示最新日期与最新抓取时间。</div>
           </div>
           <div class="auto-meta-card">
             <div class="auto-meta-label">刷新状态</div>
             <div class="auto-meta-value">每小时自动刷新</div>
-            <div class="auto-meta-sub strong">数据来源：本地缓存 + 服务器补齐</div>
             <div class="auto-meta-sub auto-status" id="autoStatusText">正在等待数据...</div>
           </div>
         </div>
@@ -233,10 +244,9 @@
       <div class="avatar-section">
         <div class="section-head">
           <div>
-            <h2 class="section-title">成员快捷入口</h2>
-            <div class="section-desc">头像墙作为首页核心导航，点击后直接进入 person 页。默认展示最新排名对应成员。</div>
+            <h2 class="section-title">成员</h2>
           </div>
-          <a class="section-link" href="person.html">查看 person 页</a>
+          <a class="section-link" href="person.html">个人页</a>
         </div>
         <div id="avatarGrid" class="avatar-grid" aria-label="成员头像展示"></div>
       </div>
@@ -244,11 +254,10 @@
       <div class="auto-preview-wrap">
       <div class="auto-preview-head">
         <div>
-          <div class="auto-preview-title">今日榜单</div>
-          <div class="auto-preview-desc">表格标题与数据统一居中展示，默认仅突出核心列；本周、本月涨幅等扩展列按需开启。</div>
+          <div class="auto-preview-title">榜单</div>
         </div>
       </div>
-      <div class="actions" style="align-items:center; margin-bottom:12px;">
+      <div class="actions auto-filter-bar" style="align-items:center; margin-bottom:12px;">
         <label style="display:flex; align-items:center; gap:6px;">
           <input type="checkbox" id="autoToggleCollect" onchange="refreshAutoTableDisplay()" /> 收藏数
         </label>
@@ -270,96 +279,9 @@
       </div>
       </div>
     </div>
-
-    <details id="manualTools" class="manual-tools">
-    <summary>低频数据工具</summary>
-    <div class="manual-tools-body">
-    <div class="grid">
-      <div class="card">
-        <label>当日日期</label>
-        <input type="date" id="todayDate" />
-        <label style="margin-top:8px;">快速选择已有日期（当日）</label>
-        <select id="todayDateSelect"><option value="">— 选择存档日期 —</option></select>
-        <button class="btn-light" onclick="clearDateStorageByDate('today')" style="margin-left:8px;">清空该日期存档</button>
-        <label style="margin-top:8px;">当日代码文本</label>
-        <div class="muted" style="margin:4px 0 6px; font-size:12px;">识别到最晚 startedDateTime：<span id="todayMaxTs" style="display:block; margin-top:2px; font-weight:600; color:#333;">—</span></div>
-        <textarea id="todayText" placeholder="粘贴当日抓取到的HAR或接口JSON……"></textarea>
-        <div class="actions" style="margin-top:8px;">
-          <button class="btn-light" onclick="selectAllText('todayText')">全选当日代码</button>
-        </div>
-      </div>
-      <div class="card">
-        <label>昨日日期</label>
-        <input type="date" id="yesterdayDate" />
-        <label style="margin-top:8px;">快速选择已有日期（昨日）</label>
-        <select id="yesterdayDateSelect"><option value="">— 选择存档日期 —</option></select>
-        <button class="btn-light" onclick="clearDateStorageByDate('yesterday')" style="margin-left:8px;">清空昨日日期存档</button>
-        <label style="margin-top:8px;">昨日代码文本</label>
-        <div class="muted" style="margin:4px 0 6px; font-size:12px;">识别到最晚 startedDateTime：<span id="yesterdayMaxTs" style="display:block; margin-top:2px; font-weight:600; color:#333;">—</span></div>
-        <textarea id="yesterdayText" placeholder="若本地没有存档，可粘贴昨日的HAR或JSON用于对比……"></textarea>
-        <div class="actions" style="margin-top:8px;">
-          <button class="btn-light" onclick="selectAllText('yesterdayText')">全选昨日代码</button>
-        </div>
-      </div>
-      </div>
-      <!-- 已按你的要求删除“昨日”输入卡片（日期/下拉/文本/全选按钮/说明），逻辑仍默认使用当日-1作为对比日期 -->
-
-    <div class="actions">
-      <button class="btn-primary" onclick="parseAndPreview()">解析并预览</button>
-      <button class="btn-primary" onclick="clearLocalArchives()" title="清除所有以 memberRaw:/memberData: 为前缀的本地缓存">清空本地存档</button>
-      <button class="btn-secondary" onclick="exportExcel()">导出Excel</button>
-      <button class="btn-secondary" onclick="exportImage()">导出图片</button>
-      <button class="btn-light" onclick="saveTodayToLocal()">保存今日数据到本地</button>
-    </div>
-    <div class="actions" style="align-items:center;">
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="toggleCollect" /> 收藏数
-      </label>
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="toggleLike" /> 点赞数
-      </label>
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="toggleFans" checked /> 粉丝数
-      </label>
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="toggleWeekGrowth" /> 本周涨幅
-      </label>
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="toggleMonthGrowth" /> 本月涨幅
-      </label>
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="followTextDate" /> 跟随文本日期
-      </label>
-    </div>
-
-
     <div id="msgError" class="msg error"></div>
     <div id="msgSuccess" class="msg success"></div>
     <div id="msgInfo" class="msg info"></div>
-
-    <div id="preview" style="margin-top: 12px;"></div>
-    
-    <!-- 页面底部的存档操作区 -->
-    <hr style="margin:16px 0; border:none; border-top:1px solid #eee;"/>
-    <div class="actions" style="margin-top:0; gap:8px;">
-      <button class="btn-light" onclick="exportLocalBackup()">导出本地存档</button>
-      <button class="btn-light" onclick="triggerImport()">导入本地存档</button>
-      <button class="btn-light" onclick="uploadLocalBackup()">上传到服务器</button>
-      <button class="btn-light" onclick="pullLatestBackup()">拉取服务器最新</button>
-      <input type="file" id="importFile" accept="application/json" style="display:none" />
-    </div>
-    
-    <!-- 状态提示区域 -->
-    <div class="status-area" style="margin-top: 12px; min-height: 24px; display: flex; flex-direction: column; gap: 4px;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span id="uploadStatus" class="inline-msg" aria-live="polite"></span>
-        <span id="pullStatus" class="inline-msg" aria-live="polite"></span>
-      </div>
-      <span id="lastSyncTime" style="font-size:12px; color:var(--text-muted);">最后同步时间：—</span>
-    </div>
-
-    </div>
-    </details>
 
     <!-- 页脚LOGO（图片加载失败时显示回退文本） -->
     <div class="footer-logo" role="contentinfo" aria-label="站点Logo">
@@ -2914,6 +2836,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 立即初始化 UI 元素，让页面快速可交互
   const todayInput = document.getElementById('todayDate');
   const yesterdayInput = document.getElementById('yesterdayDate');
+  const hasManualTools = !!todayInput;
   const todayStr = new Date().toISOString().split('T')[0];
   if (todayInput && !todayInput.value) todayInput.value = todayStr;
   if (yesterdayInput && !yesterdayInput.value) yesterdayInput.value = getPrevDateStr(todayStr);
@@ -2929,7 +2852,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tm?.addEventListener('change', (e)=>{ showMonthGrowth = !!e.target.checked; renderPreviewTable(lastPreview); });
 
   // 初次尝试从本地自动填充
-  autoFillFromLocal();
+  if(hasManualTools) autoFillFromLocal();
   initLastSync();
   
   // 延迟初始化标签页切换器，进一步延迟数据加载
@@ -3004,7 +2927,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   // 新增：初始化下拉选择并绑定事件
-  refreshDateOptions();
+  if(hasManualTools) refreshDateOptions();
   const todayDateSelect = document.getElementById('todayDateSelect');
   const yesterdayDateSelect = document.getElementById('yesterdayDateSelect');
   todayDateSelect?.addEventListener('change', (e)=>{
@@ -3160,6 +3083,7 @@ function autoFillFromLocal(){
   const yDateEl = document.getElementById('yesterdayDate');
   const todayEl = document.getElementById('todayText');
   const yesterdayEl = document.getElementById('yesterdayText');
+  if(!tdEl || !todayEl) return;
   const follow = document.getElementById('followTextDate')?.checked;
   // 若当日日期为空或开启“跟随文本日期”，尝试从文本识别并填充
   const detectedToday = detectLatestDateFromText(todayEl?.value || '');
