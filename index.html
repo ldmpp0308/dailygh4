@@ -149,7 +149,7 @@
     .auto-preview td.col-rank { font-weight:700; color:#334155; }
     .auto-preview tbody td.col-name { font-weight:600; color:#1e293b; }
     .auto-rank-table thead th { font-size:12px; letter-spacing:.01em; }
-    .auto-rank-table tbody tr:nth-child(odd) td { background:rgba(255,255,255,0.78); }
+    .auto-rank-table tbody tr:nth-child(odd) td { background:rgba(255,255,255,0.84); }
     .auto-rank-table tbody tr:nth-child(even) td { background:rgba(244,247,255,0.98); }
     .auto-rank-table tbody td { border-bottom-color:#e6edf8; }
     .rank-chip { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:24px; padding:0 6px; border-radius:999px; background:#eef2ff; color:#334155; font-weight:800; font-size:12px; }
@@ -165,6 +165,24 @@
     .trend-flat { background:rgba(148,163,184,0.10); color:#475569; }
     .rank-change-badge { min-width:38px; }
     .growth-cell { font-weight:700; }
+    .auto-export-stage { position:fixed; left:-10000px; top:0; z-index:-1; pointer-events:none; opacity:0; }
+    .auto-export-sheet { background:#ffffff; color:#1f2937; border-radius:28px; padding:28px 28px 24px; box-shadow:0 28px 60px rgba(15,23,42,0.12); }
+    .auto-export-header { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:18px; }
+    .auto-export-kicker { display:inline-flex; align-items:center; min-height:28px; padding:0 12px; border-radius:999px; background:#edf3ff; color:#4b63d8; font-size:13px; font-weight:700; }
+    .auto-export-title { margin-top:10px; font-size:30px; line-height:1.1; font-weight:800; color:#1f2937; }
+    .auto-export-subtitle { margin-top:8px; font-size:14px; color:#64748b; line-height:1.6; }
+    .auto-export-meta { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:18px; }
+    .auto-export-meta-card { min-width:0; border:1px solid #e4ebfb; border-radius:18px; padding:14px 16px; background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,255,0.98)); }
+    .auto-export-meta-label { font-size:12px; color:#64748b; }
+    .auto-export-meta-value { margin-top:8px; font-size:22px; line-height:1.1; font-weight:800; color:#1f2937; }
+    .auto-export-tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+    .auto-export-tag { display:inline-flex; align-items:center; min-height:30px; padding:0 12px; border-radius:999px; background:#eef3ff; border:1px solid #dbe6ff; color:#4560d4; font-size:12px; font-weight:700; }
+    .auto-export-table { border-radius:20px; overflow:hidden; border:1px solid #e6edf8; background:#fff; }
+    .export-image-overlay { position:fixed; inset:0; z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:18px; background:rgba(15,23,42,0.82); }
+    .export-image-overlay img { display:block; max-width:min(92vw, 720px); max-height:76vh; height:auto; border-radius:18px; box-shadow:0 20px 48px rgba(0,0,0,0.35); background:#fff; }
+    .export-image-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+    .export-image-tip { color:#fff; font-size:14px; line-height:1.6; text-align:center; }
+    .export-image-btn { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:0 16px; border-radius:999px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.14); color:#fff; text-decoration:none; font-size:13px; font-weight:700; }
     /* 手机端同步样式：日期区间与说明留白在小屏一致 */
     @media (max-width: 640px){
       .container { max-width:none; border-radius:0; box-shadow:none; padding:14px 10px 20px; background:#f7f9ff; }
@@ -182,7 +200,7 @@
       .auto-card-title { font-size:21px; }
       .auto-inline-status { font-size:11px; }
       .auto-meta { grid-template-columns:minmax(0, 1.28fr) minmax(0, 0.92fr); gap:8px; }
-      .auto-meta-card { padding:8px 11px 7px; border-radius:15px; min-width:0; grid-template-rows:minmax(14px, auto) minmax(30px, 1fr) minmax(14px, auto); row-gap:2px; min-height:60px; }
+      .auto-meta-card { padding:8px 10px 12px; border-radius:15px; min-width:0; grid-template-rows:minmax(14px, auto) minmax(30px, 1fr) minmax(14px, auto); row-gap:2px; min-height:60px; }
       .auto-meta-label { line-height:1; }
       .auto-meta-value { font-size:15px; line-height:0.98; }
       .auto-meta-value.featured { font-size:17px; gap:4px; }
@@ -201,7 +219,7 @@
       .avatar-item img { border-radius:11px; }
       th, td { padding:8px 4px; font-size:12px; }
       .auto-preview th, .auto-preview td { padding:8px 2px; font-size:11px; }
-      .auto-preview th.col-rank, .auto-preview td.col-rank { width:35px; }
+      .auto-preview th.col-rank, .auto-preview td.col-rank { width:40px; }
       .auto-preview th.col-name, .auto-preview td.col-name { width:50px; padding-left:5px; }
       .auto-preview th.col-collect, .auto-preview td.col-collect,
       .auto-preview th.col-like, .auto-preview td.col-like,
@@ -247,7 +265,7 @@
           </div>
           <div class="auto-actions">
             <button type="button" class="auto-refresh-btn" id="autoRefreshBtn" onclick="refreshAutoTab(true)">立即刷新</button>
-            <button type="button" class="btn-secondary auto-secondary-btn" onclick="exportAutoImage()">导出图片</button>
+            <button type="button" class="btn-secondary auto-secondary-btn" id="autoExportBtn" onclick="exportAutoImage()">导出图片</button>
           </div>
         </div>
         <div class="auto-meta">
@@ -912,241 +930,220 @@ function refreshAutoTableDisplay(){
   }
 }
 
-// 导出自动模式的图片
+function getAutoExportSelections(){
+  const options = [
+    ['autoToggleCollect', '收藏数'],
+    ['autoToggleLike', '点赞数'],
+    ['autoToggleFans', '粉丝数'],
+    ['autoToggleWeekGrowth', '本周涨幅'],
+    ['autoToggleMonthGrowth', '本月涨幅']
+  ];
+  return options
+    .filter(([id]) => document.getElementById(id)?.checked)
+    .map(([, label]) => label);
+}
+
+function createAutoExportStage(){
+  const preview = document.getElementById('autoPreview');
+  const table = preview?.querySelector('table');
+  if(!preview || !table){
+    return null;
+  }
+  const stage = document.createElement('div');
+  const exportWidth = Math.max(900, Math.min((table.scrollWidth || table.offsetWidth || 0) + 56, 1280));
+  const latestDate = (document.getElementById('autoLatestDate')?.textContent || '—').trim();
+  const latestTime = (document.getElementById('autoLatestTime')?.textContent || '—').trim();
+  const prevDate = (document.getElementById('autoPrevDate')?.textContent || '—').trim();
+  const title = (document.querySelector('.auto-preview-title')?.textContent || '今日榜单').trim();
+  const subtitle = (document.getElementById('autoPreviewMeta')?.textContent || '').trim();
+  const tags = getAutoExportSelections();
+  stage.className = 'auto-export-stage';
+  stage.setAttribute('aria-hidden', 'true');
+  stage.innerHTML = `
+    <div class="auto-export-sheet" style="width:${exportWidth}px;">
+      <div class="auto-export-header">
+        <div>
+          <div class="auto-export-kicker">所选数据高清图</div>
+          <div class="auto-export-title">每日高会排行榜</div>
+          <div class="auto-export-subtitle">${title}${subtitle ? ` · ${subtitle}` : ''}</div>
+        </div>
+      </div>
+      <div class="auto-export-meta">
+        <div class="auto-export-meta-card">
+          <div class="auto-export-meta-label">最新榜单时间</div>
+          <div class="auto-export-meta-value">${latestDate} ${latestTime}</div>
+        </div>
+        <div class="auto-export-meta-card">
+          <div class="auto-export-meta-label">对比日期</div>
+          <div class="auto-export-meta-value">${prevDate}</div>
+        </div>
+      </div>
+      <div class="auto-export-tags">${tags.map(tag => `<span class="auto-export-tag">${tag}</span>`).join('')}</div>
+      <div class="auto-export-table"></div>
+    </div>
+  `;
+  stage.querySelector('.auto-export-table')?.appendChild(table.cloneNode(true));
+  document.body.appendChild(stage);
+  return stage;
+}
+
+function canvasToBlob(canvas){
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if(blob){
+        resolve(blob);
+      }else{
+        reject(new Error('图片生成失败'));
+      }
+    }, 'image/png');
+  });
+}
+
+function triggerImageDownload(url, fileName){
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = url;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function removeExportImageOverlay(){
+  const existing = document.getElementById('exportImageOverlay');
+  if(existing){
+    const url = existing.dataset.objectUrl;
+    existing.remove();
+    document.body.style.overflow = '';
+    if(url){
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+  }
+}
+
+function showExportImageOverlay(url, fileName, tipText){
+  removeExportImageOverlay();
+  const overlay = document.createElement('div');
+  overlay.id = 'exportImageOverlay';
+  overlay.className = 'export-image-overlay';
+  overlay.dataset.objectUrl = url;
+  overlay.innerHTML = `
+    <img src="${url}" alt="${fileName}">
+    <div class="export-image-tip">${tipText}</div>
+    <div class="export-image-actions">
+      <a class="export-image-btn" href="${url}" download="${fileName}">下载图片</a>
+      <button type="button" class="export-image-btn" id="closeExportImageBtn">关闭</button>
+    </div>
+  `;
+  overlay.addEventListener('click', event => {
+    if(event.target === overlay){
+      removeExportImageOverlay();
+    }
+  });
+  overlay.querySelector('#closeExportImageBtn')?.addEventListener('click', removeExportImageOverlay);
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}
+
 async function exportAutoImage(){
   if(!lastAutoRows || !lastAutoRows.length){
     alert('暂无数据可导出');
     return;
   }
-  const container = document.getElementById('autoPreview');
-  if(!container){
+  const preview = document.getElementById('autoPreview');
+  const btn = document.getElementById('autoExportBtn');
+  if(!preview){
     alert('无法找到预览容器');
     return;
   }
-  
-  // 防止重复点击
-  const btn = document.getElementById('autoRefreshBtn')?.nextElementSibling || document.querySelector('button[onclick="exportAutoImage()"]');
-  if(btn && btn.disabled) return;
-  if(btn) btn.disabled = true;
-  
-  // 移动端和微信浏览器兼容性处理
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
-  
-  // 显示加载提示
-  showSuccess('正在加载导出工具，请稍候...');
-  
-  try {
-    // 按需加载 html2canvas
-    await loadHtml2Canvas();
-  } catch (err) {
-    if(btn) btn.disabled = false;
-    showError('导出工具加载失败：' + (err.message || '未知错误'));
+  if(btn?.disabled){
     return;
   }
-  
-  showSuccess('正在生成图片，请稍候...');
-  container.classList.add('export-png');
-  
-  // 优化 scale：根据设备像素比和屏幕大小动态调整
-  const devicePixelRatio = window.devicePixelRatio || 1;
-  const optimalScale = isMobile 
-    ? Math.min(devicePixelRatio, 1.2)  // 移动端进一步降低
-    : Math.min(devicePixelRatio, 1.5);  // 桌面端也降低
-  
-  html2canvas(container, {
-    backgroundColor: '#ffffff',
-    scale: optimalScale, // 优化后的 scale
-    logging: false,
-    useCORS: true,
-    allowTaint: false,
-    foreignObjectRendering: false, // 禁用 foreignObject 以提高性能
-    removeContainer: false, // 保留容器
-    imageTimeout: 0, // 图片超时设为 0（不等待外部图片）
-    ignoreElements: function(element) {
-      // 忽略不可见元素以提高性能
-      return element.style.display === 'none' || element.style.visibility === 'hidden';
-    },
-    onclone: function(clonedDoc) {
-      // 确保克隆的文档中所有样式都正确应用
-      const clonedContainer = clonedDoc.getElementById('autoPreview');
-      if(clonedContainer) {
-        clonedContainer.style.transform = 'none';
-        clonedContainer.style.position = 'relative';
-      }
+
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+  const originalText = btn?.textContent || '导出图片';
+  let stage = null;
+  let objectUrl = '';
+
+  try{
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = '生成中...';
     }
-  }).catch(err => {
-    if(btn) btn.disabled = false;
-    container.classList.remove('export-png');
-    console.error('html2canvas 错误:', err);
-    if(isWeChat) {
-      showError('图片生成失败，请重试。错误：' + (err.message || '未知错误'));
-    } else {
-      alert('导出图片失败：' + (err.message || '未知错误'));
+    showSuccess('正在生成高清图片，请稍候...');
+    const html2canvasLib = await loadHtml2Canvas();
+    if(document.fonts?.ready){
+      await document.fonts.ready;
     }
-  }).then(canvas => {
-    if(btn) btn.disabled = false;
-    if(!canvas) return;
-    container.classList.remove('export-png');
-    
+    stage = createAutoExportStage();
+    if(!stage){
+      throw new Error('导出内容未准备完成');
+    }
+    const sheet = stage.querySelector('.auto-export-sheet') || stage;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const scale = isMobile ? Math.max(2, Math.min(devicePixelRatio, 2.2)) : Math.max(2, Math.min(devicePixelRatio, 3));
+    const canvas = await html2canvasLib(sheet, {
+      backgroundColor: '#ffffff',
+      scale,
+      logging: false,
+      useCORS: true,
+      allowTaint: false,
+      imageTimeout: 15000,
+      width: sheet.scrollWidth,
+      height: sheet.scrollHeight,
+      windowWidth: sheet.scrollWidth,
+      windowHeight: sheet.scrollHeight,
+      scrollX: 0,
+      scrollY: 0
+    });
+    const blob = await canvasToBlob(canvas);
     const date = lastAutoMeta?.latestDate || new Date().toISOString().split('T')[0];
     const fileName = `高会排行榜-${date}.png`;
-    const dataUrl = canvas.toDataURL('image/png');
-    
-    // 微信浏览器：直接在页面显示图片，让用户长按保存
-    if(isWeChat) {
-      try {
-        // 移除之前可能存在的导出图片容器
-        const existingExport = document.getElementById('wechat-export-image');
-        if(existingExport) {
-          existingExport.remove();
-        }
-        
-        // 创建图片显示容器
-        const exportContainer = document.createElement('div');
-        exportContainer.id = 'wechat-export-image';
-        exportContainer.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgb(0 0 0 / 80%); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow:auto;';
-        
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        img.style.cssText = 'max-width:100%; max-height:85vh; height:auto; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5); display:block;';
-        img.alt = fileName;
-        img.setAttribute('crossorigin', 'anonymous');
-        
-        // 确保图片加载完成
-        img.onload = function() {
-          console.log('微信导出：图片加载成功');
-        };
-        img.onerror = function(e) {
-          console.error('微信导出：图片加载失败', e);
-          showError('图片生成失败，请重试');
-          exportContainer.remove();
-        };
-        
-        const tip = document.createElement('div');
-        tip.textContent = '长按图片保存到相册';
-        tip.style.cssText = 'color:#fff; font-size:16px; margin-top:20px; padding:12px 24px; background:rgba(76,110,245,0.8); border-radius:24px; font-weight:500;';
-        
-        const closeBtn = document.createElement('div');
-        closeBtn.textContent = '✕ 关闭';
-        closeBtn.style.cssText = 'position:absolute; top:20px; right:20px; color:#fff; font-size:18px; padding:10px 20px; background:rgba(255,255,255,0.3); border-radius:20px; cursor:pointer; user-select:none;';
-        closeBtn.onclick = function() {
-          exportContainer.remove();
-        };
-        closeBtn.ontouchstart = function() {
-          exportContainer.remove();
-        };
-        
-        exportContainer.appendChild(img);
-        exportContainer.appendChild(tip);
-        exportContainer.appendChild(closeBtn);
-        document.body.appendChild(exportContainer);
-        
-        // 点击背景关闭
-        exportContainer.onclick = function(e) {
-          if(e.target === exportContainer) {
-            exportContainer.remove();
+    objectUrl = URL.createObjectURL(blob);
+
+    if(isMobile && navigator.share && typeof File !== 'undefined'){
+      const file = new File([blob], fileName, { type:'image/png' });
+      if(!navigator.canShare || navigator.canShare({ files:[file] })){
+        try{
+          await navigator.share({ files:[file], title:fileName });
+          showSuccess('图片已生成，可直接保存');
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = '';
+          return;
+        }catch(err){
+          if(err?.name !== 'AbortError'){
+            console.warn('移动端分享失败，改为预览保存', err);
           }
-        };
-        
-        // 防止滚动
-        document.body.style.overflow = 'hidden';
-        exportContainer.onremove = function() {
-          document.body.style.overflow = '';
-        };
-        
-        console.log('微信导出：图片容器已创建，dataUrl长度:', dataUrl.length);
-        return;
-      } catch(e) {
-        console.error('微信导出异常:', e);
-        showError('导出失败：' + (e.message || '未知错误'));
-        container.classList.remove('export-png');
-        return;
+        }
       }
     }
-    
-    // 移动端使用不同的下载方式
-    if(isMobile) {
-      // 移动端：优先尝试下载，如果失败则打开新窗口显示图片
-      // 先尝试使用 toBlob 和下载链接
-      canvas.toBlob(function(blob) {
-        if(!blob) {
-          alert('导出图片失败，请重试');
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        
-        // 尝试创建下载链接
-        try {
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = url;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          
-          // 触发点击（在用户手势事件中调用，应该可以工作）
-          const clickEvent = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-          });
-          link.dispatchEvent(clickEvent);
-          
-          // 延迟清理
-          setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }, 100);
-          
-          // 如果下载失败，打开新窗口显示图片（用户可长按保存）
-          setTimeout(() => {
-            const imgWindow = window.open();
-            if(imgWindow) {
-              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
-              imgWindow.document.close();
-              showSuccess('图片已打开，请长按图片保存');
-            } else {
-              // 如果弹窗被阻止，直接显示图片URL
-              showSuccess('请长按下方链接保存图片：<br><a href="' + url + '" download="' + fileName + '" style="color:#4c6ef5; text-decoration:underline;">点击下载图片</a>');
-            }
-          }, 500);
-        } catch(e) {
-          // 如果下载失败，打开新窗口显示图片
-          const imgWindow = window.open();
-          if(imgWindow) {
-            imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${url}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
-            imgWindow.document.close();
-            showSuccess('图片已打开，请长按图片保存');
-          } else {
-            // 如果弹窗被阻止，使用 data URL
-            const imgWindow = window.open();
-            if(imgWindow) {
-              imgWindow.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;"><img src="${dataUrl}" style="max-width:100%; height:auto;" alt="${fileName}" /></body></html>`);
-              imgWindow.document.close();
-              showSuccess('图片已打开，请长按图片保存');
-            } else {
-              showError('无法打开图片，请检查浏览器弹窗设置');
-            }
-          }
-        }
-      }, 'image/png');
-    } else {
-      // 桌面端：使用 toDataURL
-    const link = document.createElement('a');
-    const date = lastAutoMeta?.latestDate || new Date().toISOString().split('T')[0];
-    link.download = `高会排行榜-${date}.png`;
-    link.href = canvas.toDataURL('image/png');
-      link.style.display = 'none';
-      document.body.appendChild(link);
-    link.click();
-      document.body.removeChild(link);
-      showSuccess('图片已导出');
+
+    if(isWeChat || isMobile){
+      showExportImageOverlay(objectUrl, fileName, isWeChat ? '长按图片保存到相册' : '可直接下载，若系统未自动保存请长按图片');
+      objectUrl = '';
+      showSuccess(isWeChat ? '图片已生成，请长按保存' : '图片已生成，可直接保存');
+      return;
     }
-  }).catch(err => {
-    container.classList.remove('export-png');
+
+    triggerImageDownload(objectUrl, fileName);
+    showSuccess('图片已导出');
+  }catch(err){
     console.error('导出图片失败:', err);
-    alert('导出图片失败：' + (err.message || err) + '\n请尝试刷新页面后重试');
-  });
+    showError('导出图片失败：' + (err.message || '未知错误'));
+  }finally{
+    if(stage){
+      stage.remove();
+    }
+    preview.classList.remove('export-png');
+    if(btn){
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+    if(objectUrl){
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+    }
+  }
 }
 
 async function refreshAutoTab(force){
